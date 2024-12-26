@@ -5,6 +5,7 @@ export default {
     "./src/**/*.{js,ts,jsx,tsx}",
     "node_modules/preline/dist/*.js",
   ],
+  darkMode: "class", // Enable class-based dark mode
   theme: {
     extend: {
       fontFamily: {
@@ -39,8 +40,13 @@ export default {
           light: "#34D399", // Lighter variant of gamer green
           dark: "#059669", // Darker variant of gamer green
         },
+        overscroll: {
+          light: "#FFFFFF", // Custom light color for overscroll
+          dark: "#000000", // Custom dark color for overscroll
+        },
         background: {
           DEFAULT: "#FFFFFF", // White background
+          dark: "#1A1A19", //dark background
         },
         text: {
           primary: "#10B981", // Gamer green for text

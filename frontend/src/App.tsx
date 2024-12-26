@@ -18,7 +18,7 @@ import AdminLayout from "./modules/admin/layout/AdminLayout";
 const App: React.FC = () => {
   return (
     <Router>
-      <ScrollToTop />
+      <ScrollToTop /> {/* utillity to always scroll to top on URL change */}
       <Routes>
         {/* User Routes */}
         <Route path="/" element={<HomePage />} />

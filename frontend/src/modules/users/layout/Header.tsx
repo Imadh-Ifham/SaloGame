@@ -1,11 +1,23 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
+import { applyTheme, getInitialTheme } from "../../../utils/themeChange.util";
 
 const Header: React.FC = () => {
   const [navOpen, setNavOpen] = useState(false);
 
   const handleToggle = () => {
     setNavOpen(!navOpen);
+  };
+
+  // Dark/Light theme management
+  const [theme, setTheme] = useState<string>(getInitialTheme());
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  const toggleTheme = (theme: string) => {
+    setTheme(theme);
   };
 
   const navLinks = [
@@ -20,8 +32,8 @@ const Header: React.FC = () => {
       to={to}
       className={({ isActive }) =>
         isActive
-          ? "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-primary font-normal text-gray-800 focus:outline-none"
-          : "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-transparent text-gray-500 hover:text-gray-800 focus:outline-none"
+          ? "py-0.5 md:py-3 px-4 md:px-1 md:text-xs border-s-2 md:border-s-0 md:border-b-2 border-primary font-normal text-gray-800 dark:text-white focus:outline-none"
+          : "py-0.5 md:py-3 px-4 md:px-1 md:text-xs border-s-2 md:border-s-0 md:border-b-2 border-transparent text-gray-500 dark:text-gray-500 hover:text-gray-800 dark:hover:text-white focus:outline-none"
       }
     >
       {label}
@@ -30,7 +42,10 @@ const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full text-sm">
-      <nav className="mt-4 relative max-w-4xl w-full bg-white/70 backdrop-blur-md border border-primary rounded-[2rem] mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto">
+      <nav
+        className="mt-4 relative max-w-4xl w-full bg-white/70 dark:bg-background-dark/80 text-gray-800 dark:text-gray-200 
+  backdrop-blur-md border border-primary dark:border-primary rounded-[2rem] mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto"
+      >
         <div className="px-4 md:px-0 flex justify-between items-center">
           {/* Logo */}
           <div>
@@ -44,11 +59,71 @@ const Header: React.FC = () => {
           </div>
           {/* End Logo */}
 
+          {/* Dark/Light Theme Toggle */}
+          <div className="flex items-center space-x-2">
+            <button
+              type="button"
+              className={`hs-dark-mode-active:hidden block hs-dark-mode font-medium text-gray-800 rounded-full hover:bg-gray-200 focus:outline-none focus:bg-gray-200 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800`}
+              data-hs-theme-click-value="dark"
+              onClick={() => toggleTheme("dark")}
+              aria-label="Enable Dark Mode"
+            >
+              <span className="group inline-flex shrink-0 justify-center items-center size-9">
+                <svg
+                  className="shrink-0 size-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+                </svg>
+              </span>
+            </button>
+            <button
+              type="button"
+              className={`hs-dark-mode-active:block hidden hs-dark-mode font-medium text-gray-800 rounded-full hover:bg-gray-200 focus:outline-none focus:bg-gray-200 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800`}
+              data-hs-theme-click-value="light"
+              onClick={() => toggleTheme("light")}
+              aria-label="Enable Light Mode"
+            >
+              <span className="group inline-flex shrink-0 justify-center items-center size-9">
+                <svg
+                  className="shrink-0 size-4"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <circle cx="12" cy="12" r="4"></circle>
+                  <path d="M12 2v2"></path>
+                  <path d="M12 20v2"></path>
+                  <path d="m4.93 4.93 1.41 1.41"></path>
+                  <path d="m17.66 17.66 1.41 1.41"></path>
+                  <path d="M2 12h2"></path>
+                  <path d="M20 12h2"></path>
+                  <path d="m6.34 17.66-1.41 1.41"></path>
+                  <path d="m19.07 4.93-1.41 1.41"></path>
+                </svg>
+              </span>
+            </button>
+          </div>
+
           {/* Mobile Toggle Button */}
           <div className="md:hidden">
             <button
               type="button"
-              className="hs-collapse-toggle flex justify-center items-center size-6 border border-primary text-gray-500 rounded-full hover:bg-gray-200 focus:outline-none focus:bg-gray-200"
+              className="hs-collapse-toggle flex justify-center items-center size-6 border border-primary dark:border-gray-700 text-gray-500 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 focus:outline-none focus:bg-gray-200 dark:focus:bg-gray-700"
               onClick={handleToggle}
               aria-expanded={navOpen}
               aria-label="Toggle navigation"

@@ -25,7 +25,7 @@ const GameCard: React.FC<GameCardProps> = ({
       whileInView={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5, delay: index * 0.1 }}
       viewport={{ once: true }}
-      className="flex group relative p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-background border border-border-primary"
+      className="flex group relative p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-background dark:bg-background-dark border border-border-primary"
     >
       {/* Game Image */}
       <div className="w-1/3 h-40 rounded-lg overflow-hidden">
@@ -42,7 +42,7 @@ const GameCard: React.FC<GameCardProps> = ({
           <h3 className="text-xl font-poppins font-semibold mb-2 text-text-primary">
             {name}
           </h3>
-          <p className="text-sm font-poppins text-text-secondary mb-4">
+          <p className="text-sm font-poppins text-text-secondary dark:text-neutral-50 mb-4">
             {description}
           </p>
         </div>
@@ -162,8 +162,8 @@ const GamesPage: React.FC = () => {
         >
           <h2 className="text-3xl sm:text-2xl font-press font-normal mb-4 text-primary">
             Explore Our{" "}
-            <span className="text-gray-900">
-              Top <span className="text-primary-dark">Games</span>
+            <span className="text-gray-900 dark:text-white">
+              Top <span className="text-primary-dark ">Games</span>
             </span>
           </h2>
           <div className="w-16 sm:w-24 h-1 bg-primary mx-auto rounded-full" />
