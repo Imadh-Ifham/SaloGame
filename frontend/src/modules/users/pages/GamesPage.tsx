@@ -1,12 +1,12 @@
 import React from "react";
 import HomeLayout from "../layout/HomeLayout";
 
-const AboutPage: React.FC = () => {
+const GamesPage: React.FC = () => {
   return (
     <HomeLayout>
-      <div>AboutPage</div>
+      <div>gamespage</div>
     </HomeLayout>
   );
 };
 
-export default AboutPage;
+export default GamesPage;
