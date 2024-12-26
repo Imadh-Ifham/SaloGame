@@ -1,6 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
-import userRoute from "./routes/user.routes";
+import userRoutes from "./routes/user.routes";
 import gameRoutes from "./routes/game.routes";
 
 const app: Express = express();
@@ -11,9 +11,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
-app.use("/api/example", userRoute);
-
-// Routes
+app.use("/api/users", userRoutes);
 app.use("/api/games", gameRoutes); // Mount the game router
 
 // Error handling
