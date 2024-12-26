@@ -2,7 +2,7 @@ import React from "react";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="mt-auto w-full max-w-[85rem] py-6 px-4 sm:px-6 lg:px-8 mx-auto border-t border-green-400 bg-transparent backdrop-blur-sm">
+    <footer className="mt-auto w-full  py-6 px-4 sm:px-6 lg:px-8 mx-auto border-t border-green-400 bg-transparent backdrop-blur-sm">
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-6 md:gap-5 text-center md:text-left">
         {/* Logo */}
@@ -18,8 +18,8 @@ const Footer: React.FC = () => {
         {/* End Col */}
 
         {/* Navigation Links */}
-        <ul className="space-y-2 md:space-y-0 ">
-          <li className="inline-block relative md:pe-8 last:pe-0 last-of-type:before:hidden before:absolute before:top-1/2 before:end-3 before:-translate-y-1/2 before:content-['/'] before:text-green-300">
+        <ul className="flex flex-col md:flex-row justify-center md:justify-center items-center space-y-4 md:space-y-0 md:space-x-8">
+          <li>
             <a
               className="inline-flex gap-x-2 text-sm text-gray-500 hover:text-green-600 focus:outline-none focus:text-green-600"
               href="#"
@@ -27,7 +27,7 @@ const Footer: React.FC = () => {
               About
             </a>
           </li>
-          <li className="inline-block relative md:pe-8 last:pe-0 last-of-type:before:hidden before:absolute before:top-1/2 before:end-3 before:-translate-y-1/2 before:content-['/'] before:text-green-300">
+          <li>
             <a
               className="inline-flex gap-x-2 text-sm text-gray-500 hover:text-green-600 focus:outline-none focus:text-green-600"
               href="#"
@@ -35,7 +35,7 @@ const Footer: React.FC = () => {
               Services
             </a>
           </li>
-          <li className="inline-block relative md:pe-8 last:pe-0 last-of-type:before:hidden before:absolute before:top-1/2 before:end-3 before:-translate-y-1/2 before:content-['/'] before:text-green-300">
+          <li>
             <a
               className="inline-flex gap-x-2 text-sm text-gray-500 hover:text-green-600 focus:outline-none focus:text-green-600"
               href="#"
@@ -44,6 +44,7 @@ const Footer: React.FC = () => {
             </a>
           </li>
         </ul>
+
         {/* End Col */}
 
         {/* Social Brands */}
