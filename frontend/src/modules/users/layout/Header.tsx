@@ -8,9 +8,29 @@ const Header: React.FC = () => {
     setNavOpen(!navOpen);
   };
 
+  const navLinks = [
+    { to: "/", label: "Home" },
+    { to: "/games", label: "Games" },
+    { to: "/about", label: "About" },
+  ];
+
+  const renderNavLink = (to: string, label: string) => (
+    <NavLink
+      key={to}
+      to={to}
+      className={({ isActive }) =>
+        isActive
+          ? "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-primary font-normal text-gray-800 focus:outline-none"
+          : "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-transparent text-gray-500 hover:text-gray-800 focus:outline-none"
+      }
+    >
+      {label}
+    </NavLink>
+  );
+
   return (
     <header className="sticky top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full text-sm">
-      <nav className="mt-4 relative max-w-4xl w-full bg-white border border-gray-200 rounded-[2rem] mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto">
+      <nav className="mt-4 relative max-w-4xl w-full bg-white/70 backdrop-blur-md border border-primary rounded-[2rem] mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto">
         <div className="px-4 md:px-0 flex justify-between items-center">
           {/* Logo */}
           <div>
@@ -28,7 +48,7 @@ const Header: React.FC = () => {
           <div className="md:hidden">
             <button
               type="button"
-              className="hs-collapse-toggle flex justify-center items-center size-6 border border-gray-200 text-gray-500 rounded-full hover:bg-gray-200 focus:outline-none focus:bg-gray-200"
+              className="hs-collapse-toggle flex justify-center items-center size-6 border border-primary text-gray-500 rounded-full hover:bg-gray-200 focus:outline-none focus:bg-gray-200"
               onClick={handleToggle}
               aria-expanded={navOpen}
               aria-label="Toggle navigation"
@@ -80,37 +100,7 @@ const Header: React.FC = () => {
           aria-labelledby="hs-navbar-header-floating-collapse"
         >
           <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-2 md:gap-3 mt-3 md:mt-0 py-2 md:py-0 md:ps-7 font-press">
-            {/* Links */}
-            <NavLink
-              to="/"
-              className={({ isActive }) =>
-                isActive
-                  ? "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-gray-800 font-normal text-gray-800 focus:outline-none"
-                  : "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-transparent text-gray-500 hover:text-gray-800 focus:outline-none"
-              }
-            >
-              Home
-            </NavLink>
-            <NavLink
-              to="/games"
-              className={({ isActive }) =>
-                isActive
-                  ? "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-gray-800 font-normal text-gray-800 focus:outline-none"
-                  : "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-transparent text-gray-500 hover:text-gray-800 focus:outline-none"
-              }
-            >
-              Games
-            </NavLink>
-            <NavLink
-              to="/about"
-              className={({ isActive }) =>
-                isActive
-                  ? "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-gray-800 font-normal text-gray-800 focus:outline-none"
-                  : "py-0.5 md:py-3 px-4 md:px-1 border-s-2 md:border-s-0 md:border-b-2 border-transparent text-gray-500 hover:text-gray-800 focus:outline-none"
-              }
-            >
-              About
-            </NavLink>
+            {navLinks.map(({ to, label }) => renderNavLink(to, label))}
           </div>
         </div>
       </nav>
