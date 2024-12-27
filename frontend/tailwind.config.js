@@ -35,6 +35,8 @@ export default {
         },
       },
       colors: {
+        "gamer-green": "#10B981", // Replace with your specific green shade
+        "gamer-green-dark": "#00CC00", // Darker shade for hover states
         primary: {
           DEFAULT: "#10B981", // Gamer green as primary color
           light: "#34D399", // Lighter variant of gamer green
@@ -46,6 +48,7 @@ export default {
         },
         background: {
           DEFAULT: "#FFFFFF", // White background
+          gamergreen: "#10B981", // Gamer green as primary color
           dark: "#1A1A19", //dark background
         },
         text: {

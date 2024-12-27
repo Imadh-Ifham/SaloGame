@@ -3,8 +3,10 @@ import { Request, Response } from "express";
 import mongoose from "mongoose";
 import Game from "../models/game.model";
 
-// Controller to get all games
-export const getAllGames = async (req: Request, res: Response) => {
+export const getAllGames = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const games = await Game.find();
     res.status(200).json({ success: true, data: games });
@@ -24,29 +26,14 @@ export const getGameById = async (
   const { gameID } = req.params;
 
   try {
-    // Validate ObjectID format
-    if (!mongoose.Types.ObjectId.isValid(gameID)) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid game ID format",
-      });
-      return;
-    }
-
-    // Correct usage of findById
     const game = await Game.findById(gameID);
+
     if (!game) {
-      res.status(404).json({
-        success: false,
-        message: "Game not found",
-      });
+      res.status(404).json({ success: false, message: "Game not found" });
       return;
     }
 
-    res.status(200).json({
-      success: true,
-      data: game,
-    });
+    res.status(200).json({ success: true, data: game });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -64,14 +51,16 @@ export const createGame = async (
   const { name, description, rating, image } = req.body;
   try {
     if (!name || !description) {
-      res.status(400).json({ message: "Name and description are required" });
+      res
+        .status(400)
+        .json({ success: false, message: "Name and description are required" });
       return;
     }
 
     const newGame = new Game({ name, description, rating, image });
     await newGame.save();
 
-    res.status(201).json(newGame);
+    res.status(201).json({ success: true, data: newGame });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -81,14 +70,20 @@ export const createGame = async (
   }
 };
 
-// Controller to update a game by ID
 export const updateGame = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const { gameID } = req.params;
+  const { name, description, rating, image } = req.body;
+
   try {
-    const { name, description, rating, image } = req.body;
-    const { gameID } = req.params;
+    if (!name || !description) {
+      res
+        .status(400)
+        .json({ success: false, message: "Name and description are required" });
+      return;
+    }
 
     const updatedGame = await Game.findByIdAndUpdate(
       gameID,
@@ -98,7 +93,6 @@ export const updateGame = async (
 
     if (!updatedGame) {
       res.status(404).json({ success: false, message: "Game not found" });
-
       return;
     }
 
@@ -112,18 +106,17 @@ export const updateGame = async (
   }
 };
 
-// Controller to delete a game by ID
 export const deleteGame = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const { gameID } = req.params;
+
   try {
-    const { gameID } = req.params;
     const deletedGame = await Game.findByIdAndDelete(gameID);
 
     if (!deletedGame) {
       res.status(404).json({ success: false, message: "Game not found" });
-
       return;
     }
 

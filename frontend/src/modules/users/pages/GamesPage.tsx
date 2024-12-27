@@ -1,8 +1,17 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid"; // Icons for show more/less button
-import { Button } from "@headlessui/react"; // Button Component
+import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
+import { Button } from "@headlessui/react";
 import HomeLayout from "../layout/HomeLayout";
+import axiosInstance from "../../../axios.config";
+
+interface Game {
+  _id: string;
+  image: string;
+  name: string;
+  rating: number;
+  description: string;
+}
 
 interface GameCardProps {
   image: string;
@@ -71,61 +80,13 @@ const GameCard: React.FC<GameCardProps> = ({
 };
 
 const GamesPage: React.FC = () => {
+  const [games, setGames] = useState<Game[]>([]); // State to hold game data
+  const [loading, setLoading] = useState<boolean>(false); // Loading state
+  const [error, setError] = useState<string | null>(null); // Error state
   const [showMore, setShowMore] = useState(false);
   const [screenSize, setScreenSize] = useState<"mobile" | "tablet" | "desktop">(
     "desktop"
   );
-
-  const games = [
-    {
-      image:
-        "https://cdn.kobo.com/book-images/0a77b6ba-f48f-4cfa-ae54-c6eef1767779/353/569/90/False/red-dead-redemption-1.jpg",
-      name: "Red Dead Redemption 1",
-      rating: 4.8,
-      description:
-        "Journey across the sprawling expanses of the American West and Mexico in Red Dead Redemption, and its zombie-horror companion, Undead Nightmare.",
-    },
-    {
-      image:
-        "https://upload.wikimedia.org/wikipedia/en/e/ee/God_of_War_Ragnar%C3%B6k_cover.jpg",
-      name: "God of War",
-      rating: 4.9,
-      description:
-        "Follow Kratos and Atreus on a mythical journey in this critically acclaimed action-adventure game.",
-    },
-    {
-      image:
-        "https://upload.wikimedia.org/wikipedia/en/0/0c/Witcher_3_cover_art.jpg",
-      name: "The Witcher 3: Wild Hunt",
-      rating: 4.9,
-      description:
-        "Dive into an epic fantasy world as Geralt of Rivia, a monster slayer for hire.",
-    },
-    {
-      image:
-        "https://image.api.playstation.com/vulcan/ap/rnd/202008/0416/6Bo40lnWU0BhgrOUm7Cb6by3.png?w=440",
-      name: "Cyberpunk 2077",
-      rating: 4.6,
-      description:
-        "Immerse yourself in the neon-lit streets of Night City in this open-world RPG.",
-    },
-    {
-      image:
-        "https://m.media-amazon.com/images/M/MV5BNjQzMDlkNDctYmE3Yi00ZWFiLTlmOWYtMjI4MzQ4Y2JhZjY2XkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg",
-      name: "Minecraft",
-      rating: 4.7,
-      description:
-        "Unleash your creativity and build anything you can imagine in this block-building sandbox game.",
-    },
-    {
-      image:
-        "https://cdn.europosters.eu/image/1300/canvas-print-the-legend-of-zelda-breath-of-the-wild-view-i111579.jpg",
-      name: "The Legend of Zelda: Breath of the Wild",
-      rating: 4.9,
-      description:
-        "Explore the vast open world of Hyrule and save the kingdom in this masterpiece of adventure.",
-    },
-  ];
 
   useEffect(() => {
     const handleResize = () => {
@@ -138,6 +99,27 @@ const GamesPage: React.FC = () => {
     handleResize();
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await axiosInstance.get("/games");
+        if (response.data.success) {
+          setGames(response.data.data);
+        } else {
+          setError("Failed to fetch games.");
+        }
+      } catch (err) {
+        setError((err as Error).message || "An unexpected error occurred.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchGames();
   }, []);
 
   // Determine visible games based on screen size and "showMore" state
@@ -163,47 +145,63 @@ const GamesPage: React.FC = () => {
           <h2 className="text-3xl sm:text-2xl font-press font-normal mb-4 text-primary">
             Explore Our{" "}
             <span className="text-gray-900 dark:text-white">
-              Top <span className="text-primary-dark ">Games</span>
+              Top <span className="text-primary-dark">Games</span>
             </span>
           </h2>
           <div className="w-16 sm:w-24 h-1 bg-primary mx-auto rounded-full" />
         </motion.div>
 
-        {/* Game Cards */}
-        <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10 mt-16">
-          {visibleGames.map((game, index) => (
-            <GameCard
-              key={index}
-              image={game.image}
-              name={game.name}
-              rating={game.rating}
-              description={game.description}
-              index={index}
-            />
-          ))}
-        </div>
+        {/* Handling Loading and Error States */}
+        {loading ? (
+          <div className="flex justify-center items-center mt-16">
+            <p className="text-lg text-gray-700 dark:text-gray-300">
+              Loading games...
+            </p>
+          </div>
+        ) : error ? (
+          <div className="flex justify-center items-center mt-16">
+            <p className="text-lg text-red-500">{error}</p>
+          </div>
+        ) : (
+          // Game Cards
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10 mt-16">
+            {visibleGames.map((game, index) => (
+              <GameCard
+                key={game._id} // Use unique ID as key
+                image={game.image}
+                name={game.name}
+                rating={game.rating}
+                description={game.description}
+                index={index}
+              />
+            ))}
+          </div>
+        )}
 
         {/* Show More Button */}
-        {showMoreButton && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
-            className="flex justify-center mt-8"
-          >
-            <Button
-              onClick={() => setShowMore(!showMore)}
-              className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-all duration-300"
+        {!loading &&
+          !error &&
+          showMoreButton &&
+          games.length > (screenSize === "mobile" ? 2 : 4) && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.5 }}
+              className="flex justify-center mt-8"
             >
-              {showMore ? "Show Less" : "Show More"}
-              {showMore ? (
-                <ChevronUpIcon className="w-5 h-5 ml-2" />
-              ) : (
-                <ChevronDownIcon className="w-5 h-5 ml-2" />
-              )}
-            </Button>
-          </motion.div>
-        )}
+              <Button
+                onClick={() => setShowMore(!showMore)}
+                className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-all duration-300"
+              >
+                {showMore ? "Show Less" : "Show More"}
+                {showMore ? (
+                  <ChevronUpIcon className="w-5 h-5 ml-2" />
+                ) : (
+                  <ChevronDownIcon className="w-5 h-5 ml-2" />
+                )}
+              </Button>
+            </motion.div>
+          )}
       </div>
     </HomeLayout>
   );

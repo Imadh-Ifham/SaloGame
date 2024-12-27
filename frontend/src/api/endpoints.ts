@@ -1,4 +1,4 @@
-const BASE_URL = "https://api.example.com";
+const BASE_URL = "http://localhost:3000/api";
 
 export const API_ENDPOINTS = {
   AUTH: {
@@ -11,6 +11,9 @@ export const API_ENDPOINTS = {
   },
   ADMIN: {
     DASHBOARD: `${BASE_URL}/admin/dashboard`,
+  },
+  GAMES: {
+    GET_GAMES: `${BASE_URL}/games/`,
   },
 };
 
