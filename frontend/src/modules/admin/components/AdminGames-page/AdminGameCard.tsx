@@ -3,9 +3,10 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
-import axiosInstance from "../../../axios.config";
+
 import GameForm from "./GameForm";
-import Modal from "../../../components/Modal";
+import Modal from "../../../../components/Modal";
+import axiosInstance from "../../../../axios.config";
 
 interface Game {
   _id: string;
