@@ -16,6 +16,7 @@ import { ScrollToTop } from "./utils/scrollToTop.util";
 import AdminLayout from "./modules/admin/layout/AdminLayout";
 import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
 import OffersPage from "./modules/users/pages/OffersPage";
+import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 
 const App: React.FC = () => {
   return (
@@ -34,6 +35,7 @@ const App: React.FC = () => {
           <Route index element={<Navigate to="dashboard" />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="games" element={<AdminGamesPage />} />
+          <Route path="offers" element={<AdminOfferPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

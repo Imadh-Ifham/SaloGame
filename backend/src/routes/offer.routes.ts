@@ -3,6 +3,7 @@ import {
   createOffer,
   deleteOffer,
   getAllOffers,
+  getOfferById,
   updateOffer,
 } from "../controllers/offer.controller";
 
@@ -19,5 +20,8 @@ router.put("/:offerID", updateOffer);
 
 // Route to delete an offer by ID
 router.delete("/:offerID", deleteOffer);
+
+//Route to get an offer by ID
+router.get("/:offerID", getOfferById);
 
 export default router;

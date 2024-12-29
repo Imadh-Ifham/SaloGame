@@ -1,16 +1,23 @@
 import { Request, Response } from "express";
 import Offer from "../models/offer.model";
 
-// Get all offers
+// Get all offers (with optional isActive filter)
 export const getAllOffers = async (
   req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    const currentDate = new Date();
-    const offers = await Offer.find({
-      isActive: true,
-    });
+    // Extract the isActive query parameter from the request
+    const { isActive } = req.query;
+
+    // Build the filter dynamically
+    const filter: { isActive?: boolean } = {};
+    if (isActive !== undefined) {
+      filter.isActive = isActive === "true"; // Convert string to boolean
+    }
+
+    // Fetch offers based on the filter
+    const offers = await Offer.find(filter);
 
     res.status(200).json({ success: true, data: offers });
   } catch (error) {
@@ -54,6 +61,7 @@ export const createOffer = async (
 ): Promise<void> => {
   const {
     title,
+    isActive,
     code,
     discountType,
     discountValue,
@@ -80,6 +88,7 @@ export const createOffer = async (
 
     const newOffer = new Offer({
       title,
+      isActive,
       code,
       discountType,
       discountValue,
@@ -113,45 +122,22 @@ export const updateOffer = async (
   res: Response
 ): Promise<void> => {
   const { offerID } = req.params;
-  const {
-    title,
-    code,
-    discountType,
-    discountValue,
-    startDate,
-    endDate,
-    usageLimit,
-  } = req.body;
+  const updateFields = req.body; // Accept all fields from the request body
 
   try {
-    if (
-      !title ||
-      !code ||
-      !discountType ||
-      !discountValue ||
-      !startDate ||
-      !endDate
-    ) {
+    if (!Object.keys(updateFields).length) {
       res.status(400).json({
         success: false,
-        message: "Missing required fields",
+        message: "No fields provided for update",
       });
       return;
     }
 
-    const updatedOffer = await Offer.findByIdAndUpdate(
-      offerID,
-      {
-        title,
-        code,
-        discountType,
-        discountValue,
-        startDate,
-        endDate,
-        usageLimit,
-      },
-      { new: true, runValidators: true }
-    );
+    // Update the offer with the provided fields
+    const updatedOffer = await Offer.findByIdAndUpdate(offerID, updateFields, {
+      new: true, // Return the updated document
+      runValidators: true, // Ensure the fields are validated
+    });
 
     if (!updatedOffer) {
       res.status(404).json({ success: false, message: "Offer not found" });
