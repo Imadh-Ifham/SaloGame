@@ -1,4 +1,4 @@
-import express from "express";
+import express, { Router } from "express";
 import {
   getOffers,
   createOffer,
@@ -6,7 +6,7 @@ import {
   deleteOffer,
 } from "../controllers/offer.controller";
 
-const router = express.Router();
+const router: Router = express.Router();
 
 router.get("/", getOffers);
 router.post("/", createOffer);

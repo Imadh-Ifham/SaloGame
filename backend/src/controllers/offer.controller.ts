@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Request, Response, NextFunction } from "express";
 import Offer from "../models/offer.model"; // Import the Offer model
 
 //Get all offers
@@ -28,7 +28,11 @@ export const createOffer = async (req: Request, res: Response) => {
 };
 
 //Update an offer
-export const updateOffer = async (req: Request, res: Response) => {
+export const updateOffer = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
   try {
     const { id } = req.params;
     const offer = await Offer.findByIdAndUpdate(id, req.body, {
@@ -37,27 +41,36 @@ export const updateOffer = async (req: Request, res: Response) => {
     });
 
     if (!offer) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Offer not found" });
+      res.status(404).json({
+        success: false,
+        message: "Offer not found",
+      });
+      return;
     }
 
-    res.status(200).json({ success: true, data: offer });
+    res.status(200).json({
+      success: true,
+      data: offer,
+    });
   } catch (error) {
-    res.status(400).json({ success: false, message: (error as Error).message });
+    next(error);
   }
 };
 
 //Delete an offer
-export const deleteOffer = async (req: Request, res: Response) => {
+export const deleteOffer = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
     const deletedOffer = await Offer.findByIdAndDelete(id);
 
     if (!deletedOffer) {
-      return res
-        .status(404)
-        .json({ success: false, message: "Offer not found" });
+      res.status(404).json({
+        success: false,
+        message: "Offer not found",
+      });
     }
 
     res.status(200).json({ success: true, data: {} });
