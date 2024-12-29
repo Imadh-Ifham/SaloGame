@@ -15,6 +15,7 @@ import DashboardPage from "./modules/admin/pages/DashboardPage";
 import { ScrollToTop } from "./utils/scrollToTop.util";
 import AdminLayout from "./modules/admin/layout/AdminLayout";
 import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
+import OffersPage from "./modules/users/pages/OffersPage";
 
 const App: React.FC = () => {
   return (
@@ -25,6 +26,7 @@ const App: React.FC = () => {
         <Route path="/" element={<HomePage />} />
         <Route path="/games" element={<GamesPage />} />
         <Route path="/about" element={<AboutPage />} />
+        <Route path="/offers" element={<OffersPage />} />
         <Route path="*" element={<NotFoundPage />} />
 
         {/* Admin Routes */}
