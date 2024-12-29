@@ -1,6 +1,8 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Model, Schema, Document } from "mongoose";
 
-export interface IOffer extends Document {
+// Define the Offer interface
+interface IOffer extends Document {
+  _id: mongoose.Types.ObjectId;
   title: string;
   code: string;
   discountType: "percentage" | "fixed";
@@ -12,7 +14,8 @@ export interface IOffer extends Document {
   usageCount: number;
 }
 
-const OfferSchema: Schema = new Schema(
+// Create the Offer schema
+const offerSchema: Schema<IOffer> = new mongoose.Schema<IOffer>(
   {
     title: { type: String, required: true },
     code: { type: String, required: true, unique: true },
@@ -25,10 +28,14 @@ const OfferSchema: Schema = new Schema(
     isActive: { type: Boolean, default: true },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
-    usageLimit: { type: Number },
-    usageCount: { type: Number, default: 0 },
+    usageLimit: { type: Number }, // Optional
+    usageCount: { type: Number, default: 0 }, // Default to 0
   },
-  { timestamps: true }
+  { timestamps: true } // Adds createdAt and updatedAt fields automatically
 );
 
-export default mongoose.model<IOffer>("Offer", OfferSchema);
+// Create the Offer model
+const Offer: Model<IOffer> =
+  mongoose.models.Offer || mongoose.model<IOffer>("Offer", offerSchema);
+
+export default Offer;
