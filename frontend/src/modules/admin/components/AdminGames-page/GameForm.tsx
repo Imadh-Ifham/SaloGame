@@ -102,7 +102,7 @@ const GameForm: React.FC<GameFormProps> = ({
   };
 
   return (
-    <div className="bg-transparent p-0 rounded-lg shadow-none">
+    <div className="bg-transparent p-0 font-poppins rounded-lg shadow-none">
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Name */}
         <div>
@@ -113,7 +113,7 @@ const GameForm: React.FC<GameFormProps> = ({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+            className="mt-1  block dark:bg-black w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
             required
           />
         </div>
@@ -126,7 +126,7 @@ const GameForm: React.FC<GameFormProps> = ({
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+            className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
             rows={4}
             required
           ></textarea>
@@ -141,7 +141,7 @@ const GameForm: React.FC<GameFormProps> = ({
             type="number"
             value={rating}
             onChange={(e) => setRating(Number(e.target.value))}
-            className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+            className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
             min={0}
             max={5}
             step={0.1}
@@ -157,7 +157,7 @@ const GameForm: React.FC<GameFormProps> = ({
             type="url"
             value={image}
             onChange={(e) => setImage(e.target.value)}
-            className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+            className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
             required
           />
         </div>

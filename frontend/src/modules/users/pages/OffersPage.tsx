@@ -66,15 +66,15 @@ const OfferCard = ({
   };
 
   return (
-    <div className="relative bg-gradient-to-tl from-emerald-800 to-green-500 text-white text-center py-6 px-10 rounded-lg shadow-md w-1/3 mx-4 my-4">
+    <div className="relative bg-emerald-900 text-white text-center py-6 px-10 rounded-xl shadow-md w-1/3 mx-4 my-4">
       {/* Transparent Circular Cutouts */}
       <div
         className="absolute top-1/2 left-0 -ml-5 transform -translate-y-1/2 w-10 h-10 rounded-full pattern-dots pattern-green-200 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black
-                    pattern-size-2 pattern-opacity-100"
+                    pattern-size-2 pattern-opacity-100 "
       ></div>
       <div
         className="absolute top-1/2 right-0 -mr-5 transform -translate-y-1/2 w-10 h-10 rounded-full bg-transparent pattern-dots pattern-green-200 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black
-                    pattern-size-2 pattern-opacity-100"
+                    pattern-size-2 pattern-opacity-100 "
       ></div>
 
       {/* Offer Card Content */}
