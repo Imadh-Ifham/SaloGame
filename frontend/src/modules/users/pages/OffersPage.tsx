@@ -22,8 +22,8 @@ const OfferCard = ({
   };
 
   return (
-    <div className="relative bg-emerald-900 text-white text-center py-6 px-6 sm:px-10 rounded-xl shadow-md w-full sm:w-2/3 lg:w-1/3 mx-auto sm:mx-4 my-4">
-      {/* Transparent Circular Cutouts */}
+    <div className="relative bg-emerald-900 text-white text-center py-6 px-6 sm:px-10 rounded-xl shadow-md md:min-w-96 w-full sm:w-2/3 lg:w-1/3  max-w-sm mx-auto sm:mx-4 my-4">
+      {/* Circular Cutouts */}
       <div
         className="absolute top-1/2 left-0 -ml-5 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full pattern-dots pattern-green-200 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black
                     pattern-size-2 pattern-opacity-100 "
@@ -71,11 +71,10 @@ const OffersPage: React.FC = () => {
   useEffect(() => {
     const fetchOffers = async () => {
       try {
-        // Fetch only active offers
         const response = await axiosInstance.get("/offer?isActive=true");
 
         if (response.data && response.data.success) {
-          setOffers(response.data.data); // Set the fetched offers
+          setOffers(response.data.data);
         } else {
           console.error("Backend returned an unsuccessful response:", response);
         }
@@ -88,9 +87,6 @@ const OffersPage: React.FC = () => {
 
     fetchOffers();
   }, []);
-
-  const firstRow = offers.slice(0, Math.ceil(offers.length / 2));
-  const secondRow = offers.slice(Math.ceil(offers.length / 2));
 
   if (loading) {
     return (
@@ -114,6 +110,36 @@ const OffersPage: React.FC = () => {
     );
   }
 
+  // Adjust layout for low number of offers
+  if (offers.length <= 3) {
+    return (
+      <HomeLayout>
+        <div className="flex flex-col items-center justify-center py-10 my-7 overflow-hidden">
+          <h2 className="text-3xl sm:text-2xl font-press font-normal mb-4 text-primary">
+            Time Limited{" "}
+            <span className="text-gray-900 dark:text-white">Offers</span>
+          </h2>
+          <div className="flex flex-wrap justify-center gap-4">
+            {offers.map((offer: any) => (
+              <OfferCard
+                key={offer._id}
+                title={offer.title}
+                code={offer.code}
+                expiry={`Valid Till: ${new Date(
+                  offer.endDate
+                ).toLocaleDateString()}`}
+              />
+            ))}
+          </div>
+        </div>
+      </HomeLayout>
+    );
+  }
+
+  // Regular layout for more than 3 offers
+  const firstRow = offers.slice(0, Math.ceil(offers.length / 2));
+  const secondRow = offers.slice(Math.ceil(offers.length / 2));
+
   return (
     <HomeLayout>
       <div className="flex flex-col items-center justify-center py-10 my-7 overflow-hidden">
@@ -121,7 +147,6 @@ const OffersPage: React.FC = () => {
           Time Limited{" "}
           <span className="text-gray-900 dark:text-white">Offers</span>
         </h2>
-        {/* First Row of Offers */}
         <Marquee pauseOnHover className="[--duration:20s]">
           {firstRow.map((offer: any) => (
             <OfferCard
@@ -134,7 +159,6 @@ const OffersPage: React.FC = () => {
             />
           ))}
         </Marquee>
-        {/* Second Row of Offers (Reverse Direction) */}
         <Marquee reverse pauseOnHover className="[--duration:20s] mt-6">
           {secondRow.map((offer: any) => (
             <OfferCard
