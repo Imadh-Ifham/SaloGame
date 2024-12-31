@@ -66,7 +66,7 @@ export const createOffer = async (
     discountType,
     discountValue,
     startDate,
-    endDate,
+    endDateTime,
     usageLimit,
   } = req.body;
 
@@ -77,7 +77,7 @@ export const createOffer = async (
       !discountType ||
       !discountValue ||
       !startDate ||
-      !endDate
+      !endDateTime
     ) {
       res.status(400).json({
         success: false,
@@ -93,7 +93,7 @@ export const createOffer = async (
       discountType,
       discountValue,
       startDate,
-      endDate,
+      endDateTime,
       usageLimit,
     });
 

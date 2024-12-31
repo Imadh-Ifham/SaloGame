@@ -7,20 +7,67 @@ import HomeLayout from "../layout/HomeLayout";
 const OfferCard = ({
   title,
   code,
-  expiry,
+  endDateTime,
 }: {
   title: string;
   code: string;
-  expiry: string;
+  endDateTime: string;
 }) => {
   const [copied, setCopied] = useState(false);
+  const [timeLeft, setTimeLeft] = useState("");
 
+  //calculate time left for offer to expire
+  useEffect(() => {
+    const calculateTimeLeft = (endDateTime: string): string => {
+      const now = new Date().getTime();
+      const endTime = Date.parse(endDateTime);
+
+      if (isNaN(endTime)) {
+        console.error("Error parsing endDateTime:", endDateTime);
+        return "Invalid Offer";
+      }
+
+      const difference = endTime - now;
+
+      if (difference <= 0) {
+        return "Expired";
+      }
+
+      // Calculate the time components
+      const days = Math.floor(difference / (1000 * 60 * 60 * 24));
+      const hours = Math.floor(
+        (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+
+      // Return the formatted time string
+      if (days > 0 && hours > 0) {
+        return `${days}d ${hours}h left`;
+      } else if (days > 0) {
+        return `${days} days left`;
+      } else if (hours > 0) {
+        return `${hours}h ${minutes}m left`;
+      } else {
+        return `${minutes}m left`;
+      }
+    };
+
+    setTimeLeft(calculateTimeLeft(endDateTime));
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft(endDateTime));
+    }, 60000); // Update every minute
+
+    return () => clearInterval(timer);
+  }, [endDateTime]);
+
+  // Copy coupon code to clipboard
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Offer Card JSX
   return (
     <div className="relative bg-emerald-900 text-white text-center py-6 px-6 sm:px-10 rounded-xl shadow-md md:min-w-96 w-full sm:w-2/3 lg:w-1/3  max-w-sm mx-auto sm:mx-4 my-4">
       {/* Circular Cutouts */}
@@ -59,11 +106,12 @@ const OfferCard = ({
           )}
         </button>
       </div>
-      <p className="text-xs sm:text-sm">{expiry}</p>
+      <p className="text-xs sm:text-sm">{timeLeft}</p>
     </div>
   );
 };
 
+// OffersPage Component
 const OffersPage: React.FC = () => {
   const [offers, setOffers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -125,9 +173,7 @@ const OffersPage: React.FC = () => {
                 key={offer._id}
                 title={offer.title}
                 code={offer.code}
-                expiry={`Valid Till: ${new Date(
-                  offer.endDate
-                ).toLocaleDateString()}`}
+                endDateTime={offer.endDateTime}
               />
             ))}
           </div>
@@ -153,9 +199,7 @@ const OffersPage: React.FC = () => {
               key={offer._id}
               title={offer.title}
               code={offer.code}
-              expiry={`Valid Till: ${new Date(
-                offer.endDate
-              ).toLocaleDateString()}`}
+              endDateTime={offer.endDateTime}
             />
           ))}
         </Marquee>
@@ -165,8 +209,8 @@ const OffersPage: React.FC = () => {
               key={offer._id}
               title={offer.title}
               code={offer.code}
-              expiry={`Valid Till: ${new Date(
-                offer.endDate
+              endDateTime={` ${new Date(
+                offer.endDateTime
               ).toLocaleDateString()}`}
             />
           ))}

@@ -9,7 +9,7 @@ interface IOffer extends Document {
   discountValue: number;
   isActive: boolean;
   startDate: Date;
-  endDate: Date;
+  endDateTime: Date;
   usageLimit?: number;
   usageCount: number;
 }
@@ -27,15 +27,14 @@ const offerSchema: Schema<IOffer> = new mongoose.Schema<IOffer>(
     discountValue: { type: Number, required: true },
     isActive: { type: Boolean, default: true },
     startDate: { type: Date, required: true },
-    endDate: {
+    endDateTime: {
       type: Date,
       required: true,
       validate: {
         validator: function (value: Date): boolean {
-          // Check if the endDate is in the future
           return value > new Date();
         },
-        message: "End date must be in the future.",
+        message: "End date and time must be in the future.",
       },
     },
     usageLimit: { type: Number }, // Optional
@@ -46,7 +45,7 @@ const offerSchema: Schema<IOffer> = new mongoose.Schema<IOffer>(
 
 // Middleware to automatically deactivate offers if the current date has passed the endDate
 offerSchema.pre("save", function (next) {
-  if (this.endDate && new Date(this.endDate) < new Date()) {
+  if (this.endDateTime && new Date(this.endDateTime) < new Date()) {
     this.isActive = false; // Automatically set isActive to false
   }
   next();

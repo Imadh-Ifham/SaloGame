@@ -17,7 +17,7 @@ interface Offer {
   discountValue: number;
   isActive: boolean;
   startDate: string;
-  endDate: string;
+  endDateTime: string;
   usageLimit?: number;
   usageCount: number;
 }
@@ -26,6 +26,7 @@ const AdminOfferPage: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [, setError] = useState<string | null>(null);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
 
   const [formData, setFormData] = useState<{
@@ -35,7 +36,7 @@ const AdminOfferPage: React.FC = () => {
     discountValue: number;
     isActive: boolean;
     startDate: string;
-    endDate: string;
+    endDateTime: string;
     usageLimit?: number;
   }>({
     title: "",
@@ -44,10 +45,13 @@ const AdminOfferPage: React.FC = () => {
     discountValue: 0,
     isActive: true,
     startDate: "",
-    endDate: "",
+    endDateTime: "",
     usageLimit: undefined,
   });
 
+  //FUNCTIONS
+
+  //function to fetch offers from the server
   const fetchOffers = async () => {
     setLoading(true);
     try {
@@ -70,23 +74,53 @@ const AdminOfferPage: React.FC = () => {
   };
 
   const handleSubmit = async () => {
+    // Validate required fields
+    if (
+      !formData.title ||
+      !formData.code ||
+      !formData.discountValue ||
+      !formData.startDate ||
+      !formData.endDateTime
+    ) {
+      setError("Please fill in all required fields.");
+      return;
+    }
+
+    // Validate dates
+    if (new Date(formData.startDate) > new Date(formData.endDateTime)) {
+      setError("End date must be after start date.");
+      return;
+    }
     try {
       if (selectedOffer) {
-        await axiosInstance.put(`/offer/${selectedOffer._id}`, formData);
+        await axiosInstance.put(`/offer/${selectedOffer._id}`, {
+          ...formData,
+          // Ensure correct field names match backend
+          endDate: formData.endDateTime, // Backend expects endDate
+        });
       } else {
-        await axiosInstance.post("/offer", formData);
+        await axiosInstance.post("/offer", {
+          ...formData,
+          endDate: formData.endDateTime, // Backend expects endDate
+        });
       }
       fetchOffers();
       closeModal();
-    } catch (error) {
-      console.error("Error saving offer:", error);
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || "An unexpected error occurred.";
+      setError(errorMessage);
+      console.error("Detailed Error:", error.response?.data);
     }
   };
 
   const openModal = (offer: Offer | null = null) => {
     setSelectedOffer(offer);
     if (offer) {
-      setFormData({ ...offer });
+      setFormData({
+        ...offer,
+        endDateTime: offer.endDateTime,
+      });
     } else {
       setFormData({
         title: "",
@@ -95,7 +129,7 @@ const AdminOfferPage: React.FC = () => {
         discountValue: 0,
         isActive: true,
         startDate: "",
-        endDate: "",
+        endDateTime: "",
         usageLimit: undefined,
       });
     }
@@ -203,7 +237,7 @@ const AdminOfferPage: React.FC = () => {
                     </td>
                     <td className="px-4 py-2">
                       {new Date(offer.startDate).toLocaleDateString()} -{" "}
-                      {new Date(offer.endDate).toLocaleDateString()}
+                      {new Date(offer.endDateTime).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-2 flex gap-x-2">
                       <button
@@ -326,12 +360,12 @@ const AdminOfferPage: React.FC = () => {
                       </div>
                       <div>
                         <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          End Date
+                          End Date & Time
                         </label>
                         <input
-                          type="date"
-                          name="endDate"
-                          value={formData.endDate}
+                          type="datetime-local" // Changed from date to datetime-local
+                          name="endDateTime"
+                          value={formData.endDateTime}
                           onChange={handleInputChange}
                           className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
                         />
