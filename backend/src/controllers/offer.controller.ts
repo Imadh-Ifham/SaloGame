@@ -11,10 +11,13 @@ export const getAllOffers = async (
     const { isActive } = req.query;
 
     // Build the filter dynamically
-    const filter: { isActive?: boolean } = {};
+    const filter: { isActive?: boolean; endDateTime?: { $gte: Date } } = {};
     if (isActive !== undefined) {
       filter.isActive = isActive === "true"; // Convert string to boolean
     }
+
+    // Add a filter to exclude expired offers
+    filter.endDateTime = { $gte: new Date() };
 
     // Fetch offers based on the filter
     const offers = await Offer.find(filter);

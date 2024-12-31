@@ -20,7 +20,7 @@ const OfferCard = ({
   useEffect(() => {
     const calculateTimeLeft = (endDateTime: string): string => {
       const now = new Date().getTime();
-      const endTime = Date.parse(endDateTime);
+      const endTime = new Date(endDateTime).getTime();
 
       if (isNaN(endTime)) {
         console.error("Error parsing endDateTime:", endDateTime);
