@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   BrowserRouter as Router,
   Routes,
@@ -19,6 +19,10 @@ import OffersPage from "./modules/users/pages/OffersPage";
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 
 const App: React.FC = () => {
+  useEffect(() => {
+    // Always set dark mode as default
+    document.documentElement.classList.add("dark");
+  }, []);
   return (
     <Router>
       <ScrollToTop /> {/* utillity to always scroll to top on URL change */}
