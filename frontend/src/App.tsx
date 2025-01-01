@@ -16,6 +16,9 @@ import { ScrollToTop } from "./utils/scrollToTop.util";
 import AdminLayout from "./modules/admin/layout/AdminLayout";
 import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
 import BlueprintManager from "./modules/admin/pages/BlueprintManager";
+import EventManagerPage from "./modules/admin/pages/EventManager";
+import EventPage from "./modules/users/pages/EventPages/EventPage";
+import TeamRegistration from "./modules/users/pages/EventPages/TeamRegistration";
 
 const App: React.FC = () => {
   return (
@@ -27,6 +30,9 @@ const App: React.FC = () => {
         <Route path="/games" element={<GamesPage />} />
         <Route path="/about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
+        <Route path="/events" element={<EventPage/>} />
+        <Route path="/team-registration" element={<TeamRegistration/>}/>
+
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -35,6 +41,7 @@ const App: React.FC = () => {
           <Route path="games" element={<AdminGamesPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="layout-manager" element={<BlueprintManager />} />
+          <Route path="events" element={<EventManagerPage/>}/>
         </Route>
       </Routes>
     </Router>
