@@ -116,6 +116,14 @@ export default {
             transform: "translateY(calc(-100% - var(--gap)))",
           },
         },
+        "background-position-spin": {
+          "0%": {
+            backgroundPosition: "top center",
+          },
+          "100%": {
+            backgroundPosition: "bottom center",
+          },
+        },
       },
       animation: {
         marquee: "marquee var(--duration) infinite linear",
