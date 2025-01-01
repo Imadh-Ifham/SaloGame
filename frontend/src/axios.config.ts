@@ -1,9 +1,10 @@
-// axios.config.ts
-
 import axios from "axios";
 
+// Dynamically set the baseURL using the VITE_API_PORT environment variable
+const baseURL = `http://localhost:${import.meta.env.VITE_API_PORT}/api`;
+
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:5000/api", // Adjust as necessary
+  baseURL,
   headers: {
     "Content-Type": "application/json",
   },
