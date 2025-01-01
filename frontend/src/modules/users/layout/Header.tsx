@@ -24,6 +24,7 @@ const Header: React.FC = () => {
     { to: "/", label: "Home" },
     { to: "/games", label: "Games" },
     { to: "/about", label: "About" },
+    { to: "/offers", label: "Offers" },
   ];
 
   const renderNavLink = (to: string, label: string) => (
