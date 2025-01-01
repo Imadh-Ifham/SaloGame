@@ -15,6 +15,7 @@ import DashboardPage from "./modules/admin/pages/DashboardPage";
 import { ScrollToTop } from "./utils/scrollToTop.util";
 import AdminLayout from "./modules/admin/layout/AdminLayout";
 import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
+import BlueprintManager from "./modules/admin/pages/BlueprintManager";
 
 const App: React.FC = () => {
   return (
@@ -33,6 +34,7 @@ const App: React.FC = () => {
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="games" element={<AdminGamesPage />} />
           <Route path="settings" element={<SettingsPage />} />
+          <Route path="layout-manager" element={<BlueprintManager />} />
         </Route>
       </Routes>
     </Router>
