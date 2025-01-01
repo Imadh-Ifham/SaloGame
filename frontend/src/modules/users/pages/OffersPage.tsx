@@ -16,7 +16,7 @@ const OfferCard = ({
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
 
-  //calculate time left for offer to expire
+  // Calculate the time left for the offer to expire
   useEffect(() => {
     const calculateTimeLeft = (endDateTime: string): string => {
       const now = new Date().getTime();
@@ -33,26 +33,25 @@ const OfferCard = ({
         return "Expired";
       }
 
-      // Calculate the time components
       const days = Math.floor(difference / (1000 * 60 * 60 * 24));
       const hours = Math.floor(
         (difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
       );
       const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
 
-      // Return the formatted time string
-      if (days > 0 && hours > 0) {
+      if (days > 0) {
         return `${days}d ${hours}h left`;
-      } else if (days > 0) {
-        return `${days} days left`;
       } else if (hours > 0) {
         return `${hours}h ${minutes}m left`;
-      } else {
+      } else if (minutes > 0) {
         return `${minutes}m left`;
+      } else {
+        return "Less than 1 minute left";
       }
     };
 
     setTimeLeft(calculateTimeLeft(endDateTime));
+
     const timer = setInterval(() => {
       setTimeLeft(calculateTimeLeft(endDateTime));
     }, 60000); // Update every minute
@@ -69,15 +68,15 @@ const OfferCard = ({
 
   // Offer Card JSX
   return (
-    <div className="relative bg-emerald-900 text-white text-center py-6 px-6 sm:px-10 rounded-xl shadow-md md:min-w-96 w-full sm:w-2/3 lg:w-1/3  max-w-sm mx-auto sm:mx-4 my-4">
+    <div className="relative bg-emerald-900 text-white text-center py-6 px-6 sm:px-10 rounded-xl shadow-md md:min-w-96 w-full sm:w-2/3 lg:w-1/3 max-w-sm mx-auto sm:mx-4 my-4">
       {/* Circular Cutouts */}
       <div
         className="absolute top-1/2 left-0 -ml-5 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full pattern-dots pattern-green-200 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black
-                    pattern-size-2 pattern-opacity-100 "
+                    pattern-size-2 pattern-opacity-100"
       ></div>
       <div
         className="absolute top-1/2 right-0 -mr-5 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-transparent pattern-dots pattern-green-200 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black
-                    pattern-size-2 pattern-opacity-100 "
+                    pattern-size-2 pattern-opacity-100"
       ></div>
 
       {/* Offer Card Content */}
@@ -158,31 +157,6 @@ const OffersPage: React.FC = () => {
     );
   }
 
-  // Adjust layout for low number of offers
-  if (offers.length <= 3) {
-    return (
-      <HomeLayout>
-        <div className="flex flex-col items-center justify-center py-10 my-7 overflow-hidden">
-          <h2 className="text-3xl sm:text-2xl font-press font-normal mb-4 text-primary">
-            Time Limited{" "}
-            <span className="text-gray-900 dark:text-white">Offers</span>
-          </h2>
-          <div className="flex flex-wrap justify-center gap-4">
-            {offers.map((offer: any) => (
-              <OfferCard
-                key={offer._id}
-                title={offer.title}
-                code={offer.code}
-                endDateTime={offer.endDateTime}
-              />
-            ))}
-          </div>
-        </div>
-      </HomeLayout>
-    );
-  }
-
-  // Regular layout for more than 3 offers
   const firstRow = offers.slice(0, Math.ceil(offers.length / 2));
   const secondRow = offers.slice(Math.ceil(offers.length / 2));
 
@@ -209,9 +183,7 @@ const OffersPage: React.FC = () => {
               key={offer._id}
               title={offer.title}
               code={offer.code}
-              endDateTime={` ${new Date(
-                offer.endDateTime
-              ).toLocaleDateString()}`}
+              endDateTime={offer.endDateTime}
             />
           ))}
         </Marquee>

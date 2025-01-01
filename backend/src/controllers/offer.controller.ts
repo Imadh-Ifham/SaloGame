@@ -7,23 +7,21 @@ export const getAllOffers = async (
   res: Response
 ): Promise<void> => {
   try {
-    // Extract the isActive query parameter from the request
     const { isActive } = req.query;
 
-    // Build the filter dynamically
+    // Convert `isActive` query parameter to a boolean filter
     const filter: { isActive?: boolean } = {};
     if (isActive !== undefined) {
       filter.isActive = isActive === "true"; // Convert string to boolean
     }
 
-    // Fetch offers based on the filter
     const offers = await Offer.find(filter);
 
     res.status(200).json({ success: true, data: offers });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Error fetching offers",
       error: (error as Error).message,
     });
   }
@@ -34,9 +32,9 @@ export const getOfferById = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { offerID } = req.params;
-
   try {
+    const { offerID } = req.params;
+
     const offer = await Offer.findById(offerID);
 
     if (!offer) {
@@ -48,7 +46,7 @@ export const getOfferById = async (
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Error fetching the offer",
       error: (error as Error).message,
     });
   }
@@ -59,18 +57,18 @@ export const createOffer = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const {
-    title,
-    isActive,
-    code,
-    discountType,
-    discountValue,
-    startDate,
-    endDateTime,
-    usageLimit,
-  } = req.body;
-
   try {
+    const {
+      title,
+      code,
+      discountType,
+      discountValue,
+      startDate,
+      endDateTime,
+      usageLimit,
+    } = req.body;
+
+    // Validate required fields
     if (
       !title ||
       !code ||
@@ -79,16 +77,14 @@ export const createOffer = async (
       !startDate ||
       !endDateTime
     ) {
-      res.status(400).json({
-        success: false,
-        message: "Missing required fields",
-      });
+      res
+        .status(400)
+        .json({ success: false, message: "Missing required fields" });
       return;
     }
 
     const newOffer = new Offer({
       title,
-      isActive,
       code,
       discountType,
       discountValue,
@@ -101,18 +97,16 @@ export const createOffer = async (
     res.status(201).json({ success: true, data: savedOffer });
   } catch (error) {
     if ((error as any).code === 11000) {
-      res.status(400).json({
+      res
+        .status(400)
+        .json({ success: false, message: "Offer code must be unique" });
+    } else {
+      res.status(500).json({
         success: false,
-        message: "Offer code already exists",
+        message: "Error creating the offer",
+        error: (error as Error).message,
       });
-      return;
     }
-
-    res.status(500).json({
-      success: false,
-      message: "Server error",
-      error: (error as Error).message,
-    });
   }
 };
 
@@ -121,22 +115,20 @@ export const updateOffer = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { offerID } = req.params;
-  const updateFields = req.body; // Accept all fields from the request body
-
   try {
+    const { offerID } = req.params;
+    const updateFields = req.body;
+
     if (!Object.keys(updateFields).length) {
-      res.status(400).json({
-        success: false,
-        message: "No fields provided for update",
-      });
+      res
+        .status(400)
+        .json({ success: false, message: "No fields provided for update" });
       return;
     }
 
-    // Update the offer with the provided fields
     const updatedOffer = await Offer.findByIdAndUpdate(offerID, updateFields, {
       new: true, // Return the updated document
-      runValidators: true, // Ensure the fields are validated
+      runValidators: true, // Validate updated fields
     });
 
     if (!updatedOffer) {
@@ -148,7 +140,7 @@ export const updateOffer = async (
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Error updating the offer",
       error: (error as Error).message,
     });
   }
@@ -159,9 +151,9 @@ export const deleteOffer = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { offerID } = req.params;
-
   try {
+    const { offerID } = req.params;
+
     const deletedOffer = await Offer.findByIdAndDelete(offerID);
 
     if (!deletedOffer) {
@@ -175,7 +167,7 @@ export const deleteOffer = async (
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Error deleting the offer",
       error: (error as Error).message,
     });
   }
@@ -186,15 +178,15 @@ export const validateOffer = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { code } = req.body;
-  const currentDate = new Date();
-
   try {
+    const { code } = req.body;
+    const currentDate = new Date();
+
     const offer = await Offer.findOne({
       code,
       isActive: true,
       startDate: { $lte: currentDate },
-      endDate: { $gte: currentDate },
+      endDateTime: { $gte: currentDate },
     });
 
     if (!offer) {
@@ -205,10 +197,9 @@ export const validateOffer = async (
     }
 
     if (offer.usageLimit && offer.usageCount >= offer.usageLimit) {
-      res.status(400).json({
-        success: false,
-        message: "Offer usage limit exceeded",
-      });
+      res
+        .status(400)
+        .json({ success: false, message: "Offer usage limit exceeded" });
       return;
     }
 
@@ -219,7 +210,7 @@ export const validateOffer = async (
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Server error",
+      message: "Error validating the offer",
       error: (error as Error).message,
     });
   }

@@ -43,11 +43,16 @@ const offerSchema: Schema<IOffer> = new mongoose.Schema<IOffer>(
   { timestamps: true } // Adds createdAt and updatedAt fields automatically
 );
 
-// Middleware to automatically deactivate offers if the current date has passed the endDate
-offerSchema.pre("save", function (next) {
-  if (this.endDateTime && new Date(this.endDateTime) < new Date()) {
-    this.isActive = false; // Automatically set isActive to false
-  }
+// Query middleware to deactivate expired offers automatically
+offerSchema.pre(/^find/, async function (next) {
+  const currentDate = new Date();
+
+  // Deactivate expired offers
+  await (this.model as Model<IOffer>).updateMany(
+    { endDateTime: { $lt: currentDate }, isActive: true },
+    { $set: { isActive: false } }
+  );
+
   next();
 });
 
