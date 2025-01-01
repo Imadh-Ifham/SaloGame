@@ -3,6 +3,7 @@ import cors from "cors";
 import userRoutes from "./routes/user.routes";
 import gameRoutes from "./routes/game.routes";
 import layoutRoutes from "./routes/blueprint.routes";
+import eventRoutes from "./routes/event.routes";
 
 const app: Express = express();
 
@@ -13,8 +14,13 @@ app.use(express.urlencoded({ extended: true }));
 
 // Routes
 app.use("/api/users", userRoutes);
+
 app.use("/api/games", gameRoutes);
 app.use("/api/layouts", layoutRoutes);
+
+app.use("/api/games", gameRoutes); // Mount the game router
+app.use("/api/events", eventRoutes);
+
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
