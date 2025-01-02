@@ -2,8 +2,12 @@ import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import userRoutes from "./routes/user.routes";
 import gameRoutes from "./routes/game.routes";
+
 import layoutRoutes from "./routes/blueprint.routes";
-import eventRoutes from "./routes/event.routes";
+
+import eventRoutes from "./routes/event.routes/event.routes";
+import teamRoutes from "./routes/event.routes/team.routes";
+
 
 const app: Express = express();
 
@@ -19,7 +23,8 @@ app.use("/api/games", gameRoutes);
 app.use("/api/layouts", layoutRoutes);
 
 app.use("/api/games", gameRoutes); // Mount the game router
-app.use("/api/events", eventRoutes);
+app.use("/api/events", eventRoutes); //events routes
+app.use("/api/teams", teamRoutes); // teams in events routes
 
 
 // Error handling
