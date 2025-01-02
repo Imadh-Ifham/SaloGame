@@ -15,10 +15,6 @@ export const getAllOffers = async (
       filter.isActive = isActive === "true"; // Convert string to boolean
     }
 
-    // Add a filter to exclude expired offers
-    filter.endDateTime = { $gte: new Date() };
-
-    // Fetch offers based on the filter
     const offers = await Offer.find(filter);
 
     res.status(200).json({ success: true, data: offers });
