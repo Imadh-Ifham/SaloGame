@@ -7,9 +7,9 @@ export const getAllTeams = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-    const { eventId } = req.query;
+    const { id} = req.query;
   try {
-    const teams = await Team.find({ eventId });
+    const teams = await Team.find({ id });
     if (!teams) {
       res.status(404).json({ success: false, message: "No teams found" });
       return;
