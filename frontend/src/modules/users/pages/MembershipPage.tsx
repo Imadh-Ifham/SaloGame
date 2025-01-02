@@ -1,55 +1,21 @@
-import React, { useState } from "react";
+// src/pages/MembershipPage.tsx
+
+import React, { useState, useEffect } from "react";
 import HomeLayout from "../layout/HomeLayout";
 import { NeonGradientCard } from "@/components/ui/neon-gradient-card";
+import axiosInstance from "@/axios.config";
+import MembershipSkeleton from "../components/membershipSkeleton";
 
-interface Tier {
-  title: string;
-  tagline: string;
-  neonColors: { firstColor: string; secondColor: string };
-  benefits: string[];
-  price: string;
-}
+// Map the priority to the neon color scheme
+const neonColorMapping: Record<
+  number,
+  { firstColor: string; secondColor: string }
+> = {
+  1: { firstColor: "#D39D55", secondColor: "#D39D55" }, // Celestial Overlord
+  2: { firstColor: "#00FF8E", secondColor: "#00D1B2" }, // Nova Knight
+  3: { firstColor: "#5B5B5B", secondColor: "#9E9E9E" }, // Shadow Squire
+};
 
-const tiers: Tier[] = [
-  {
-    title: "Shadow Squire",
-    tagline: "Step into the shadows and sharpen your skills",
-    neonColors: { firstColor: "#5B5B5B", secondColor: "#9E9E9E" },
-    benefits: [
-      "Earn 10 XP for every LKR1000 spent on bookings",
-      "2 Free Hour of PC/Console time per month",
-      "Standard Lounge Access",
-    ],
-    price: "499",
-  },
-  {
-    title: "Nova Knight",
-    tagline: "Radiate power and conquer new challenges",
-    neonColors: { firstColor: "#00FF8E", secondColor: "#00D1B2" },
-    benefits: [
-      "Earn 20 XP for every LKR1000 spent on bookings",
-      "5 Free Hours of PC/Console time per month",
-      "Priority Booking for Premium Stations",
-      "Discounted Café & Snack Bar",
-    ],
-    price: "999",
-  },
-  {
-    title: "Celestial Overlord",
-    tagline: "Ascend to the heavens and rule the galaxy",
-    neonColors: { firstColor: "#D39D55", secondColor: "#D39D55" },
-    benefits: [
-      "Earn 30 XP for every LKR1000 spent on bookings",
-      "8 Free Hours of PC/Console time per month",
-      "Exclusive VIP Room Access",
-      "24/7 Dedicated Support & Priority Reservations",
-      "Special Tournament Invitations",
-    ],
-    price: "1499",
-  },
-];
-
-// Isolate this long Tailwind string for clarity and reuse
 const subscribeButtonClasses = `
   w-full 
   inline-flex 
@@ -116,8 +82,31 @@ const subscribeButtonClasses = `
 `;
 
 const MembershipPage: React.FC = () => {
-  // State to track which tier is currently displayed on mobile
-  const [currentIndex, setCurrentIndex] = useState(0);
+  const [tiers, setTiers] = useState<any[]>([]); // Ensure initial state is an array
+  const [currentIndex, setCurrentIndex] = useState(0); // State for mobile view
+  const [loading, setLoading] = useState(true); // State to track loading
+  const [error, setError] = useState<string | null>(null);
+
+  // Fetch memberships on component mount
+  useEffect(() => {
+    const fetchMemberships = async () => {
+      try {
+        const response = await axiosInstance.get("/memberships?isActive=true");
+        if (Array.isArray(response.data)) {
+          setTiers(response.data); // Only update state if it's an array
+        } else {
+          throw new Error("Unexpected response format");
+        }
+      } catch (error: any) {
+        console.error("Failed to fetch memberships:", error);
+        setError("Failed to load memberships. Please try again later.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMemberships();
+  }, []);
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev + 1) % tiers.length);
@@ -126,6 +115,38 @@ const MembershipPage: React.FC = () => {
   const handlePrev = () => {
     setCurrentIndex((prev) => (prev === 0 ? tiers.length - 1 : prev - 1));
   };
+
+  if (loading) {
+    return (
+      <HomeLayout>
+        <div className="flex flex-col items-center justify-center py-0 my-44">
+          <MembershipSkeleton count={3} /> {/* Pass dynamic count here */}
+        </div>
+      </HomeLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <HomeLayout>
+        <div className="flex justify-center items-center h-screen">
+          <p className="text-lg text-red-500">{error}</p>
+        </div>
+      </HomeLayout>
+    );
+  }
+
+  if (tiers.length === 0) {
+    return (
+      <HomeLayout>
+        <div className="flex justify-center items-center h-screen">
+          <p className="text-lg text-text-secondary dark:text-gray-300">
+            No memberships available. Please try again later.
+          </p>
+        </div>
+      </HomeLayout>
+    );
+  }
 
   return (
     <HomeLayout>
@@ -140,41 +161,33 @@ const MembershipPage: React.FC = () => {
           boosts.
         </p>
 
-        {/* 
-          Desktop: Show all 3 tiers in a grid 
-          ------------------------------------------------
-        */}
+        {/* Desktop: Show all tiers in a grid */}
         <div className="hidden md:grid grid-cols-3 gap-8 px-4 sm:px-8 w-full max-w-7xl">
           {tiers.map((tier) => (
             <NeonGradientCard
-              key={tier.title}
+              key={tier._id}
               className="w-full max-w-sm flex"
-              neonColors={tier.neonColors}
+              neonColors={neonColorMapping[tier.priority]}
               borderSize={1}
               borderRadius={25}
             >
               <div className="flex flex-col h-full w-full p-6 justify-between">
-                {/* Top Content */}
                 <div>
                   <h3 className="text-3xl font-extrabold text-text-primary dark:text-white">
-                    {tier.title}
+                    {tier.name}
                   </h3>
-
                   {tier.tagline && (
                     <p className="mt-1 text-sm italic text-text-secondary dark:text-gray-300">
                       {tier.tagline}
                     </p>
                   )}
-
                   <p className="mt-4 text-2xl font-semibold text-text-primary dark:text-gray-100">
                     <span className="text-sm">LKR </span>
                     {tier.price}
                     <span className="text-sm"> / month</span>
                   </p>
-
-                  {/* Benefits */}
                   <ul className="mt-4 space-y-2">
-                    {tier.benefits.map((benefit, index) => (
+                    {tier.benefits.map((benefit: string, index: number) => (
                       <li
                         key={index}
                         className="flex items-center text-sm text-text-secondary dark:text-gray-300"
@@ -185,8 +198,6 @@ const MembershipPage: React.FC = () => {
                     ))}
                   </ul>
                 </div>
-
-                {/* Bottom (Button) */}
                 <div className="mt-6">
                   <button type="button" className={subscribeButtonClasses}>
                     Subscribe
@@ -197,63 +208,51 @@ const MembershipPage: React.FC = () => {
           ))}
         </div>
 
-        {/* 
-          Mobile: Show one tier at a time with left & right arrows 
-          ------------------------------------------------
-        */}
+        {/* Mobile: Show one tier at a time */}
         <div className="block md:hidden w-full max-w-7xl px-4 sm:px-8">
-          {/* Arrows + Single Card Container */}
           <div className="relative flex items-center justify-center">
-            {/* Left Arrow */}
             <button
               onClick={handlePrev}
               className="absolute left-0 p-2 text-gray-700 dark:text-gray-200 hover:scale-110 transition-transform"
             >
               ◀
             </button>
-
-            {/* Single Tier Card */}
             <NeonGradientCard
-              key={tiers[currentIndex].title}
+              key={tiers[currentIndex]._id}
               className="w-full max-w-sm flex"
-              neonColors={tiers[currentIndex].neonColors}
+              neonColors={neonColorMapping[tiers[currentIndex].priority]}
               borderSize={1}
               borderRadius={25}
             >
               <div className="flex flex-col h-full w-full p-6 justify-between">
-                {/* Top Content */}
                 <div>
                   <h3 className="text-3xl font-extrabold text-text-primary dark:text-white">
-                    {tiers[currentIndex].title}
+                    {tiers[currentIndex].name}
                   </h3>
-
                   {tiers[currentIndex].tagline && (
                     <p className="mt-1 text-sm italic text-text-secondary dark:text-gray-300">
                       {tiers[currentIndex].tagline}
                     </p>
                   )}
-
                   <p className="mt-4 text-2xl font-semibold text-text-primary dark:text-gray-100">
                     <span className="text-sm">LKR </span>
                     {tiers[currentIndex].price}
                     <span className="text-sm"> / month</span>
                   </p>
-
-                  {/* Benefits */}
                   <ul className="mt-4 space-y-2">
-                    {tiers[currentIndex].benefits.map((benefit, index) => (
-                      <li
-                        key={index}
-                        className="flex items-center text-sm text-text-secondary dark:text-gray-300"
-                      >
-                        <span className="mr-2 text-gamer-green">✔</span>
-                        {benefit}
-                      </li>
-                    ))}
+                    {tiers[currentIndex].benefits.map(
+                      (benefit: string, index: number) => (
+                        <li
+                          key={index}
+                          className="flex items-center text-sm text-text-secondary dark:text-gray-300"
+                        >
+                          <span className="mr-2 text-gamer-green">✔</span>
+                          {benefit}
+                        </li>
+                      )
+                    )}
                   </ul>
                 </div>
-
-                {/* Bottom (Button) */}
                 <div className="mt-6">
                   <button type="button" className={subscribeButtonClasses}>
                     Subscribe
@@ -261,8 +260,6 @@ const MembershipPage: React.FC = () => {
                 </div>
               </div>
             </NeonGradientCard>
-
-            {/* Right Arrow */}
             <button
               onClick={handleNext}
               className="absolute right-0 p-2 text-gray-700 dark:text-gray-200 hover:scale-110 transition-transform"

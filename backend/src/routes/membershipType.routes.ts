@@ -1,11 +1,10 @@
 import express from "express";
-import MembershipType from "../models/membershipType.model";
 import {
   createMembership,
-  getMemberships,
   getMembershipById,
   updateMembership,
   deleteMembership,
+  getMemberships,
 } from "../controllers/membershipType.controller";
 const router = express.Router();
 // Define routes
