@@ -88,7 +88,7 @@ const EventPage: React.FC = () => {
                   </p>
                   <Button
                     className="px-4 py-2 bg-gamer-green text-white rounded-lg hover:bg-gamer-green-dark transition"
-                    onClick={() => navigate("/team-registration")} // Navigate to TeamRegistration
+                    onClick={() => navigate(`/team-registration/${event._id}`)} // Navigate to TeamRegistration
                   >
                     Register now
                   </Button>

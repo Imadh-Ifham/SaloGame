@@ -47,7 +47,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get(`/teams?eventId=${eventId}`);
+      const response = await axiosInstance.get(`/teams/${eventId}`);
       if (response.data.success) {
         setTeams(response.data.data);
       } else {

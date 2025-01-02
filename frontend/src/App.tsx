@@ -31,7 +31,7 @@ const App: React.FC = () => {
         <Route path="/about" element={<AboutPage />} />
         <Route path="*" element={<NotFoundPage />} />
         <Route path="/events" element={<EventPage/>} />
-        <Route path="/team-registration" element={<TeamRegistration/>}/>
+        <Route path="/team-registration/:eventId" element={<TeamRegistration userId="64a32f3b6f10b5a10b34d672" />} />
 
 
         {/* Admin Routes */}
