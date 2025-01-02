@@ -41,7 +41,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
 
   useEffect(() => {
     fetchTeams();
-  }, []);
+  }, [eventId]);
 
   const fetchTeams = async () => {
     setLoading(true);
@@ -62,11 +62,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
 
   const handleRegister = async (teamId: string) => {
     try {
-      const team = teams.find((team) => team._id === teamId);
-      const members = team?.members ?? [];
-      await axiosInstance.put(`/teams/${teamId}`, {
-        members: [...members, { userId }],
-      });
+      await axiosInstance.put(`/teams/${teamId}/register`, { userId });
       fetchTeams();
     } catch (err) {
       setError((err as Error).message || "An unexpected error occurred.");
@@ -75,12 +71,8 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
 
   const handleUndo = async (teamId: string) => {
     try {
-      const team = teams.find((team) => team._id === teamId);
-      if (team) {
-        const updatedMembers = team.members.filter((member) => member.userId !== userId);
-        await axiosInstance.put(`/teams/${teamId}`, { members: updatedMembers });
-        fetchTeams();
-      }
+      await axiosInstance.put(`/teams/${teamId}/remove`, { userId });
+      fetchTeams();
     } catch (err) {
       setError((err as Error).message || "An unexpected error occurred.");
     }
