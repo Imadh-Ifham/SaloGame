@@ -4,8 +4,7 @@ import userRoutes from "./routes/user.routes";
 import gameRoutes from "./routes/game.routes";
 import offerRoutes from "./routes/offer.routes";
 import layoutRoutes from "./routes/blueprint.routes";
-
-
+import membershipRoute from "./routes/membershipType.routes";
 const app: Express = express();
 
 // Middleware
@@ -19,6 +18,7 @@ app.use("/api/games", gameRoutes); // Mount the game router
 app.use("/api/offer", offerRoutes);
 app.use("/api/games", gameRoutes);
 app.use("/api/layouts", layoutRoutes);
+app.use("/api/memberships", membershipRoute);
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
