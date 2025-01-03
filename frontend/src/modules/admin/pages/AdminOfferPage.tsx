@@ -3,6 +3,7 @@ import { Dialog, Transition, Switch } from "@headlessui/react";
 import axiosInstance from "@/axios.config";
 import HomeLayout from "@/modules/users/layout/HomeLayout";
 import ConfirmationDialog from "@/components/confirmationDialog";
+import { CheckCircleIcon } from "@heroicons/react/24/outline";
 
 interface Offer {
   _id: string;
@@ -17,12 +18,75 @@ interface Offer {
   usageCount: number;
 }
 
+// SuccessDialog component
+interface SuccessDialogProps {
+  isOpen: boolean;
+  onClose: () => void;
+  message: string;
+}
+
+const SuccessDialog: React.FC<SuccessDialogProps> = ({
+  isOpen,
+  onClose,
+  message,
+}) => {
+  return (
+    <Transition appear show={isOpen} as={Fragment}>
+      <Dialog
+        as="div"
+        className="fixed inset-0 z-10 overflow-y-auto"
+        onClose={onClose}
+      >
+        <div className="min-h-screen px-4 text-center">
+          <Transition.Child
+            as={Fragment}
+            enter="ease-out duration-300"
+            enterFrom="opacity-0"
+            enterTo="opacity-100"
+            leave="ease-in duration-200"
+            leaveFrom="opacity-100"
+            leaveTo="opacity-0"
+          >
+            <Dialog
+              className="fixed inset-0 bg-black bg-opacity-30"
+              onClose={onClose}
+            />
+          </Transition.Child>
+
+          <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-lg">
+            <div className="flex items-center justify-center mb-4">
+              <CheckCircleIcon className="h-12 w-12 text-primary" />
+            </div>
+            <Dialog.Title className="text-lg font-medium text-center leading-6 text-gray-900 dark:text-white">
+              Success
+            </Dialog.Title>
+            <div className="mt-2">
+              <p className="text-sm text-center text-gray-500 dark:text-gray-300">
+                {message}
+              </p>
+            </div>
+            <div className="mt-4 flex justify-center">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 bg-primary text-white rounded-md shadow hover:bg-primary-dark"
+              >
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+      </Dialog>
+    </Transition>
+  );
+};
+
 const AdminOfferPage: React.FC = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [error, setError] = useState<string | null>(null); // General error state
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   // State for Delete Confirmation Dialog
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -96,7 +160,19 @@ const AdminOfferPage: React.FC = () => {
     }
 
     // Validate dates
-    if (new Date(formData.startDate) > new Date(formData.endDateTime)) {
+    const currentDate = new Date();
+    const startDate = new Date(formData.startDate);
+    const endDate = new Date(formData.endDateTime);
+
+    // Remove time portion from current date for comparison
+    currentDate.setHours(0, 0, 0, 0);
+
+    if (startDate < currentDate) {
+      setError("Start date cannot be in the past.");
+      return;
+    }
+
+    if (startDate > endDate) {
       setError("End date must be after start date.");
       return;
     }
@@ -107,11 +183,13 @@ const AdminOfferPage: React.FC = () => {
           ...formData,
           endDate: formData.endDateTime, // Ensure correct field names match backend
         });
+        setSuccessMessage("Offer updated successfully.");
       } else {
         await axiosInstance.post("/offer", {
           ...formData,
           endDate: formData.endDateTime, // Ensure correct field names match backend
         });
+        setSuccessMessage("Offer created successfully.");
       }
       fetchOffers();
       closeModal();
@@ -207,6 +285,7 @@ const AdminOfferPage: React.FC = () => {
       await axiosInstance.delete(`/offer/${offerToDelete._id}`);
       fetchOffers();
       closeDeleteDialog();
+      setSuccessMessage("Offer deleted successfully!");
     } catch (error) {
       console.error("Error deleting offer:", error);
       setDeleteError("Failed to delete offer.");
@@ -402,10 +481,11 @@ const AdminOfferPage: React.FC = () => {
                           Start Date <span className="text-red-500">*</span>
                         </label>
                         <input
-                          type="date"
+                          type="datetime-local"
                           name="startDate"
                           value={formData.startDate}
                           onChange={handleInputChange}
+                          min={new Date().toISOString().slice(0, 16)}
                           className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
                           required
                         />
@@ -422,6 +502,7 @@ const AdminOfferPage: React.FC = () => {
                           name="endDateTime"
                           value={formData.endDateTime}
                           onChange={handleInputChange}
+                          min={new Date().toISOString().slice(0, 16)}
                           className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
                           required
                         />
@@ -487,6 +568,12 @@ const AdminOfferPage: React.FC = () => {
             <p className="text-red-500 text-sm mt-2">{deleteError}</p>
           )}
         </ConfirmationDialog>
+
+        <SuccessDialog
+          isOpen={!!successMessage}
+          onClose={() => setSuccessMessage(null)}
+          message={successMessage || ""}
+        />
       </div>
     </HomeLayout>
   );

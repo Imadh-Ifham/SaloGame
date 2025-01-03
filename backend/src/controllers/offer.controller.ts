@@ -68,6 +68,10 @@ export const createOffer = async (
       usageLimit,
     } = req.body;
 
+    /*
+      SERVER SIDE VALIDATION
+    */
+
     // Validate required fields
     if (
       !title ||
@@ -83,6 +87,35 @@ export const createOffer = async (
       return;
     }
 
+    // Date validation
+    const currentDate = new Date();
+    const offerStartDate = new Date(startDate);
+    const offerEndDate = new Date(endDateTime);
+
+    // Remove milliseconds for accurate comparison
+    currentDate.setMilliseconds(0);
+    offerStartDate.setMilliseconds(0);
+    offerEndDate.setMilliseconds(0);
+
+    // Validate start date is not in the past
+    if (offerStartDate < currentDate) {
+      res.status(400).json({
+        success: false,
+        message: "Start date cannot be in the past",
+      });
+      return;
+    }
+
+    // Validate end date is after start date
+    if (offerEndDate <= offerStartDate) {
+      res.status(400).json({
+        success: false,
+        message: "End date must be after start date",
+      });
+      return;
+    }
+
+    //new offer
     const newOffer = new Offer({
       title,
       code,
@@ -124,6 +157,37 @@ export const updateOffer = async (
         .status(400)
         .json({ success: false, message: "No fields provided for update" });
       return;
+    }
+
+    /*
+      SERVER SIDE VALIDATION
+     */
+
+    // Date validation if dates are being updated
+    if (updateFields.startDate || updateFields.endDateTime) {
+      const currentDate = new Date();
+      const offerStartDate = new Date(updateFields.startDate || "");
+      const offerEndDate = new Date(updateFields.endDateTime || "");
+
+      currentDate.setMilliseconds(0);
+      offerStartDate.setMilliseconds(0);
+      offerEndDate.setMilliseconds(0);
+
+      if (offerStartDate < currentDate) {
+        res.status(400).json({
+          success: false,
+          message: "Start date cannot be in the past",
+        });
+        return;
+      }
+
+      if (offerEndDate <= offerStartDate) {
+        res.status(400).json({
+          success: false,
+          message: "End date must be after start date",
+        });
+        return;
+      }
     }
 
     const updatedOffer = await Offer.findByIdAndUpdate(offerID, updateFields, {
