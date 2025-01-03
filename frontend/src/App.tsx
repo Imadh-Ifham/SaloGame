@@ -4,6 +4,7 @@ import HomePage from "./modules/users/pages/HomePage";
 import AboutPage from "./modules/users/pages/AboutPage";
 import NotFoundPage from "./components/NotFoundPage";
 import GamesPage from "./modules/users/pages/GamesPage";
+import BookingPage from "./modules/users/pages/BookingPage";
 import SettingsPage from "./modules/admin/pages/SettingsPage";
 import DashboardPage from "./modules/admin/pages/DashboardPage";
 import { ScrollToTop } from "./utils/scrollToTop.util";
@@ -11,6 +12,8 @@ import AdminLayout from "./modules/admin/layout/AdminLayout";
 import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
 import AdminPackagePage from "./modules/admin/pages/AdminPackagePage";
 import PackagesPage from "./modules/users/pages/PackagesPage";
+import AdminBookingPage from "./modules/admin/pages/AdminBookingPage";
+import AdminViewAllBookingsPage from "./modules/admin/pages/AdminViewAllBookingsPage";
 
 
 
@@ -23,6 +26,7 @@ function App() {
           {/* User Routes */}
           <Route path="/" element={<HomePage />} />
           <Route path="/games" element={<GamesPage />} />
+          <Route path="/bookings" element={<BookingPage />} />
           <Route path="/packages" element={<PackagesPage />} />
           <Route path="/about" element={<AboutPage />} />
           {/* Keep the catch-all route at the end */}
@@ -33,8 +37,11 @@ function App() {
             <Route index element={<Navigate to="dashboard" />} />
             <Route path="dashboard" element={<DashboardPage />} />
             <Route path="games" element={<AdminGamesPage />} />
+            <Route path="booking" element={<AdminBookingPage />} />
             <Route path="packages" element={<AdminPackagePage />} />
             <Route path="settings" element={<SettingsPage />} />
+            <Route path="bookings/all" element={<AdminViewAllBookingsPage />} />
+            
           </Route>
         </Routes>
       </>

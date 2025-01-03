@@ -3,6 +3,7 @@ import cors from "cors";
 import userRoute from "./routes/user.routes";
 import packageroute from "./routes/package.routes";
 import gameRoutes from "./routes/game.routes";
+import bookingRoutes from "./routes/booking.routes";
 
 
 const app = express();
@@ -15,6 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/api/example", userRoute);
 app.use("/api/packages", packageroute);
+app.use("/api/bookings", bookingRoutes);
 app.use("/api/games", gameRoutes); // Mount the game router
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
