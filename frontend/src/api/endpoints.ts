@@ -1,4 +1,4 @@
-const BASE_URL = "http://localhost:3000/api";
+const BASE_URL = "http://localhost:5000";
 
 export const API_ENDPOINTS = {
   AUTH: {
@@ -15,6 +15,11 @@ export const API_ENDPOINTS = {
   GAMES: {
     GET_GAMES: `${BASE_URL}/games/`,
   },
+  PACKAGES: {
+    GET_PACKAGES: `${BASE_URL}/api/packages/`,
+    UPDATE_PACKAGE: (id: string) => `${BASE_URL}/api/packages/${id}`, // New endpoint for updating packages
+  },
+  
 };
 
 export default API_ENDPOINTS;

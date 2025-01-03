@@ -13,7 +13,9 @@ const HomeLayout: React.FC<HomeLayoutProps> = ({ children }) => {
                     pattern-size-2 pattern-opacity-100"
     >
       <Header />
-      <div className="min-h-screen">{children}</div>
+      <div className="min-h-screen">
+        {children}
+      </div>
       <Footer />
     </div>
   );

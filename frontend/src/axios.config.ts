@@ -1,9 +1,10 @@
 // axios.config.ts
 
 import axios from "axios";
+const baseURL =`http://localhost:${import.meta.env.VITE_API_PORT}/api`;
 
 const axiosInstance = axios.create({
-  baseURL: "http://localhost:3000/api", // Adjust as necessary
+  baseURL, 
   headers: {
     "Content-Type": "application/json",
   },
