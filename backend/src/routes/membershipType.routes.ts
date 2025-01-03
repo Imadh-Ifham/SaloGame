@@ -5,13 +5,15 @@ import {
   updateMembership,
   deleteMembership,
   getMemberships,
+  toggleActiveMembership,
 } from "../controllers/membershipType.controller";
 const router = express.Router();
 // Define routes
-router.post("/", createMembership); // POST /api/memberships
-router.get("/", getMemberships); // GET /api/memberships
-router.get("/:id", getMembershipById); // GET /api/memberships/:id
-router.put("/:id", updateMembership); // PUT /api/memberships/:id
-router.delete("/:id", deleteMembership); // DELETE /api/memberships/:id
+router.post("/", createMembership);
+router.get("/", getMemberships);
+router.get("/:id", getMembershipById);
+router.put("/:id", updateMembership);
+router.delete("/:id", deleteMembership);
+router.patch("/:id/toggle-active", toggleActiveMembership);
 
 export default router;

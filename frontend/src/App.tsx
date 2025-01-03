@@ -19,6 +19,7 @@ import OffersPage from "./modules/users/pages/OffersPage";
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import BlueprintManager from "./modules/admin/pages/BlueprintManager";
 import MembershipPage from "./modules/users/pages/MembershipPage";
+import AdminMembershipPage from "./modules/admin/pages/AdminMembershipPage";
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -45,6 +46,7 @@ const App: React.FC = () => {
           <Route path="offers" element={<AdminOfferPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="layout-manager" element={<BlueprintManager />} />
+          <Route path="memberships" element={<AdminMembershipPage />} />
         </Route>
       </Routes>
     </Router>

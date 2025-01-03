@@ -1,19 +1,30 @@
-// src/pages/MembershipPage.tsx
-
 import React, { useState, useEffect } from "react";
 import HomeLayout from "../layout/HomeLayout";
 import { NeonGradientCard } from "@/components/ui/neon-gradient-card";
 import axiosInstance from "@/axios.config";
 import MembershipSkeleton from "../components/membershipSkeleton";
 
-// Map the priority to the neon color scheme
-const neonColorMapping: Record<
-  number,
-  { firstColor: string; secondColor: string }
-> = {
-  1: { firstColor: "#D39D55", secondColor: "#D39D55" }, // Celestial Overlord
-  2: { firstColor: "#00FF8E", secondColor: "#00D1B2" }, // Nova Knight
-  3: { firstColor: "#5B5B5B", secondColor: "#9E9E9E" }, // Shadow Squire
+const neonColorMapping: {
+  [key: string]: { firstColor: string; secondColor: string };
+} = {
+  gold: { firstColor: "#FFD700", secondColor: "#FFA500" }, // Gold
+  green: { firstColor: "#00FF8E", secondColor: "#00D1B2" }, // Green
+  purple: { firstColor: "#800080", secondColor: "#9370DB" }, // Purple
+  silver: { firstColor: "#C0C0C0", secondColor: "#A9A9A9" }, // Silver
+};
+
+// Function to assign neon colors comparatively
+const assignColorsByRanking = (tiers: any[]) => {
+  // Sort tiers by price in descending order
+  const sortedTiers = [...tiers].sort((a, b) => b.price - a.price);
+
+  // Assign colors based on their ranking
+  return sortedTiers.map((tier, index) => {
+    if (index === 0) return { ...tier, neonColors: neonColorMapping.gold }; // Highest price gets gold
+    if (index === 1) return { ...tier, neonColors: neonColorMapping.green }; // Second highest gets green
+    if (index === 2) return { ...tier, neonColors: neonColorMapping.purple }; // Third highest gets purple
+    return { ...tier, neonColors: neonColorMapping.silver }; // Rest get silver
+  });
 };
 
 const subscribeButtonClasses = `
@@ -93,7 +104,8 @@ const MembershipPage: React.FC = () => {
       try {
         const response = await axiosInstance.get("/memberships?isActive=true");
         if (Array.isArray(response.data)) {
-          setTiers(response.data); // Only update state if it's an array
+          const colorAssignedTiers = assignColorsByRanking(response.data);
+          setTiers(colorAssignedTiers); // Set the updated tiers with colors
         } else {
           throw new Error("Unexpected response format");
         }
@@ -120,7 +132,7 @@ const MembershipPage: React.FC = () => {
     return (
       <HomeLayout>
         <div className="flex flex-col items-center justify-center py-0 my-44">
-          <MembershipSkeleton count={3} /> {/* Pass dynamic count here */}
+          <MembershipSkeleton count={tiers.length} /> {/* Use dynamic count */}
         </div>
       </HomeLayout>
     );
@@ -167,7 +179,7 @@ const MembershipPage: React.FC = () => {
             <NeonGradientCard
               key={tier._id}
               className="w-full max-w-sm flex"
-              neonColors={neonColorMapping[tier.priority]}
+              neonColors={tier.neonColors} // Use assigned neon colors
               borderSize={1}
               borderRadius={25}
             >
@@ -220,7 +232,7 @@ const MembershipPage: React.FC = () => {
             <NeonGradientCard
               key={tiers[currentIndex]._id}
               className="w-full max-w-sm flex"
-              neonColors={neonColorMapping[tiers[currentIndex].priority]}
+              neonColors={tiers[currentIndex].neonColors} // Use assigned neon colors
               borderSize={1}
               borderRadius={25}
             >
