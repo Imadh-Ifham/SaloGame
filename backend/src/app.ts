@@ -4,6 +4,7 @@ import userRoutes from "./routes/user.routes";
 import gameRoutes from "./routes/game.routes";
 import offerRoutes from "./routes/offer.routes";
 import layoutRoutes from "./routes/blueprint.routes";
+import reportRoutes from "./routes/report.routes";
 
 
 const app: Express = express();
@@ -17,8 +18,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/users", userRoutes);
 app.use("/api/games", gameRoutes); // Mount the game router
 app.use("/api/offer", offerRoutes);
-app.use("/api/games", gameRoutes);
 app.use("/api/layouts", layoutRoutes);
+app.use("/api/reports", reportRoutes);
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

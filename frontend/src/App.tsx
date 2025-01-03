@@ -18,6 +18,7 @@ import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
 import OffersPage from "./modules/users/pages/OffersPage";
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import BlueprintManager from "./modules/admin/pages/BlueprintManager";
+import AdminReportsPage from "./modules/admin/pages/AdminReportsPage";
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -43,6 +44,7 @@ const App: React.FC = () => {
           <Route path="offers" element={<AdminOfferPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="layout-manager" element={<BlueprintManager />} />
+          <Route path="reports-manager" element={<AdminReportsPage/>}/>
         </Route>
       </Routes>
     </Router>
