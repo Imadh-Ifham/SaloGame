@@ -13,7 +13,7 @@ const neonColorMapping: {
   silver: { firstColor: "#C0C0C0", secondColor: "#A9A9A9" }, // Silver
 };
 
-// Function to assign neon colors comparatively
+// Function to assign neon colors based on ranking
 const assignColorsByRanking = (tiers: any[]) => {
   // Sort tiers by price in descending order
   const sortedTiers = [...tiers].sort((a, b) => b.price - a.price);
@@ -23,6 +23,7 @@ const assignColorsByRanking = (tiers: any[]) => {
     if (index === 0) return { ...tier, neonColors: neonColorMapping.gold }; // Highest price gets gold
     if (index === 1) return { ...tier, neonColors: neonColorMapping.green }; // Second highest gets green
     if (index === 2) return { ...tier, neonColors: neonColorMapping.purple }; // Third highest gets purple
+    if (index === 3) return { ...tier, neonColors: neonColorMapping.silver }; // Fourth gets silver
     return { ...tier, neonColors: neonColorMapping.silver }; // Rest get silver
   });
 };
@@ -173,8 +174,18 @@ const MembershipPage: React.FC = () => {
           boosts.
         </p>
 
-        {/* Desktop: Show all tiers in a grid */}
-        <div className="hidden md:grid grid-cols-3 gap-8 px-4 sm:px-8 w-full max-w-7xl">
+        {/* Desktop: Show all tiers in a responsive grid */}
+        <div
+          className={`hidden md:grid gap-8 px-4 sm:px-8 w-full max-w-7xl ${
+            tiers.length === 1
+              ? "grid-cols-1"
+              : tiers.length === 2
+              ? "grid-cols-2"
+              : tiers.length === 3
+              ? "grid-cols-3"
+              : "grid-cols-4"
+          }`}
+        >
           {tiers.map((tier) => (
             <NeonGradientCard
               key={tier._id}
