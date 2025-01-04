@@ -19,6 +19,7 @@ import BlueprintManager from "./modules/admin/pages/BlueprintManager";
 import EventManagerPage from "./modules/admin/pages/EventManager";
 import EventPage from "./modules/users/pages/EventPages/EventPage";
 import TeamRegistration from "./modules/users/pages/EventPages/TeamRegistration";
+import TeamsManager from "./modules/admin/pages/TeamsManager";
 
 const App: React.FC = () => {
   return (
@@ -42,6 +43,7 @@ const App: React.FC = () => {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="layout-manager" element={<BlueprintManager />} />
           <Route path="events" element={<EventManagerPage/>}/>
+          <Route path="teams/:eventId" element={<TeamsManager />} /> {/* Add this route */}
         </Route>
       </Routes>
     </Router>

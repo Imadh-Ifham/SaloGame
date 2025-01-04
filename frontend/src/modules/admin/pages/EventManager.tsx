@@ -3,6 +3,7 @@ import axiosInstance from "../../../axios.config";
 import Modal from "../../../components/Modal";
 import { Button } from "@headlessui/react";
 import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { useNavigate } from "react-router-dom";
 
 interface Event {
   _id: string;
@@ -18,6 +19,7 @@ const EventManagerPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [currentEvent, setCurrentEvent] = useState<Partial<Event> | undefined>(undefined);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchEvents();
@@ -144,6 +146,13 @@ const EventManagerPage: React.FC = () => {
                     title="Delete Event"
                   >
                     <TrashIcon className="w-5 h-5" />
+                  </Button>
+                  <Button
+                    onClick={() => navigate(`/admin/teams/${event._id}`)}
+                    className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    title="View Teams"
+                  >
+                    View Teams
                   </Button>
                 </div>
               </div>

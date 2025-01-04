@@ -204,7 +204,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
                 required
               />
             </div>
-            <div>
+            {/*<div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
                 Max Members
               </label>
@@ -215,7 +215,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
                 className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
                 required
               />
-            </div>
+            </div>*/}
             <div className="mt-4 flex justify-end">
               <Button
                 type="button"
