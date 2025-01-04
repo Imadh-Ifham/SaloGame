@@ -11,6 +11,7 @@ interface Game {
   name: string;
   rating: number;
   description: string;
+  genres: string[]; // Add genres
 }
 
 interface GameCardProps {
@@ -18,6 +19,7 @@ interface GameCardProps {
   name: string;
   rating: number;
   description: string;
+  genres: string[]; // Add genres
   index: number;
 }
 
@@ -26,8 +28,17 @@ const GameCard: React.FC<GameCardProps> = ({
   name,
   rating,
   description,
+  genres,
   index,
 }) => {
+  // Function to truncate the description
+  const truncateText = (text: string, limit: number) => {
+    if (text.length > limit) {
+      return text.slice(0, limit) + "...";
+    }
+    return text;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -52,11 +63,16 @@ const GameCard: React.FC<GameCardProps> = ({
             {name}
           </h3>
           <p className="text-sm font-poppins text-text-secondary dark:text-neutral-50 mb-4">
-            {description}
+            {truncateText(description, 100)} {/* Truncate the description */}
           </p>
+          <div className="text-xs font-poppins text-text-secondary dark:text-neutral-400">
+            Genres:{" "}
+            <span className="font-semibold text-primary">
+              {genres.join(", ") || "N/A"} {/* Display genres */}
+            </span>
+          </div>
         </div>
         <div className="flex items-center text-base font-poppins text-green-500">
-          {/* SVG Star */}
           {rating}
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -172,6 +188,7 @@ const GamesPage: React.FC = () => {
                 name={game.name}
                 rating={game.rating}
                 description={game.description}
+                genres={game.genres} // Pass genres to GameCard
                 index={index}
               />
             ))}
