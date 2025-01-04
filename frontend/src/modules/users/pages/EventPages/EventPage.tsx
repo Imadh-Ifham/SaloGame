@@ -10,7 +10,7 @@ interface Event {
   description: string;
   date: string;
   time: string;
-  image: string; 
+  image: string;
 }
 
 const EventPage: React.FC = () => {
@@ -69,7 +69,8 @@ const EventPage: React.FC = () => {
                   backgroundImage: `url(${event.image})`,
                   backgroundSize: "cover",
                   backgroundPosition: "center",
-                  filter: "brightness(0.7)",
+                  backgroundRepeat: "no-repeat",
+                  minHeight: "300px", // Ensures the card has a fixed height
                 }}
               >
                 <div className="absolute inset-0 bg-black opacity-50"></div>
@@ -88,7 +89,7 @@ const EventPage: React.FC = () => {
                   </p>
                   <Button
                     className="px-4 py-2 bg-gamer-green text-white rounded-lg hover:bg-gamer-green-dark transition"
-                    onClick={() => navigate(`/team-registration/${event._id}`)} // Navigate to TeamRegistration
+                    onClick={() => navigate(`/team-registration/${event._id}`)}
                   >
                     Register now
                   </Button>

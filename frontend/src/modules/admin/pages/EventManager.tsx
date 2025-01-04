@@ -3,6 +3,7 @@ import axiosInstance from "../../../axios.config";
 import Modal from "../../../components/Modal";
 import { Button } from "@headlessui/react";
 import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
+import { useNavigate } from "react-router-dom";
 
 interface Event {
   _id: string;
@@ -10,6 +11,7 @@ interface Event {
   description: string;
   date: string;
   time: string;
+  image: string;
 }
 
 const EventManagerPage: React.FC = () => {
@@ -18,6 +20,7 @@ const EventManagerPage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false);
   const [currentEvent, setCurrentEvent] = useState<Partial<Event> | undefined>(undefined);
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchEvents();
@@ -145,6 +148,13 @@ const EventManagerPage: React.FC = () => {
                   >
                     <TrashIcon className="w-5 h-5" />
                   </Button>
+                  <Button
+                    onClick={() => navigate(`/admin/teams/${event._id}`)}
+                    className="p-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
+                    title="View Teams"
+                  >
+                    View Teams
+                  </Button>
                 </div>
               </div>
             </div>
@@ -184,6 +194,7 @@ const EventForm: React.FC<EventFormProps> = ({
   const [description, setDescription] = useState(initialData.description || "");
   const [date, setDate] = useState(initialData.date || "");
   const [time, setTime] = useState(initialData.time || "");
+  const [image, setImage] = useState(initialData.image || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -192,13 +203,13 @@ const EventForm: React.FC<EventFormProps> = ({
     setLoading(true);
     setError(null);
 
-    if (!name || !description || !date || !time) {
+    if (!name || !description || !date || !time || !image) {
       setError("Please fill in all required fields.");
       setLoading(false);
       return;
     }
 
-    onSuccess({ _id: initialData._id, name, description, date, time });
+    onSuccess({ _id: initialData._id, name, description, date, time, image });
     setLoading(false);
   };
 
@@ -251,6 +262,19 @@ const EventForm: React.FC<EventFormProps> = ({
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
+          className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+          Image URL<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="url"
+          value={image}
+          onChange={(e) => setImage(e.target.value)}
           className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
           required
         />
