@@ -45,6 +45,7 @@ export const createTeam = async (
 ): Promise<void> => {
     try {
         const { teamName, eventId, maxMembers } = req.body;
+        const userId = req.user._id; // Assuming you have user authentication and user ID is available in req.user
         if(!teamName || !eventId || !maxMembers) {
             res.status(400).json({ success: false, message: "teamName, eventId and maxMembers are required" });
             return;
