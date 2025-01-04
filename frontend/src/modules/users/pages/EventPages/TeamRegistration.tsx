@@ -11,7 +11,7 @@ interface Team {
   teamName: string;
   members: { userId: string }[];
   maxMembers: number;
-  createdBy: string; // Add this line
+  createdBy: string;
 }
 
 interface TeamRegistrationProps {
@@ -204,18 +204,6 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
                 required
               />
             </div>
-            {/*<div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                Max Members
-              </label>
-              <input
-                type="number"
-                value={maxMembers}
-                onChange={(e) => setMaxMembers(Number(e.target.value))}
-                className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
-                required
-              />
-            </div>*/}
             <div className="mt-4 flex justify-end">
               <Button
                 type="button"

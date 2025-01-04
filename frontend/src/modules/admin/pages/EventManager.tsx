@@ -11,6 +11,7 @@ interface Event {
   description: string;
   date: string;
   time: string;
+  image: string;
 }
 
 const EventManagerPage: React.FC = () => {
@@ -193,6 +194,7 @@ const EventForm: React.FC<EventFormProps> = ({
   const [description, setDescription] = useState(initialData.description || "");
   const [date, setDate] = useState(initialData.date || "");
   const [time, setTime] = useState(initialData.time || "");
+  const [image, setImage] = useState(initialData.image || "");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -201,13 +203,13 @@ const EventForm: React.FC<EventFormProps> = ({
     setLoading(true);
     setError(null);
 
-    if (!name || !description || !date || !time) {
+    if (!name || !description || !date || !time || !image) {
       setError("Please fill in all required fields.");
       setLoading(false);
       return;
     }
 
-    onSuccess({ _id: initialData._id, name, description, date, time });
+    onSuccess({ _id: initialData._id, name, description, date, time, image });
     setLoading(false);
   };
 
@@ -260,6 +262,19 @@ const EventForm: React.FC<EventFormProps> = ({
           type="time"
           value={time}
           onChange={(e) => setTime(e.target.value)}
+          className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+          Image URL<span className="text-red-500">*</span>
+        </label>
+        <input
+          type="url"
+          value={image}
+          onChange={(e) => setImage(e.target.value)}
           className="mt-1 block w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
           required
         />
