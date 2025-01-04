@@ -40,23 +40,23 @@ export const getTeamById = async (
 
 // Create a new team
 export const createTeam = async (
-    req: Request,
-    res: Response
+  req: Request, 
+  res: Response
 ): Promise<void> => {
-    try {
-        const { teamName, eventId, maxMembers } = req.body;
-        const userId = req.user._id; // Assuming you have user authentication and user ID is available in req.user
-        if(!teamName || !eventId || !maxMembers) {
-            res.status(400).json({ success: false, message: "teamName, eventId and maxMembers are required" });
-            return;
-        }
-        const team = new Team({ teamName, eventId, maxMembers });
-        await team.save();
-        res.status(201).json({ success: true, data: team });
-    } catch (error) {
-        res.status(500).json({ success: false, message: "Server error", error: (error as Error).message });
+  try {
+    const { teamName, eventId, maxMembers, createdBy } = req.body; 
+    if (!teamName || !eventId || !maxMembers || !createdBy) {
+      res.status(400).json({ success: false, message: "teamName, eventId, maxMembers, and createdBy are required" });
+      return;
     }
-}
+    const team = new Team({ teamName, eventId, maxMembers, createdBy });
+    await team.save();
+    res.status(201).json({ success: true, data: team });
+  } catch (error) {
+    console.error("Error creating team:", error);
+    res.status(500).json({ success: false, message: "Server error", error: (error as Error).message });
+  }
+};
 
 // Update a team
 export const updateTeam = async (
