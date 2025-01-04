@@ -6,13 +6,13 @@ export const createEvent = async (
     res: Response
 ):Promise<void> => {
     try {
-        const{ name, description, date, time } = req.body;
-        if( !name || !description || !date || !time ){
+        const{ name, description, date, time, image } = req.body;
+        if( !name || !description || !date || !time || !image ){
             res.status(400).json({ message: "Please fill in all fields" });
             return;
         }
 
-        const newEvent = new Event({ name, description, date, time });
+        const newEvent = new Event({ name, description, date, time, image });
         await newEvent.save();
 
         res.status(201).json({ success: true, data: newEvent });
@@ -60,14 +60,14 @@ export const updateEvent = async (
 ):Promise<void> => {
     try {
         const { id } = req.params;
-        const { name, description, date, time } = req.body;
-        if(!name || !description || !date || !time){
+        const { name, description, date, time, image } = req.body;
+        if(!name || !description || !date || !time || !image){
             res.status(400).json({ message: "Please fill all fields" });
             return;
         }
         const updatedEvent = await Event.findByIdAndUpdate(
             id, 
-            { name, description, date, time }, 
+            { name, description, date, time, image }, 
             { new : true }
         );
         if(!updatedEvent){
