@@ -2,7 +2,7 @@ import mongoose, { Model, Schema, Document } from "mongoose";
 
 
 interface IMember {
-  userId: mongoose.Types.ObjectId; // Reference to the Users schema
+  userId: mongoose.Types.ObjectId; // Ref to the Users schema
   joinedAt: Date; // Timestamp of when the user joined
 }
 
@@ -12,6 +12,7 @@ interface ITeam extends Document {
   eventId: mongoose.Types.ObjectId; // Ref to the Event schema
   members: IMember[]; // team members array
   maxMembers: number; // Max members in the team
+  createdBy: mongoose.Types.ObjectId;//user who created the grp
 }
 
 // Schema for a Team Member
@@ -26,6 +27,7 @@ const teamSchema: Schema<ITeam> = new mongoose.Schema({
   eventId: { type: mongoose.Schema.Types.ObjectId, ref: "Event", required: true },
   members: { type: [memberSchema], default: [] },
   maxMembers: { type: Number, required: true },
+  createdBy: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
 });
 
 // Model for a Team
