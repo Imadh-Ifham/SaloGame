@@ -26,6 +26,7 @@ const Header: React.FC = () => {
     { to: "/bookings", label: "Bookings" },
     { to: "/packages", label: "Packages" },
     { to: "/about", label: "About" },
+    { to: "/offers", label: "Offers" },
   ];
 
   const renderNavLink = (to: string, label: string) => (

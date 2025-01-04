@@ -9,13 +9,11 @@ interface HomeLayoutProps {
 const HomeLayout: React.FC<HomeLayoutProps> = ({ children }) => {
   return (
     <div
-      className="max-w-full pattern-dots pattern-green-200 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black
+      className="max-w-full pattern-dots pattern-green-300 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black
                     pattern-size-2 pattern-opacity-100"
     >
       <Header />
-      <div className="min-h-screen">
-        {children}
-      </div>
+      <div className="min-h-screen">{children}</div>
       <Footer />
     </div>
   );
