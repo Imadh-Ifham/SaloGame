@@ -1,10 +1,10 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 interface IMachineType extends Document {
   _id: Schema.Types.ObjectId;
   name: string;
   description: string;
-  supportedGames: string[];
+  supportedGames: Schema.Types.ObjectId[];
   specifications: string;
   rate: number;
   imageUrl: string;
@@ -13,10 +13,14 @@ interface IMachineType extends Document {
 const MachineTypeSchema: Schema = new Schema({
   name: { type: String, required: true },
   description: { type: String },
-  supportedGames: [{ type: String }],
+  supportedGames: [{ type: Schema.Types.ObjectId, ref: "Game", default: [] }],
   specifications: { type: String },
   rate: { type: Number, required: true },
   imageUrl: { type: String },
 });
 
-export default mongoose.model<IMachineType>("MachineType", MachineTypeSchema);
+const MachineType: Model<IMachineType> =
+  mongoose.models.MachineType ||
+  mongoose.model<IMachineType>("MachineType", MachineTypeSchema);
+
+export default MachineType;

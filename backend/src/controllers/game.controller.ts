@@ -1,6 +1,5 @@
 // Import the Game model
 import { Request, Response } from "express";
-import mongoose from "mongoose";
 import Game from "../models/game.model";
 
 export const getAllGames = async (

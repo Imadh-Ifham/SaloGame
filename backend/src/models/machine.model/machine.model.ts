@@ -1,4 +1,4 @@
-import mongoose, { Schema, Document } from "mongoose";
+import mongoose, { Schema, Document, Model } from "mongoose";
 
 interface IMachine extends Document {
   _id: Schema.Types.ObjectId;
@@ -24,4 +24,7 @@ const MachineSchema: Schema = new Schema(
   { timestamps: true }
 );
 
-export default mongoose.model<IMachine>("Machine", MachineSchema);
+const Machine: Model<IMachine> =
+  mongoose.models.Machine || mongoose.model<IMachine>("Machine", MachineSchema);
+
+export default Machine;
