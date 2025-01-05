@@ -1,3 +1,4 @@
+// models/game.model.ts
 import mongoose, { Document, Model, Schema } from "mongoose";
 
 // Define the interface for the Game document

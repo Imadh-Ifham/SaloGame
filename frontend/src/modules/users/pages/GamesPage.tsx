@@ -4,6 +4,7 @@ import { ChevronDownIcon, ChevronUpIcon } from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
 import HomeLayout from "../layout/HomeLayout";
 import axiosInstance from "../../../axios.config";
+import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa"; // Importing star icons from react-icons
 
 interface Game {
   _id: string;
@@ -11,7 +12,7 @@ interface Game {
   name: string;
   rating: number;
   description: string;
-  genres: string[]; // Add genres
+  genres: string[];
 }
 
 interface GameCardProps {
@@ -19,7 +20,7 @@ interface GameCardProps {
   name: string;
   rating: number;
   description: string;
-  genres: string[]; // Add genres
+  genres: string[];
   index: number;
 }
 
@@ -37,6 +38,29 @@ const GameCard: React.FC<GameCardProps> = ({
       return text.slice(0, limit) + "...";
     }
     return text;
+  };
+
+  // Function to render star icons based on rating
+  const renderStars = (rating: number) => {
+    const stars = [];
+    const roundedRating = Math.round(rating * 2) / 2; // Round to nearest 0.5
+
+    for (let i = 1; i <= 5; i++) {
+      if (roundedRating >= i) {
+        // Full Star
+        stars.push(<FaStar key={i} className="w-4 h-4 text-gamer-green" />);
+      } else if (roundedRating >= i - 0.5) {
+        // Half Star
+        stars.push(
+          <FaStarHalfAlt key={i} className="w-4 h-4 text-gamer-green" />
+        );
+      } else {
+        // Empty Star
+        stars.push(<FaRegStar key={i} className="w-4 h-4 text-gamer-green" />);
+      }
+    }
+
+    return stars;
   };
 
   return (
@@ -63,29 +87,26 @@ const GameCard: React.FC<GameCardProps> = ({
             {name}
           </h3>
           <p className="text-sm font-poppins text-text-secondary dark:text-neutral-50 mb-4">
-            {truncateText(description, 100)} {/* Truncate the description */}
+            {truncateText(description, 100)} {/* Truncated Description */}
           </p>
-          <div className="text-xs font-poppins text-text-secondary dark:text-neutral-400">
-            Genres:{" "}
-            <span className="font-semibold text-primary">
-              {genres.join(", ") || "N/A"} {/* Display genres */}
-            </span>
+          {/* Genres as Pill-Shaped Badges */}
+          <div className="flex flex-wrap gap-2 mt-2">
+            {genres.map((genre) => (
+              <span
+                key={genre}
+                className="px-3 py-1 text-xs font-medium dark:text-white text-gamer-green-dark bg-transparent border border-gamer-green rounded-full shadow-sm"
+              >
+                {genre}
+              </span>
+            ))}
           </div>
         </div>
-        <div className="flex items-center text-base font-poppins text-green-500">
-          {rating}
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            fill="currentColor"
-            className="w-4 h-4 mr-1"
-          >
-            <path
-              fillRule="evenodd"
-              d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"
-              clipRule="evenodd"
-            />
-          </svg>
+        <div className="flex items-center text-base font-poppins text-gamer-green mt-4">
+          {/* Render Stars */}
+          <div className="flex items-center">
+            {renderStars(rating)}
+            <span className="ml-2 text-xs">({rating.toFixed(2)})</span>
+          </div>
         </div>
       </div>
 
