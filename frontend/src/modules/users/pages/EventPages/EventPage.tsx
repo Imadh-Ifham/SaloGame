@@ -45,7 +45,7 @@ const EventPage: React.FC = () => {
       <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-transparent">
         <div className="max-w-7xl mx-auto text-center mb-12 sm:mb-16">
           <h2 className="text-3xl sm:text-2xl font-press font-semibold mb-4 text-primary">
-            Upcoming Events
+            New Upcoming Events
           </h2>
         </div>
 
@@ -70,29 +70,36 @@ const EventPage: React.FC = () => {
                   backgroundSize: "cover",
                   backgroundPosition: "center",
                   backgroundRepeat: "no-repeat",
-                  minHeight: "300px", // Ensures the card has a fixed height
+                  minHeight: "400px", // Adjust card height
                 }}
               >
-                <div className="absolute inset-0 bg-black opacity-50"></div>
-                <div className="relative z-10 text-white">
-                  <h3 className="text-xl font-poppins font-semibold mb-2">
-                    {event.name}
-                  </h3>
-                  <p className="text-sm font-poppins mb-4">
-                    {event.description}
-                  </p>
-                  <p className="text-sm font-poppins mb-4 text-background-gamergreen">
-                    Date : {event.date}
-                  </p>
-                  <p className="text-sm font-poppins mb-4 text-background-gamergreen">
-                    Time : {event.time}
-                  </p>
-                  <Button
-                    className="px-4 py-2 bg-gamer-green text-white rounded-lg hover:bg-gamer-green-dark transition"
-                    onClick={() => navigate(`/team-registration/${event._id}`)}
-                  >
-                    Register now
-                  </Button>
+                {/* Semi-transparent background for text */}
+                <div className="absolute inset-0 bg-black/50"></div>
+
+                {/* Misty or frosted glass effect */}
+                <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black via-black/70 to-transparent">
+                  <div className="relative z-10 text-white">
+                    <h3 className="text-xl font-poppins font-semibold mb-2">
+                      {event.name}
+                    </h3>
+                    <p className="text-sm font-poppins mb-4">
+                      {event.description}
+                    </p>
+                    <p className="text-sm font-poppins mb-4 text-background-gamergreen">
+                      Date : {event.date}
+                    </p>
+                    <p className="text-sm font-poppins mb-4 text-background-gamergreen">
+                      Time : {event.time}
+                    </p>
+                    <Button
+                      className="px-4 py-2 bg-gamer-green text-white rounded-lg hover:bg-gamer-green-dark transition"
+                      onClick={() =>
+                        navigate(`/team-registration/${event._id}`)
+                      }
+                    >
+                      Register now
+                    </Button>
+                  </div>
                 </div>
               </div>
             ))}
