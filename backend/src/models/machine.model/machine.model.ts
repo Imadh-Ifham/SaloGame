@@ -4,7 +4,7 @@ interface IMachine extends Document {
   _id: Schema.Types.ObjectId;
   machineType: Schema.Types.ObjectId;
   serialNumber: string;
-  status: "available" | "in-use" | "under maintenance" | "offline";
+  status: "available" | "in-use" | "under-maintenance" | "offline";
 }
 
 const MachineSchema: Schema = new Schema(
@@ -17,7 +17,7 @@ const MachineSchema: Schema = new Schema(
     serialNumber: { type: String, required: true, unique: true },
     status: {
       type: String,
-      enum: ["available", "in-use", "under maintenance", "offline"],
+      enum: ["available", "in-use", "under-maintenance", "offline"],
       default: "available",
     },
   },

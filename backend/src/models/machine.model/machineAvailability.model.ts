@@ -1,13 +1,29 @@
 import mongoose, { Document, Schema } from "mongoose";
 
-interface IMachineAvailability extends Document {
+interface IBookedSlot {
   _id: Schema.Types.ObjectId;
-  machineID: Schema.Types.ObjectId;
-  date: Date;
-  bookedSlots: string[];
+  startTime: string;
+  endTime: string;
 }
 
-const MachineAvailabiltySchema: Schema = new Schema({
+interface IMachineAvailability extends Document {
+  machineID: Schema.Types.ObjectId;
+  date: Date;
+  bookedSlots: IBookedSlot[];
+}
+
+const BookedSlotSchema: Schema = new Schema({
+  startTime: {
+    type: String,
+    required: true,
+  },
+  endTime: {
+    type: String,
+    required: true,
+  },
+});
+
+const MachineAvailabilitySchema: Schema = new Schema({
   machineID: {
     type: Schema.Types.ObjectId,
     ref: "Machine",
@@ -17,15 +33,10 @@ const MachineAvailabiltySchema: Schema = new Schema({
     type: Date,
     required: true,
   },
-  bookedSlots: [
-    {
-      type: String,
-      default: [],
-    },
-  ],
+  bookedSlots: [BookedSlotSchema],
 });
 
 export default mongoose.model<IMachineAvailability>(
   "MachineAvailability",
-  MachineAvailabiltySchema
+  MachineAvailabilitySchema
 );

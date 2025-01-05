@@ -2,12 +2,13 @@ import { Request, Response } from "express";
 import Machine from "../../models/machine.model/machine.model";
 
 // Retrieve all Machines
-export const getAllMachines = async (
+export const getAllMachinesByType = async (
   req: Request,
   res: Response
 ): Promise<void> => {
+  const { machineType } = req.params;
   try {
-    const machines = await Machine.find();
+    const machines = await Machine.find({ machineType });
     res.status(200).json({ success: true, data: machines });
   } catch (error) {
     res.status(500).json({
@@ -15,6 +16,21 @@ export const getAllMachines = async (
       message: "Server error fetching all Machines",
       error: (error as Error).message,
     });
+  }
+};
+
+export const createMachine = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { machineType, serialNumber } = req.body;
+  try {
+    const newMachine = new Machine({ machineType, serialNumber });
+
+    const savedMachine = await newMachine.save();
+    res.status(201).json({ success: true, data: savedMachine });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating new machine" });
   }
 };
 
@@ -26,7 +42,9 @@ export const getMachineBySerialNumber = async (
   const { machineNum } = req.params;
 
   try {
-    const machine = await Machine.findOne({ serialNumber: machineNum });
+    const machine = await Machine.findOne({
+      serialNumber: new RegExp(`^${machineNum}$`, "i"),
+    });
 
     if (!machine) {
       res.status(404).json({ success: false, message: "Machine not found" });
@@ -53,7 +71,7 @@ export const updateMachineSerialNumber = async (
 
   try {
     const machine = await Machine.findOneAndUpdate(
-      { serialNumber: machineNum },
+      { serialNumber: new RegExp(`^${machineNum}$`, "i") },
       { serialNumber: newSerialNumber },
       { new: true, runValidators: true }
     );
@@ -83,7 +101,7 @@ export const updateMachineStatus = async (
 
   try {
     const machine = await Machine.findOneAndUpdate(
-      { serialNumber: machineNum },
+      { serialNumber: new RegExp(`^${machineNum}$`, "i") },
       { status: newStatus },
       { new: true, runValidators: true }
     );
@@ -112,7 +130,7 @@ export const deleteMachine = async (
 
   try {
     const deletedMachine = await Machine.findOneAndDelete({
-      serialNumber: machineNum,
+      serialNumber: new RegExp(`^${machineNum}$`, "i"),
     });
 
     if (!deletedMachine) {

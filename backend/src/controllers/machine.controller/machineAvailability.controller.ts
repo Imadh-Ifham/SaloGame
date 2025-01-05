@@ -1,5 +1,7 @@
 import { Request, Response } from "express";
 import MachineAvailability from "../../models/machine.model/machineAvailability.model";
+import { isOverlapping } from "../../utils/checkOverlap";
+import mongoose, { Types } from "mongoose";
 
 // 📌 Create or Book a Slot
 export const createAvailability = async (
@@ -9,27 +11,33 @@ export const createAvailability = async (
   const { machineID, date, bookedSlots } = req.body;
 
   try {
-    let availability = await MachineAvailability.findOne({ machineID, date });
+    const availability = await MachineAvailability.findOne({ machineID, date });
 
     if (!availability) {
-      // If no entry for the date, create a new one
-      availability = new MachineAvailability({ machineID, date, bookedSlots });
-    } else {
-      // Prevent double booking
-      const existingSlots = availability.bookedSlots;
-      const alreadyBooked = bookedSlots.some((slot: string) =>
-        existingSlots.includes(slot)
-      );
-
-      if (alreadyBooked) {
-        res.status(400).json({ message: "Some slots are already booked." });
-        return;
-      }
-
-      // Add the new slots
-      availability.bookedSlots.push(...bookedSlots);
+      const newAvailability = new MachineAvailability({
+        machineID,
+        date,
+        bookedSlots,
+      });
+      await newAvailability.save();
+      res.status(201).json(newAvailability);
+      return;
     }
 
+    // At this point, TypeScript knows availability is not null
+    const alreadyBooked = bookedSlots.some(
+      (newSlot: { startTime: string; endTime: string }) =>
+        isOverlapping(newSlot, availability.bookedSlots)
+    );
+
+    if (alreadyBooked) {
+      res
+        .status(400)
+        .json({ message: "Some slots are already booked or overlapping." });
+      return;
+    }
+
+    availability.bookedSlots.push(...bookedSlots);
     await availability.save();
     res.status(201).json(availability);
   } catch (error) {
@@ -37,12 +45,80 @@ export const createAvailability = async (
   }
 };
 
-// 📌 Extend Booking
-export const extendBookingAvailability = async (
+// 📌 Extend Booking Controller
+export const alterBookingSlot = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { machineID, date, slot } = req.body;
+  const { slotID, minutes } = req.body;
+  const { action } = req.query;
+
+  try {
+    const availability = await MachineAvailability.findOne({
+      "bookedSlots._id": Types.ObjectId.createFromHexString(slotID),
+    });
+
+    if (!availability) {
+      res.status(404).json({ message: "Booking not found." });
+      return;
+    }
+
+    const slot = availability.bookedSlots.find(
+      (s) => s._id.toString() === slotID
+    );
+
+    if (!slot) {
+      res.status(404).json({ message: "Slot not found." });
+      return;
+    }
+
+    const oldEndTime = new Date(`1970-01-01T${slot.endTime}`);
+    let formattedNewEndTime: string;
+
+    if (action === "extend") {
+      const newEndTime = new Date(oldEndTime.getTime() + minutes * 60000);
+      formattedNewEndTime = newEndTime.toTimeString().slice(0, 5);
+
+      const newSlotData = {
+        startTime: slot.startTime,
+        endTime: formattedNewEndTime,
+      };
+      const otherSlots = availability.bookedSlots.filter(
+        (s) => s._id.toString() !== slotID
+      );
+
+      if (isOverlapping(newSlotData, otherSlots)) {
+        res
+          .status(400)
+          .json({ message: "Extension overlaps with other bookings." });
+        return;
+      }
+    } else {
+      const newEndTime = new Date(oldEndTime.getTime() - minutes * 60000);
+      formattedNewEndTime = newEndTime.toTimeString().slice(0, 5);
+    }
+
+    slot.endTime = formattedNewEndTime;
+    await availability.save();
+
+    res.status(200).json({
+      message:
+        action === "extend"
+          ? `Booking slot extended by ${minutes} minutes successfully.`
+          : `Booking slot reduced by ${minutes} minutes successfully.`,
+      availability,
+    });
+  } catch (error) {
+    res.status(500).json({ error: (error as Error).message });
+  }
+};
+
+// 📌 Get Booked Slots for a Machine and Date
+export const getBookedSlots = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { machineID, date } = req.body;
 
   try {
     const availability = await MachineAvailability.findOne({ machineID, date });
@@ -52,15 +128,6 @@ export const extendBookingAvailability = async (
       return;
     }
 
-    // Check if the slot is available
-    if (availability.bookedSlots.includes(slot)) {
-      res.status(400).json({ message: "Slot already booked." });
-      return;
-    }
-
-    // Add the extended slot
-    availability.bookedSlots.push(slot);
-    await availability.save();
     res.status(200).json(availability);
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
@@ -72,7 +139,7 @@ export const removeBookingSlot = async (
   req: Request,
   res: Response
 ): Promise<void> => {
-  const { machineID, date, slot } = req.body;
+  const { machineID, date, slotID } = req.body;
 
   try {
     const availability = await MachineAvailability.findOne({ machineID, date });
@@ -82,13 +149,16 @@ export const removeBookingSlot = async (
       return;
     }
 
-    // Remove the slot if it exists
+    // ✅ Correctly filter by ObjectId comparison
     availability.bookedSlots = availability.bookedSlots.filter(
-      (s) => s !== slot
+      (s) => s._id.toString() !== slotID
     );
 
+    // ✅ Save changes
     await availability.save();
-    res.status(200).json(availability);
+    res
+      .status(200)
+      .json({ message: "Booking slot removed successfully.", availability });
   } catch (error) {
     res.status(500).json({ error: (error as Error).message });
   }

@@ -107,11 +107,11 @@ export const deleteMachineType = async (
 export const addGameToMachineType = async (req: Request, res: Response) => {
   try {
     const { machineTypeID } = req.params;
-    const { gameID } = req.body;
+    const { gameIDs } = req.body;
 
     const machineType = await MachineType.findByIdAndUpdate(
       machineTypeID,
-      { $addToSet: { supportedGames: gameID } },
+      { $addToSet: { supportedGames: gameIDs } },
       { new: true }
     ).populate("supportedGames");
 
