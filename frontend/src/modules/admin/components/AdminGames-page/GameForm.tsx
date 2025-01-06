@@ -1,4 +1,3 @@
-// components/GameForm.tsx
 import React, { Fragment, useState } from "react";
 import {
   Button,
@@ -16,6 +15,7 @@ interface Game {
   name: string;
   rating: number;
   description: string;
+  genres: string[]; // Ensure genres are included
 }
 
 interface GameFormProps {
@@ -33,22 +33,50 @@ const GameForm: React.FC<GameFormProps> = ({
   const [description, setDescription] = useState(initialData.description || "");
   const [rating, setRating] = useState(initialData.rating || 0);
   const [image, setImage] = useState(initialData.image || "");
+  const [genres, setGenres] = useState<string[]>(initialData.genres || []);
+  const [genreInput, setGenreInput] = useState<string>(""); // For adding new genres
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const isEditMode = !!initialData._id;
 
+  // Handle adding a new genre
+  const addGenre = () => {
+    const trimmedGenre = genreInput.trim();
+    if (trimmedGenre && !genres.includes(trimmedGenre)) {
+      setGenres([...genres, trimmedGenre]);
+    }
+    setGenreInput("");
+  };
+
+  // Handle removing a genre
+  const removeGenre = (genreToRemove: string) => {
+    setGenres(genres.filter((genre) => genre !== genreToRemove));
+  };
+
+  // Handle form submission
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
-    // Basic validation
-    if (!name || !description || !image) {
-      setError("Please fill in all required fields.");
-      setLoading(false);
-      return;
+    if (isEditMode) {
+      // Edit Mode: Validate required fields
+      if (!name || !description || genres.length === 0) {
+        setError(
+          "Please fill in all required fields and add at least one genre."
+        );
+        setLoading(false);
+        return;
+      }
+    } else {
+      // Create Mode: Validate only name
+      if (!name) {
+        setError("Please provide the game name.");
+        setLoading(false);
+        return;
+      }
     }
 
     try {
@@ -58,23 +86,21 @@ const GameForm: React.FC<GameFormProps> = ({
         response = await axiosInstance.put(`/games/${initialData._id}`, {
           name,
           description,
-          rating,
+          rating: parseFloat(rating.toFixed(2)), // Ensure two decimal places
           image,
+          genres,
         });
       } else {
-        // Create new game
+        // Create new game with only name
         response = await axiosInstance.post("/games", {
           name,
-          description,
-          rating,
-          image,
         });
       }
 
       if (response.data.success) {
         onSuccess(response.data.data);
       } else {
-        setError(response.data.message || "Failed to create the game.");
+        setError(response.data.message || "Failed to create/update the game.");
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "An unexpected error occurred.");
@@ -83,6 +109,7 @@ const GameForm: React.FC<GameFormProps> = ({
     }
   };
 
+  // Handle deletion (optional, based on user request)
   const handleDelete = async () => {
     if (!initialData._id) return;
     setLoading(true);
@@ -118,49 +145,104 @@ const GameForm: React.FC<GameFormProps> = ({
           />
         </div>
 
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-            Description<span className="text-red-500">*</span>
-          </label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
-            rows={4}
-            required
-          ></textarea>
-        </div>
+        {/* Description (Only in Edit Mode) */}
+        {isEditMode && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+              Description<span className="text-red-500">*</span>
+            </label>
+            <textarea
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
+              className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+              rows={4}
+              required
+            ></textarea>
+          </div>
+        )}
 
-        {/* Rating */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-            Rating
-          </label>
-          <input
-            type="number"
-            value={rating}
-            onChange={(e) => setRating(Number(e.target.value))}
-            className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
-            min={0}
-            max={5}
-            step={0.1}
-          />
-        </div>
+        {/* Rating (Only in Edit Mode) */}
+        {isEditMode && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+              Rating<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={rating}
+              onChange={(e) => setRating(Number(e.target.value))}
+              className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+              min={0}
+              max={5}
+              step={0.01} // Changed from 0.1 to 0.01
+              required={isEditMode}
+            />
+          </div>
+        )}
 
-        {/* Image URL */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-            Image URL<span className="text-red-500">*</span>
-          </label>
-          <input
-            type="url"
-            value={image}
-            onChange={(e) => setImage(e.target.value)}
-            className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
-            required
-          />
-        </div>
+        {/* Image URL (Only in Edit Mode) */}
+        {isEditMode && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+              Image URL<span className="text-red-500">*</span>
+            </label>
+            <input
+              type="url"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+              required={isEditMode}
+            />
+          </div>
+        )}
+
+        {/* Genres (Only in Edit Mode) */}
+        {isEditMode && (
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+              Genres<span className="text-red-500">*</span>
+            </label>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {genres.map((genre) => (
+                <span
+                  key={genre}
+                  className="flex items-center px-3 py-1 text-xs font-medium dark:text-white text-gamer-green-dark bg-transparent border border-gamer-green rounded-full shadow-sm"
+                >
+                  {genre}
+                  <button
+                    type="button"
+                    onClick={() => removeGenre(genre)}
+                    className="ml-1 text-red-500 hover:text-red-700 focus:outline-none"
+                  >
+                    &times;
+                  </button>
+                </span>
+              ))}
+            </div>
+            <div className="mt-2 flex">
+              <input
+                type="text"
+                value={genreInput}
+                onChange={(e) => setGenreInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    addGenre();
+                  }
+                }}
+                placeholder="Add a genre and press Enter"
+                className="flex-grow dark:bg-black border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+              />
+              <Button
+                type="button"
+                onClick={addGenre}
+                className="ml-2 px-4 py-2 bg-gamer-green text-white rounded-md hover:bg-gamer-green-dark transition"
+              >
+                Add
+              </Button>
+            </div>
+          </div>
+        )}
 
         {/* Error Message */}
         {error && (
