@@ -1,10 +1,10 @@
 import React, { Fragment } from "react";
 import {
-  Dialog,
-  DialogTitle,
-  Transition,
-  TransitionChild,
-} from "@headlessui/react";
+    Dialog,
+    DialogTitle,
+    Transition,
+    TransitionChild,
+  } from "@headlessui/react";
 
 interface ModalProps {
   isOpen: boolean;

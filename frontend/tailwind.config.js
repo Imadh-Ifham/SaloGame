@@ -41,6 +41,7 @@ export default {
           DEFAULT: "#10B981", // Gamer green as primary color
           light: "#34D399", // Lighter variant of gamer green
           dark: "#059669", // Darker variant of gamer green
+          foreground: "hsl(var(--primary-foreground))",
         },
         overscroll: {
           light: "#FFFFFF", // Custom light color for overscroll
@@ -56,10 +57,83 @@ export default {
           secondary: "#374151", // Gray for secondary text
         },
         border: {
-          primary: "#10B981", // Gamer green for borders
+          primary: "#10B981",
         },
+        foreground: "hsl(var(--foreground))",
+        card: {
+          DEFAULT: "hsl(var(--card))",
+          foreground: "hsl(var(--card-foreground))",
+        },
+        popover: {
+          DEFAULT: "hsl(var(--popover))",
+          foreground: "hsl(var(--popover-foreground))",
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))",
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))",
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))",
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))",
+        },
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        chart: {
+          1: "hsl(var(--chart-1))",
+          2: "hsl(var(--chart-2))",
+          3: "hsl(var(--chart-3))",
+          4: "hsl(var(--chart-4))",
+          5: "hsl(var(--chart-5))",
+        },
+      },
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)",
+      },
+      keyframes: {
+        marquee: {
+          from: {
+            transform: "translateX(0)",
+          },
+          to: {
+            transform: "translateX(calc(-100% - var(--gap)))",
+          },
+        },
+        "marquee-vertical": {
+          from: {
+            transform: "translateY(0)",
+          },
+          to: {
+            transform: "translateY(calc(-100% - var(--gap)))",
+          },
+        },
+        "background-position-spin": {
+          "0%": {
+            backgroundPosition: "top center",
+          },
+          "100%": {
+            backgroundPosition: "bottom center",
+          },
+        },
+      },
+      animation: {
+        marquee: "marquee var(--duration) infinite linear",
+        "marquee-vertical": "marquee-vertical var(--duration) linear infinite",
       },
     },
   },
-  plugins: [require("preline/plugin"), require("tailwindcss-bg-patterns")],
+  plugins: [
+    require("preline/plugin"),
+    require("tailwindcss-bg-patterns"),
+    require("tailwindcss-animate"),
+  ],
 };

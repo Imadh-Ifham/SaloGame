@@ -2,7 +2,7 @@ import React from "react";
 
 const Footer: React.FC = () => {
   return (
-    <footer className="mt-auto w-full  py-6 px-4 sm:px-6 lg:px-8 mx-auto border-t border-green-400 bg-transparent backdrop-blur-sm">
+    <footer className="mt-auto  w-full  py-6 px-4 sm:px-6 lg:px-8 mx-auto border-t border-green-400 bg-transparent backdrop-blur-sm">
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-3 items-center gap-6 md:gap-5 text-center md:text-left">
         {/* Logo */}
