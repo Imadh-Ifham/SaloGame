@@ -279,3 +279,47 @@ export const validateOffer = async (
     });
   }
 };
+
+// Toggle offer active status
+export const toggleActiveOffer = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { offerID } = req.params;
+    const { isActive } = req.body;
+
+    if (typeof isActive !== "boolean") {
+      res.status(400).json({
+        success: false,
+        message: "isActive must be a boolean",
+      });
+      return;
+    }
+
+    const updatedOffer = await Offer.findByIdAndUpdate(
+      offerID,
+      { isActive },
+      { new: true, runValidators: true }
+    );
+
+    if (!updatedOffer) {
+      res.status(404).json({
+        success: false,
+        message: "Offer not found",
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      data: updatedOffer,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error toggling offer status",
+      error: (error as Error).message,
+    });
+  }
+};
