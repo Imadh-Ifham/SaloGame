@@ -9,6 +9,7 @@ import layoutRoutes from "./routes/blueprint.routes";
 import membershipRoute from "./routes/membershipType.routes";
 import machineRoute from "./routes/machine.routes";
 import blueprintRoute from "./routes/blueprint.routes";
+import userRoutes from "./routes/user.routes";
 
 const app: Express = express();
 
@@ -28,6 +29,7 @@ app.use("/api/layouts", layoutRoutes);
 app.use("/api/memberships", membershipRoute);
 app.use("/api/machine", machineRoute);
 app.use("/api/blueprint", blueprintRoute);
+app.use('/api/users', userRoutes);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   const statusCode: number = err.statusCode || 500;
