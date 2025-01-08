@@ -1,4 +1,4 @@
-// src/components/AdminGameCard.tsx
+// src/components/AdminGames-page/AdminGameCard.tsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
@@ -14,6 +14,7 @@ interface Game {
   name: string;
   rating: number;
   description: string;
+  genres: string[]; // Ensure genres are included
 }
 
 interface AdminGameCardProps {
@@ -33,6 +34,14 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+
+  // Function to truncate the description
+  const truncateText = (text: string, limit: number) => {
+    if (text.length > limit) {
+      return text.slice(0, limit) + "...";
+    }
+    return text;
+  };
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -79,12 +88,24 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
               {game.name}
             </h3>
             <p className="text-sm font-poppins text-text-secondary dark:text-neutral-500 mb-4">
-              {game.description}
+              {truncateText(game.description, 100)}{" "}
+              {/* Truncated Description */}
             </p>
+            {/* Genres as Pill-Shaped Badges */}
+            <div className="flex flex-wrap gap-2 mt-2">
+              {game.genres.map((genre) => (
+                <span
+                  key={genre}
+                  className="px-3 py-1 text-xs font-medium dark:text-white text-gamer-green-dark bg-transparent border border-gamer-green rounded-full shadow-sm"
+                >
+                  {genre}
+                </span>
+              ))}
+            </div>
           </div>
           <div className="flex items-center justify-between">
             <div className="flex items-center text-base font-poppins text-green-500">
-              {game.rating}
+              {game.rating.toFixed(2)} {/* Formatted Rating */}
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 24 24"
