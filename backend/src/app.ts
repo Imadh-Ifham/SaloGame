@@ -26,12 +26,10 @@ app.use("/api/packages", packageroute);
 app.use("/api/games", gameRoutes);
 app.use("/api/offer", offerRoutes);
 app.use("/api/memberships", membershipRoute);
-app.use("/api/games", gameRoutes);
 app.use("/api/layouts", layoutRoutes);
 app.use("/api/machine", machineRoute);
 app.use("/api/blueprint", blueprintRoute);
 app.use("/api/bookings", bookingRoutes);
-app.use("/api/games", gameRoutes); // Mount the game router
 app.use("/api/events", eventRoutes); //events routes
 app.use("/api/teams", teamRoutes); // teams in events routes
 
