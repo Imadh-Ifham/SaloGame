@@ -20,6 +20,7 @@ interface Game {
   name: string;
   rating: number;
   description: string;
+  genres: string[]; // Ensure genres are included
 }
 
 const AdminGamesPage: React.FC = () => {
