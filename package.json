@@ -5,7 +5,8 @@
   "scripts": {
     "client": "cd frontend && npm run dev",
     "server": "cd backend && npm run dev",
-    "dev": "concurrently \"npm run server\" \"npm run client\""
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "install:all": "npm install && cd frontend && npm install && cd .. && cd backend && npm install && cd .."
   },
   "author": "",
   "license": "ISC",
