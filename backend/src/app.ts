@@ -9,6 +9,7 @@ import layoutRoutes from "./routes/blueprint.routes";
 import membershipRoute from "./routes/membershipType.routes";
 import machineRoute from "./routes/machine.routes";
 import blueprintRoute from "./routes/blueprint.routes";
+import userRoutes from "./routes/user.routes";
 
 const app: Express = express();
 
@@ -18,6 +19,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Routes
+app.use("/api/users", userRoutes);
 app.use("/api/example", userRoute);
 app.use("/api/packages", packageroute);
 app.use("/api/bookings", bookingRoutes);
