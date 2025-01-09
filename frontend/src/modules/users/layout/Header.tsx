@@ -182,6 +182,28 @@ const Header: React.FC = () => {
           </div>
         </div>
       </nav>
+
+      {/* Profile Icon */}
+      <NavLink
+        to="/profile"
+        className="flex items-center justify-center w-10 h-10 rounded-full border border-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+        title="Profile"
+      >
+        <svg
+          className="w-5 h-5 text-gray-700 dark:text-gray-300"
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+          />
+        </svg>
+      </NavLink>
     </header>
   );
 };

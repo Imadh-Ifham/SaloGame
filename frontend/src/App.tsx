@@ -25,6 +25,7 @@ import PackagesPage from "./modules/users/pages/PackagesPage";
 import AdminBookingPage from "./modules/admin/pages/AdminBookingPage";
 import AdminViewAllBookingsPage from "./modules/admin/pages/AdminViewAllBookingsPage";
 import AuthPage from "./modules/users/pages/AuthPage";
+import ProfilePage from "./modules/users/pages/ProfilePage";
 const App: React.FC = () => {
   useEffect(() => {
     // Always set dark mode as default
@@ -36,9 +37,6 @@ const App: React.FC = () => {
       <Routes>
         {/* User Routes */}
         <Route path="/auth" element={<AuthPage />} />
-        {/*<Route path="/" element={role === "user" ? <HomePage /> : <Navigate to="/admin" />} />
-        <Route path="/admin" element={role === "admin" ? <AdminDashboard /> : <Navigate to="/" />} />*/}
-        
         <Route path="/" element={<HomePage />} />
         <Route path="/games" element={<GamesPage />} />
         <Route path="/bookings" element={<BookingPage />} />
@@ -46,6 +44,7 @@ const App: React.FC = () => {
         <Route path="/about" element={<AboutPage />} />
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/memberships" element={<MembershipPage />} />
+        <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
 
         {/* Admin Routes */}

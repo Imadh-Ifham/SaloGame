@@ -34,9 +34,9 @@ const AuthPage: React.FC = () => {
       // Set the token in axios defaults for subsequent requests
       axiosInstance.defaults.headers.common[
         "Authorization"
-      ] = Bearer ${token};
+      ] = `Bearer ${token}`;
 
-      navigate(user.role === "admin" ? "/admin/dashboard" : "/home");
+      navigate(user.role === "admin" ? "/admin/dashboard" : "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
     } finally {
@@ -45,7 +45,7 @@ const AuthPage: React.FC = () => {
   };
 
   // Handle Google Sign In (using Firebase)
-  const handleGoogleSignIn = async () => {
+  /*const handleGoogleSignIn = async () => {
     setLoading(true);
     try {
       const result = await signInWithPopup(auth, provider);
@@ -59,7 +59,7 @@ const AuthPage: React.FC = () => {
       // Set the token in axios defaults for subsequent requests
       axiosInstance.defaults.headers.common[
         "Authorization"
-      ] = Bearer ${token};
+      ] = `Bearer ${token}`;
 
       navigate(user.role === "admin" ? "/admin/dashboard" : "/home");
     } catch (err) {
@@ -69,6 +69,19 @@ const AuthPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
+  };*/
+
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (result.user) {
+        navigate("/");
+      }
+    } catch (error) {
+      console.error("Error:", error);
+    }
+    setLoading(false);
   };
 
   return (
@@ -139,7 +152,7 @@ const AuthPage: React.FC = () => {
 
           <button
             type="button"
-            onClick={handleGoogleSignIn}
+            onClick={signInWithGoogle}
             disabled={loading}
             className="mt-4 w-full flex items-center justify-center py-2 px-4 border border-gray-300 dark:border-gray-600 rounded-md shadow-sm text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
           >
