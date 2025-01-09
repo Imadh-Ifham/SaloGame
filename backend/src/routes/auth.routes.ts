@@ -4,15 +4,14 @@
  *  and session verification.
  */
 
-
-import express from 'express';
+import express, { Router } from 'express';
 import { handleEmailPasswordAuth, handleGoogleAuth, verifySession } from '../controllers/authController';
 
-const router = express.Router();
+const router: Router = express.Router();
 
-router.post('/email', handleEmailPasswordAuth);
-router.post('/google', handleGoogleAuth);
-router.post('/verify-session', verifySession);
+// Fix the type mismatch by using RequestHandler type assertion
+router.post('/email', handleEmailPasswordAuth as express.RequestHandler);
+router.post('/google', handleGoogleAuth as express.RequestHandler); 
+router.post('/verify-session', verifySession as express.RequestHandler);
 
 export default router;
-

@@ -1,62 +1,82 @@
 /**
- * controller functions that handle the logic for each authentication route. 
+ * controller functions that handle the logic for each authentication route.
  */
 
+import { Request, Response, NextFunction } from "express";
+import admin from "../config/firebase";
+import User, { IUser } from "../models/user.model";
+import { generateToken } from "../utils/jwt";
 
-import { Request, Response ,NextFunction } from 'express';
-import admin from '../config/firebase';
-import User, { IUser } from '../models/user.model';
-import { generateToken } from '../utils/jwt';
-
-export const handleEmailPasswordAuth = async (req: Request, res: Response) => {
+/*
+  handles both signup and login based on the 
+  isSignUp flag in the request body
+ */
+export const handleEmailPasswordAuth = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
-    const { email, password } = req.body;
-    
-    // Verify the Firebase ID token
-    const userCredential = await admin.auth().getUserByEmail(email);
-    
-    // Check if user exists in our database
-    let user = await User.findOne({ email });
-    
-    if (!user) {
-      // Create new user in our database
-      user = new User({
+    const { email, password, isSignUp } = req.body;
+
+    if (isSignUp) {
+      // For signup, create a new user in Firebase
+      const userRecord = await admin.auth().createUser({
         email,
-        role: 'user',
-        firebaseUid: userCredential.uid
+        password,
+      });
+
+      // Create user in our database
+      const user = new User({
+        email,
+        password,
+        role: "user",
+        firebaseUid: userRecord.uid,
       });
       await user.save();
-    }
 
-    const token = generateToken(user);
-    res.json({ user, token });
+      const token = generateToken(user);
+      res.status(201).json({ user, token });
+    } else {
+      // For login, verify the user exists
+      const userRecord = await admin.auth().getUserByEmail(email);
+      const user = await User.findOne({ email });
+
+      if (!user) {
+        res.status(401).json({ message: "User not found" });
+        return;
+      }
+
+      const token = generateToken(user);
+      res.json({ user, token });
+    }
   } catch (error) {
-    console.error('Email/Password auth error:', error);
-    res.status(401).json({ message: 'Authentication failed' });
+    console.error("Email/Password auth error:", error);
+    res.status(401).json({ message: "Authentication failed" });
   }
 };
 
 export const handleGoogleAuth = async (req: Request, res: Response) => {
   try {
     const { idToken } = req.body;
-    
-    // Verify the Firebase ID token
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    const { email, uid } = decodedToken;
-    
-    if (!email) {
-      throw new Error('No email found in Google authentication');
+    if (!idToken) {
+      return res.status(401).json({ message: "No token provided" });
     }
 
-    // Check if user exists in our database
+    // Verify the token
+    const decodedToken = await admin.auth().verifyIdToken(idToken);
+    const { email, uid } = decodedToken;
+
+    if (!email) {
+      return res.status(401).json({ message: "No email found in token" });
+    }
+
+    // Find or create user
     let user = await User.findOne({ email });
-    
     if (!user) {
-      // Create new user in our database
       user = new User({
         email,
-        role: 'user',
-        firebaseUid: uid
+        role: "user",
+        firebaseUid: uid,
       });
       await user.save();
     }
@@ -64,26 +84,29 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
     const token = generateToken(user);
     res.json({ user, token });
   } catch (error) {
-    console.error('Google auth error:', error);
-    res.status(401).json({ message: 'Authentication failed' });
+    console.error("Google auth error:", error);
+    res.status(401).json({ message: "Authentication failed" });
   }
 };
 
-export const verifySession = async (req: Request, res: Response, next: NextFunction): Promise<Response | void> => {
+export const verifySession = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<Response | void> => {
   try {
     const { idToken } = req.body;
     const decodedToken = await admin.auth().verifyIdToken(idToken);
     const user = await User.findOne({ email: decodedToken.email });
-    
+
     if (!user) {
-      return res.status(404).json({ message: 'User not found' });
+      return res.status(404).json({ message: "User not found" });
     }
 
     const token = generateToken(user);
     res.json({ user, token });
   } catch (error) {
-    console.error('Session verification error:', error);
-    res.status(401).json({ message: 'Invalid session' });
+    console.error("Session verification error:", error);
+    res.status(401).json({ message: "Invalid session" });
   }
 };
-
