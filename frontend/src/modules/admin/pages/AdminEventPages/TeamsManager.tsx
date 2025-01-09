@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
-import axiosInstance from "../../../axios.config.ts";
+import axiosInstance from "../../../../axios.config.ts";
 import { Button } from "@headlessui/react";
 import { useParams } from "react-router-dom";
-import Modal from "../../../components/Modal.tsx";
+import Modal from "../../../../components/Modal.tsx";
 
 interface Team {
   _id: string;

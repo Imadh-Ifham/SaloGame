@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import axiosInstance from "../../../axios.config";
-import Modal from "../../../components/Modal";
+import axiosInstance from "../../../../axios.config";
+import Modal from "../../../../components/Modal";
 import { Button } from "@headlessui/react";
 import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
