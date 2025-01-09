@@ -24,6 +24,7 @@ import AdminPackagePage from "./modules/admin/pages/AdminPackagePage";
 import PackagesPage from "./modules/users/pages/PackagesPage";
 import AdminBookingPage from "./modules/admin/pages/AdminBookingPage";
 import AdminViewAllBookingsPage from "./modules/admin/pages/AdminViewAllBookingsPage";
+import AdminManagement from "./modules/admin/pages/AdminManagement";
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -56,6 +57,7 @@ const App: React.FC = () => {
           <Route path="booking" element={<AdminBookingPage />} />
           <Route path="packages" element={<AdminPackagePage />} />
           <Route path="bookings/all" element={<AdminViewAllBookingsPage />} />
+          <Route path="admin-manager" element={<AdminManagement />} />
         </Route>
       </Routes>
     </Router>

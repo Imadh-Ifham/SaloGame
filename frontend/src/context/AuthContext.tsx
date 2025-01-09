@@ -14,7 +14,7 @@ import {
   signOut,
   updateProfile,
 } from "firebase/auth";
-import { auth } from "../firebase";
+import { auth } from "../firebaseConfig";
 import axiosInstance from "@/axios.config";
 
 interface AuthContextType {

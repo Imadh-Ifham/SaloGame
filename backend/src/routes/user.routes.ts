@@ -5,15 +5,15 @@ import {
   getUsers,
   updateUserRole,
   deleteUser,
-  validateCreateUser,
 } from "../controllers/user.controller";
 import { authenticateUser } from "../middleware/authenticateUser";
 import { authorizeRole } from "../middleware/authorizeRole";
+import { validateNewUser } from "../middleware/validateNewUser";
 
 const router = express.Router();
 
 // Public Route: Create User (Called after Firebase authentication)
-router.post("/create", authenticateUser, validateCreateUser, createUser);
+router.post("/create", authenticateUser, validateNewUser, createUser);
 
 // Protected Route: Get All Users (Admin Only)
 router.get("/", authenticateUser, authorizeRole("admin"), getUsers);
