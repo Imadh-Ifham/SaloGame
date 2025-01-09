@@ -1,20 +1,17 @@
 import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
 import { verifyFirebaseToken } from '../utils/firebaseAuth';
+import { AuthRequest } from './types';
 
-export interface AuthRequest extends Request {
-  user?: any;
-}
-
-export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction) => {
+export const authMiddleware = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void>  => {
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
+       res.status(401).json({ message: 'No token provided' });
     }
-
-    const decoded = verifyToken(token);
-    req.user = decoded;
+    const decoded = verifyToken(token as string);
+    
+    req.user = { id: 'userId', role: 'user' }; // Example user object
     next();
   } catch (error) {
     res.status(401).json({ message: 'Invalid token' });
@@ -25,12 +22,12 @@ export const firebaseAuthMiddleware = async (req: AuthRequest, res: Response, ne
   try {
     const token = req.headers.authorization?.split(' ')[1];
     if (!token) {
-      return res.status(401).json({ message: 'No token provided' });
+       res.status(401).json({ message: 'No token provided' });
     }
 
-    const decodedToken = await verifyFirebaseToken(token);
-    req.user = decodedToken;
-    next();
+    const decodedToken = await verifyFirebaseToken(token as string);
+    req.user = { id: 'userId', role: 'user' }; // Example user object
+  next();
   } catch (error) {
     res.status(401).json({ message: 'Invalid Firebase token' });
   }

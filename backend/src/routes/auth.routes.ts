@@ -1,3 +1,10 @@
+/**
+ * set up routes for handling email/password authentication, 
+ * Google authentication,
+ *  and session verification.
+ */
+
+
 import express from 'express';
 import { handleEmailPasswordAuth, handleGoogleAuth, verifySession } from '../controllers/authController';
 

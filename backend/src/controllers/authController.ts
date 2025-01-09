@@ -1,3 +1,8 @@
+/**
+ * controller functions that handle the logic for each authentication route. 
+ */
+
+
 import { Request, Response ,NextFunction } from 'express';
 import admin from '../config/firebase';
 import User, { IUser } from '../models/user.model';

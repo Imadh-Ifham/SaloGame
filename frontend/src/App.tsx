@@ -24,7 +24,7 @@ import AdminPackagePage from "./modules/admin/pages/AdminPackagePage";
 import PackagesPage from "./modules/users/pages/PackagesPage";
 import AdminBookingPage from "./modules/admin/pages/AdminBookingPage";
 import AdminViewAllBookingsPage from "./modules/admin/pages/AdminViewAllBookingsPage";
-
+import AuthPage from "./modules/users/pages/AuthPage";
 const App: React.FC = () => {
   useEffect(() => {
     // Always set dark mode as default
@@ -35,7 +35,10 @@ const App: React.FC = () => {
       <ScrollToTop /> {/* utillity to always scroll to top on URL change */}
       <Routes>
         {/* User Routes */}
-        <Route path="/" element={<HomePage />} />
+        <Route path="/auth" element={<AuthPage />} />
+        <Route path="/" element={role === "user" ? <HomePage /> : <Navigate to="/admin" />} />
+        <Route path="/admin" element={role === "admin" ? <AdminDashboard /> : <Navigate to="/" />} />
+        
         <Route path="/games" element={<GamesPage />} />
         <Route path="/bookings" element={<BookingPage />} />
         <Route path="/packages" element={<PackagesPage />} />
