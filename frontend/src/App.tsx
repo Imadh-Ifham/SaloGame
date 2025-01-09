@@ -36,9 +36,10 @@ const App: React.FC = () => {
       <Routes>
         {/* User Routes */}
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/" element={role === "user" ? <HomePage /> : <Navigate to="/admin" />} />
-        <Route path="/admin" element={role === "admin" ? <AdminDashboard /> : <Navigate to="/" />} />
+        {/*<Route path="/" element={role === "user" ? <HomePage /> : <Navigate to="/admin" />} />
+        <Route path="/admin" element={role === "admin" ? <AdminDashboard /> : <Navigate to="/" />} />*/}
         
+        <Route path="/" element={<HomePage />} />
         <Route path="/games" element={<GamesPage />} />
         <Route path="/bookings" element={<BookingPage />} />
         <Route path="/packages" element={<PackagesPage />} />
