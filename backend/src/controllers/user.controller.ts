@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import User, { IUser } from '../models/user.model';
 import { generateToken } from '../utils/jwt';
 
-export const registerUser = async (req: Request, res: Response , next: NextFunction) : Promise<Response | void> => {
+export const registerUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const { email, password, role } = req.body;
     const existingUser = await User.findOne({ email });
@@ -34,7 +34,6 @@ export const loginUser = async (req: Request, res: Response) => {
     res.status(500).json({ message: 'Error logging in', error });
   }
 };
-
 export const getUsers = async (req: Request, res: Response) => {
   try {
     const users = await User.find().select('-password');
