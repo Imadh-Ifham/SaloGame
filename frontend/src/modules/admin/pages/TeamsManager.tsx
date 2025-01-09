@@ -12,6 +12,17 @@ interface Team {
   createdBy: string;
 }
 
+interface ApiResponse<T> {
+  success: boolean;
+  data: T;
+  message?: string;
+}
+
+interface Event {
+  name: string;
+}
+
+
 const TeamsManager: React.FC = () => {
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
@@ -32,11 +43,13 @@ const TeamsManager: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get(`/teams/${eventId}`);
-      if (response.data.success) {
-        setTeams(response.data.data);
+      const response = await axiosInstance.get<ApiResponse<Team[]>>(`/teams/${eventId}`);
+      const responseData = response.data;
+  
+      if (responseData.success) {
+        setTeams(responseData.data);
       } else {
-        setError(response.data.message || "Failed to fetch teams.");
+        setError(responseData.message || "Failed to fetch teams.");
       }
     } catch (err) {
       setError((err as Error).message || "An unexpected error occurred.");
@@ -47,7 +60,7 @@ const TeamsManager: React.FC = () => {
 
   const fetchEvent = async () => { // Added fetchEvent function
     try {
-      const response = await axiosInstance.get(`/events/${eventId}`);
+      const response = await axiosInstance.get<ApiResponse<Event>>(`/events/${eventId}`);
       if (response.data.success) {
         setEventName(response.data.data.name);
       } else {
@@ -65,23 +78,25 @@ const TeamsManager: React.FC = () => {
     try {
       let response;
       if (currentTeam?._id) {
-        response = await axiosInstance.put(`/teams/${currentTeam._id}`, {
+        response = await axiosInstance.put<ApiResponse<Team>>(`/teams/${currentTeam._id}`, {
           teamName: newTeamName,
           maxMembers,
         });
       } else {
-        response = await axiosInstance.post("/teams", {
+        response = await axiosInstance.post<ApiResponse<Team>>("/teams", {
           teamName: newTeamName,
           eventId,
           maxMembers,
-          createdBy: "64a32f3b6f10b5a10b34d672", // Replaced with user ID
+          createdBy: "64a32f3b6f10b5a10b34d672", // Example user ID
         });
       }
-      if (response.data.success) {
+      const responseData = response.data;
+  
+      if (responseData.success) {
         fetchTeams();
         setIsModalOpen(false);
       } else {
-        setError(response.data.message || "Failed to save the team.");
+        setError(responseData.message || "Failed to save the team.");
       }
     } catch (err) {
       setError((err as Error).message || "An unexpected error occurred.");
@@ -89,16 +104,19 @@ const TeamsManager: React.FC = () => {
       setLoading(false);
     }
   };
+  
 
   const handleDeleteTeam = async (teamId: string) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.delete(`/teams/${teamId}`);
-      if (response.data.success) {
+      const response = await axiosInstance.delete<ApiResponse<null>>(`/teams/${teamId}`);
+      const responseData = response.data;
+  
+      if (responseData.success) {
         fetchTeams();
       } else {
-        setError(response.data.message || "Failed to delete the team.");
+        setError(responseData.message || "Failed to delete the team.");
       }
     } catch (err) {
       setError((err as Error).message || "An unexpected error occurred.");
@@ -106,7 +124,7 @@ const TeamsManager: React.FC = () => {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-transparent">
       <div className="max-w-7xl mx-auto text-center mb-12 sm:mb-16">

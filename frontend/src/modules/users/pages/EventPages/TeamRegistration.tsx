@@ -4,7 +4,7 @@ import HomeLayout from "../../layout/HomeLayout";
 import axiosInstance from "../../../../axios.config";
 import { Button } from "@headlessui/react";
 import { useParams } from "react-router-dom";
-import Modal from "../../../../components/event/Modal"; // Assuming you have a Modal component
+import Modal from "../../../../components/event/Modal";
 
 interface Team {
   _id: string;
@@ -16,6 +16,16 @@ interface Team {
 
 interface TeamRegistrationProps {
   userId: string;
+}
+
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
+interface Event {
+  name: string;
 }
 
 const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
@@ -34,7 +44,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
 
   const fetchEvent = async () => {
     try {
-      const response = await axiosInstance.get(`/events/${eventId}`);
+      const response = await axiosInstance.get<ApiResponse<Event>>(`/events/${eventId}`);
       if (response.data.success) {
         setEvent(response.data.data);
       } else {
@@ -53,7 +63,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get(`/teams/${eventId}`);
+      const response = await axiosInstance.get<ApiResponse<Team[]>>(`/teams/${eventId}`);
       if (response.data.success) {
         setTeams(response.data.data);
       } else {
@@ -68,7 +78,7 @@ const TeamRegistration: React.FC<TeamRegistrationProps> = ({ userId }) => {
 
   const handleCreateTeam = async () => {
     try {
-      const response = await axiosInstance.post("/teams", {
+      const response = await axiosInstance.post<ApiResponse<Team>>("/teams", {
         teamName: newTeamName,
         eventId,
         maxMembers,

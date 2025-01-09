@@ -60,7 +60,7 @@ const App: React.FC = () => {
           <Route path="settings" element={<SettingsPage />} />
           <Route path="layout-manager" element={<BlueprintManager />} />
           <Route path="events" element={<EventManagerPage/>}/>
-          <Route path="teams/:eventId" element={<TeamsManager />} /> {/* Add this route */}
+          <Route path="teams/:eventId" element={<TeamsManager />} />
           <Route path="memberships" element={<AdminMembershipPage />} />
           <Route path="booking" element={<AdminBookingPage />} />
           <Route path="packages" element={<AdminPackagePage />} />

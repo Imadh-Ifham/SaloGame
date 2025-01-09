@@ -132,7 +132,7 @@ export const registerUserToTeam = async (req: Request, res: Response): Promise<v
         }
 
         // Convert userId to ObjectId and add to members
-        team.members.push({ userId: new mongoose.Types.ObjectId(userId), joinedAt: new Date() });
+        team.members.push({ userId: mongoose.Types.ObjectId.createFromHexString(userId), joinedAt: new Date() });
         await team.save();
         res.status(200).json({ success: true, data: team });
     } catch (error) {
