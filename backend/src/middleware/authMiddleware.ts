@@ -1,6 +1,6 @@
-/*import { Request, Response, NextFunction } from 'express';
+import { Request, Response, NextFunction } from 'express';
 import { verifyToken } from '../utils/jwt';
-//import { verifyFirebaseToken } from '../utils/firebaseAuth ';
+import { verifyFirebaseToken } from '../utils/firebaseAuth';
 
 export interface AuthRequest extends Request {
   user?: any;
@@ -42,5 +42,5 @@ export const adminMiddleware = (req: AuthRequest, res: Response, next: NextFunct
   } else {
     res.status(403).json({ message: 'Admin access required' });
   }
-};*/
+};
 
