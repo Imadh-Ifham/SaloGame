@@ -1,13 +1,21 @@
-import { initializeApp } from "firebase/app";
+import * as admin from 'firebase-admin';
+import dotenv from 'dotenv';
 
-const firebaseConfig = {
-    apiKey: "AIzaSyBh_xH-jaJ3gFkwdfhy_prKR-i3I2mq2vU",
-    authDomain: "authentication-2a2fd.firebaseapp.com",
-    projectId: "authentication-2a2fd",
-    storageBucket: "authentication-2a2fd.firebasestorage.app",
-    messagingSenderId: "455649401557",
-    appId: "1:455649401557:web:a5707ec47f60bdb459205c",
-    measurementId: "G-CBZYH2X7X9"
-  };
+dotenv.config();
 
-  const app = initializeApp(firebaseConfig);
+const serviceAccount = {
+  projectId: process.env.FIREBASE_PROJECT_ID,
+  privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+};
+
+if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.clientEmail) {
+  throw new Error('Firebase configuration is incomplete. Check your environment variables.');
+}
+
+admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+});
+
+export default admin;
+
