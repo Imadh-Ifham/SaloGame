@@ -5,6 +5,12 @@ import { Button } from "@headlessui/react";
 import { PlusIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
 import { useNavigate } from "react-router-dom";
 
+interface ApiResponse<T> {
+  success: boolean;
+  message?: string;
+  data: T;
+}
+
 interface Event {
   _id: string;
   name: string;
@@ -30,7 +36,7 @@ const EventManagerPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.get("/events");
+      const response = await axiosInstance.get<ApiResponse<Event[]>>("/events");
       if (response.data.success) {
         setEvents(response.data.data);
       } else {
@@ -49,9 +55,9 @@ const EventManagerPage: React.FC = () => {
     try {
       let response;
       if (event._id) {
-        response = await axiosInstance.put(`/events/${event._id}`, event);
+        response = await axiosInstance.put<ApiResponse<null>>(`/events/${event._id}`, event);
       } else {
-        response = await axiosInstance.post("/events", event);
+        response = await axiosInstance.post<ApiResponse<null>>("/events", event);
       }
       if (response.data.success) {
         fetchEvents();
@@ -70,7 +76,7 @@ const EventManagerPage: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await axiosInstance.delete(`/events/${eventId}`);
+      const response = await axiosInstance.delete<ApiResponse<null>>(`/events/${eventId}`);
       if (response.data.success) {
         fetchEvents();
       } else {
