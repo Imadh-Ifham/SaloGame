@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import HomeLayout from "../layout/HomeLayout";
 import axiosInstance from "../../../axios.config";
@@ -14,14 +15,28 @@ const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchProfile = async () => {
       try {
+        setLoading(true);
+
+        // Retrieve the token from localStorage
+        const token = localStorage.getItem("token");
+        if (token) {
+          // Set the token in axios headers
+          axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        }
+
         const response = await axiosInstance.get("/users/profile");
+
+        // Log the request headers for debugging
+        console.log("Request Headers:", axiosInstance.defaults.headers.common);
+
         setProfile(response.data);
       } catch (err) {
-        setError("Failed to load profile");
+        setError(err instanceof Error ? err.message : "Failed to fetch profile");
       } finally {
         setLoading(false);
       }
@@ -29,6 +44,11 @@ const ProfilePage: React.FC = () => {
 
     fetchProfile();
   }, []);
+
+  const handleLogout = () => {
+    localStorage.removeItem("token");
+    navigate("/auth");
+  };
 
   if (loading) {
     return (
@@ -118,13 +138,14 @@ const ProfilePage: React.FC = () => {
                 </div>
               </div>
 
-              {/* Edit Profile Button */}
+              {/* Logout Button */}
               <div className="mt-8 flex justify-center">
                 <button
                   type="button"
+                  onClick={handleLogout}
                   className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors duration-200"
                 >
-                  Edit Profile
+                  Logout
                 </button>
               </div>
             </div>
