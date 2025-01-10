@@ -97,12 +97,11 @@ export const deleteTeam = async (
 
 //get teams for a specific event
 export const getEventAllTeams = async (req: Request, res: Response): Promise<void> => {
-  const { id } = req.params; // Use req.params to get the ID from the URL
+  const { id } = req.params; 
   try {
-    // Query the database for teams with the matching eventId
     const teams = await Team.find({ eventId: id }); 
     if (teams.length === 0) {
-      res.status(404).json({ success: false, message: "No teams found for the given event" });
+      res.status(200).json({ success: true, message: "No teams found" });
       return;
     }
     res.status(200).json({ success: true, data: teams });
