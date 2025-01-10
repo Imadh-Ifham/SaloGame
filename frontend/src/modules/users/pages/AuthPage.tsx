@@ -32,9 +32,7 @@ const AuthPage: React.FC = () => {
       localStorage.setItem("token", token);
 
       // Set the token in axios defaults for subsequent requests
-      axiosInstance.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${token}`;
+      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       navigate(user.role === "admin" ? "/admin/dashboard" : "/");
     } catch (err) {
