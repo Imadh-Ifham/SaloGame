@@ -18,6 +18,10 @@ import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
 import OffersPage from "./modules/users/pages/OffersPage";
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import BlueprintManager from "./modules/admin/pages/BlueprintManager";
+import EventManagerPage from "./modules/admin/pages/AdminEventPages/EventManager";
+import EventPage from "./modules/users/pages/EventPages/EventPage";
+import TeamRegistration from "./modules/users/pages/EventPages/TeamRegistration";
+import TeamsManager from "./modules/admin/pages/AdminEventPages/TeamsManager";
 import MembershipPage from "./modules/users/pages/MembershipPage";
 import AdminMembershipPage from "./modules/admin/pages/AdminMembershipPage";
 import AdminPackagePage from "./modules/admin/pages/AdminPackagePage";
@@ -43,6 +47,9 @@ const App: React.FC = () => {
         <Route path="/offers" element={<OffersPage />} />
         <Route path="/memberships" element={<MembershipPage />} />
         <Route path="*" element={<NotFoundPage />} />
+        <Route path="/events" element={<EventPage/>} />
+        <Route path="/team-registration/:eventId" element={<TeamRegistration userId="64a32f3b6f10b5a10b34d672" />} />
+
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -52,6 +59,8 @@ const App: React.FC = () => {
           <Route path="offers" element={<AdminOfferPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="layout-manager" element={<BlueprintManager />} />
+          <Route path="events" element={<EventManagerPage/>}/>
+          <Route path="teams/:eventId" element={<TeamsManager />} />
           <Route path="memberships" element={<AdminMembershipPage />} />
           <Route path="booking" element={<AdminBookingPage />} />
           <Route path="packages" element={<AdminPackagePage />} />
