@@ -12,6 +12,7 @@ const AuthPage: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Handle Email/Password Authentication (direct to backend)
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
@@ -22,23 +23,53 @@ const AuthPage: React.FC = () => {
       const response = await axiosInstance.post(endpoint, {
         email,
         password,
-        role: "user",
+        role: "user", // Default role for new registrations
       });
 
       const { user, token } = response.data;
 
+      // Store the token in localStorage
       localStorage.setItem("token", token);
+
+      // Set the token in axios defaults for subsequent requests
       axiosInstance.defaults.headers.common[
         "Authorization"
       ] = `Bearer ${token}`;
 
-      navigate("/");
+      navigate(user.role === "admin" ? "/admin/dashboard" : "/");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Authentication failed");
     } finally {
       setLoading(false);
     }
   };
+
+  // Handle Google Sign In (using Firebase)
+  /*const handleGoogleSignIn = async () => {
+    setLoading(true);
+    try {
+      const result = await signInWithPopup(auth, provider);
+      const idToken = await result.user.getIdToken();
+      const response = await axiosInstance.post("/auth/google", { idToken });
+      const { user, token } = response.data;
+
+      // Store the token in localStorage
+      localStorage.setItem("token", token);
+
+      // Set the token in axios defaults for subsequent requests
+      axiosInstance.defaults.headers.common[
+        "Authorization"
+      ] = `Bearer ${token}`;
+
+      navigate(user.role === "admin" ? "/admin/dashboard" : "/home");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Google authentication failed"
+      );
+    } finally {
+      setLoading(false);
+    }
+  };*/
 
   const signInWithGoogle = async () => {
     setLoading(true);
@@ -48,12 +79,9 @@ const AuthPage: React.FC = () => {
         navigate("/");
       }
     } catch (error) {
-      setError(
-        error instanceof Error ? error.message : "Google authentication failed"
-      );
-    } finally {
-      setLoading(false);
+      console.error("Error:", error);
     }
+    setLoading(false);
   };
 
   return (

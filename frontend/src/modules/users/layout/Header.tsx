@@ -1,15 +1,18 @@
 import React, { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { applyTheme, getInitialTheme } from "../../../utils/themeChange.util";
 
 const Header: React.FC = () => {
   const [navOpen, setNavOpen] = useState(false);
-  const [theme, setTheme] = useState<string>(getInitialTheme());
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   const handleToggle = () => {
     setNavOpen(!navOpen);
   };
+
+  // Dark/Light theme management
+  const [theme, setTheme] = useState<string>(getInitialTheme());
 
   useEffect(() => {
     applyTheme(theme);
@@ -18,8 +21,8 @@ const Header: React.FC = () => {
     setIsAuthenticated(!!token);
   }, [theme]);
 
-  const toggleTheme = (newTheme: string) => {
-    setTheme(newTheme);
+  const toggleTheme = (theme: string) => {
+    setTheme(theme);
   };
 
   const navLinks = [
@@ -47,7 +50,10 @@ const Header: React.FC = () => {
 
   return (
     <header className="sticky top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full text-sm">
-      <nav className="mt-4 relative max-w-4xl w-full bg-white/70 dark:bg-background-dark/80 text-gray-800 dark:text-gray-200 backdrop-blur-md border border-primary dark:border-primary rounded-[2rem] mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto">
+      <nav
+        className="mt-4 relative max-w-4xl w-full bg-white/70 dark:bg-background-dark/80 text-gray-800 dark:text-gray-200 
+  backdrop-blur-md border border-primary dark:border-primary rounded-[2rem] mx-2 py-2.5 md:flex md:items-center md:justify-between md:py-0 md:px-4 md:mx-auto"
+      >
         <div className="px-4 md:px-0 flex justify-between items-center">
           {/* Logo */}
           <div>
@@ -59,6 +65,7 @@ const Header: React.FC = () => {
               <img src="/icon-main.svg" alt="Logo" className="w-8 h-auto" />
             </NavLink>
           </div>
+          {/* End Logo */}
 
           {/* Dark/Light Theme Toggle */}
           <div className="flex items-center space-x-2">
@@ -181,46 +188,51 @@ const Header: React.FC = () => {
         </div>
       </nav>
 
-      {/* Auth Buttons or Profile Icon */}
-      {!isAuthenticated ? (
-        <div className="flex items-center gap-2 absolute right-4 top-6">
+      {/* Authentication Buttons */}
+      <div className="flex items-center justify-end mt-4 mx-4 space-x-2">
+        {!isAuthenticated ? (
+          <>
+            <NavLink
+              to="/auth"
+              className="px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary hover:text-white transition-colors duration-200"
+              onClick={() => navigate("/auth")}
+            >
+              Sign In
+            </NavLink>
+            <NavLink
+              to="/auth"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors duration-200"
+              onClick={() => {
+                localStorage.setItem("isSignUp", "true");
+                navigate("/auth");
+              }}
+            >
+              Sign Up
+            </NavLink>
+          </>
+        ) : (
           <NavLink
-            to="/auth"
-            className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary-dark transition-colors"
-            onClick={() => localStorage.setItem("authMode", "signin")}
+            to="/profile"
+            className="flex items-center justify-center w-10 h-10 rounded-full border border-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            title="Profile"
           >
-            Sign In
+            <svg
+              className="w-5 h-5 text-gray-700 dark:text-gray-300"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
           </NavLink>
-          <NavLink
-            to="/auth"
-            className="px-4 py-2 text-sm font-medium border border-primary text-primary rounded-lg hover:bg-primary hover:text-white transition-colors"
-            onClick={() => localStorage.setItem("authMode", "signup")}
-          >
-            Sign Up
-          </NavLink>
-        </div>
-      ) : (
-        <NavLink
-          to="/profile"
-          className="absolute right-4 top-6 flex items-center justify-center w-10 h-10 rounded-full border border-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-          title="Profile"
-        >
-          <svg
-            className="w-5 h-5 text-gray-700 dark:text-gray-300"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-            />
-          </svg>
-        </NavLink>
-      )}
+        )}
+      </div>
     </header>
   );
 };

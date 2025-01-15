@@ -1,5 +1,6 @@
 import * as admin from 'firebase-admin';
 import dotenv from 'dotenv';
+import https from 'https';  // Add this import
 
 dotenv.config();
 
@@ -15,7 +16,9 @@ if (!serviceAccount.projectId || !serviceAccount.privateKey || !serviceAccount.c
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount as admin.ServiceAccount),
+  httpAgent: new https.Agent({
+    timeout: 30000 // Increase timeout to 30 seconds
+  })
 });
 
 export default admin;
-
