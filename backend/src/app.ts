@@ -27,7 +27,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 
 
-app.use("/api/example", userRoutes);
+
 app.use("/api/packages", packageroute);
 app.use("/api/games", gameRoutes);
 app.use("/api/offer", offerRoutes);
