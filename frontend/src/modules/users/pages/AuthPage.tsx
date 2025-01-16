@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate , NavLink  } from "react-router-dom";
 import { auth, provider } from "../../../config/firebase";
 import { signInWithPopup } from "firebase/auth";
 import axiosInstance from "../../../axios.config";
@@ -175,9 +175,17 @@ const AuthPage: React.FC = () => {
               : "Don't have an account? Sign up"}
           </button>
         </div>
+
+        <div className="mt-4 text-center">
+          <NavLink
+            to="/"
+            className="inline-block px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:text-primary dark:hover:text-primary-light transition-colors duration-200"
+          >
+            ← Back to Home
+          </NavLink>
+        </div>
       </div>
     </div>
   );
 };
-
 export default AuthPage;
