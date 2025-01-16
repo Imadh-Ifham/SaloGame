@@ -47,6 +47,7 @@ const App: React.FC = () => {
         <Route path="/memberships" element={<MembershipPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
+        
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
