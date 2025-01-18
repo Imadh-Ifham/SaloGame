@@ -9,15 +9,37 @@ interface UserProfile {
   name?: string;
   role: string;
   joinedDate?: string;
+  defaultMembershipId: {
+    _id: string;
+    name: string;
+    tagline?: string;
+    price: number;
+    benefits: string[];
+  };
 }
 
 const ProfilePage: React.FC = () => {
+  const [membershipType, setMembershipType] = useState<string | null>(null);
+
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
+    const fetchMembershipType = async () => {
+      try {
+        const response = await axiosInstance.get<{ name: string }>(
+          "/membership/current"
+        );
+        setMembershipType(response.data.name);
+      } catch (error) {
+        console.error("Error fetching membership type:", error);
+      }
+    };
+
+    fetchMembershipType();
+
     const fetchProfile = async () => {
       try {
         setLoading(true);
@@ -26,7 +48,9 @@ const ProfilePage: React.FC = () => {
         const token = localStorage.getItem("token");
         if (token) {
           // Set the token in axios headers
-          axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+          axiosInstance.defaults.headers.common[
+            "Authorization"
+          ] = `Bearer ${token}`;
         }
 
         const response = await axiosInstance.get("/users/profile");
@@ -34,9 +58,11 @@ const ProfilePage: React.FC = () => {
         // Log the request headers for debugging
         console.log("Request Headers:", axiosInstance.defaults.headers.common);
 
-        setProfile(response.data);
+        setProfile(response.data as UserProfile);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch profile");
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch profile"
+        );
       } finally {
         setLoading(false);
       }
@@ -124,6 +150,51 @@ const ProfilePage: React.FC = () => {
                   <p className="text-lg font-medium text-gray-900 dark:text-white capitalize">
                     {profile?.role}
                   </p>
+                </div>
+
+                {/* Membership Information  */}
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Current Membership
+                  </label>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <h3 className="text-lg font-semibold text-primary dark:text-primary-light">
+                      {profile?.defaultMembershipId?.name || "Basic Warrior"}
+                    </h3>
+                    {/*{profile?.defaultMembershipId?.tagline && (
+                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 italic">
+                        {profile.defaultMembershipId.tagline}
+                      </p>
+                    )}*/}
+                    <div className="mt-3">
+                      <p className="text-sm text-gray-600 dark:text-gray-300">
+                        Price: ${profile?.defaultMembershipId?.price}/month
+                      </p>
+                      {/*{profile?.defaultMembershipId?.benefits && (
+                        <ul className="mt-2 space-y-1">
+                          {profile.defaultMembershipId.benefits.map(
+                            (benefit, index) => (
+                              <li
+                                key={index}
+                                className="text-sm text-gray-600 dark:text-gray-300 flex items-center"
+                              >
+                                <span className="text-primary mr-2">✓</span>
+                                {benefit}
+                              </li>
+                            )
+                          )}
+                        </ul>
+                      )}*/}
+                    </div>
+                  </div>
+                  <div className="mt-4">
+                    <button
+                      onClick={() => navigate("/memberships")}
+                      className="text-primary dark:text-primary-light hover:underline text-sm"
+                    >
+                      View Available Memberships →
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">

@@ -99,7 +99,9 @@ export const getProfile = async (
       return;
     }
 
-    const user = await User.findById(req.user.id).select("-password");
+    const user = await User.findById(req.user.id)
+      .populate("defaultMembershipId")
+      .select("-password");
     if (!user) {
       res.status(404).json({ message: "User not found" });
     }

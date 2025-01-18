@@ -7,6 +7,7 @@ export interface IUser extends Document {
   password: string;
   role: "user" | "admin";
   firebaseUid: string;
+  defaultMembershipId: mongoose.Types.ObjectId;
   comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
@@ -15,6 +16,11 @@ const userSchema = new Schema<IUser>({
   password: { type: String, required: true },
   role: { type: String, enum: ["user", "admin"], default: "user" },
   firebaseUid: { type: String, unique: true },
+  defaultMembershipId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "MembershipType",
+    required: true,
+  },
 });
 
 // Pre-save hook to hash the password before saving

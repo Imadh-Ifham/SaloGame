@@ -11,7 +11,7 @@ import machineRoute from "./routes/machine.routes";
 import blueprintRoute from "./routes/blueprint.routes";
 import eventRoutes from "./routes/event.routes/event.routes";
 import teamRoutes from "./routes/event.routes/team.routes";
-
+import subscriptionRoutes from "./routes/subscription.routes";
 import userRoutes from "./routes/user.routes";
 import authRoutes from "./routes/auth.routes";
 
@@ -26,8 +26,6 @@ app.use(express.urlencoded({ extended: true }));
 app.use("/api/users", userRoutes);
 app.use("/api/auth", authRoutes);
 
-
-
 app.use("/api/packages", packageroute);
 app.use("/api/games", gameRoutes);
 app.use("/api/offer", offerRoutes);
@@ -35,11 +33,11 @@ app.use("/api/memberships", membershipRoute);
 app.use("/api/layouts", layoutRoutes);
 app.use("/api/machine", machineRoute);
 app.use("/api/blueprint", blueprintRoute);
-app.use('/api/users', userRoutes);
+app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/events", eventRoutes); //events routes
 app.use("/api/teams", teamRoutes); // teams in events routes
-
+app.use("/api/subscriptions", subscriptionRoutes);
 // Error handling
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
