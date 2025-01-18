@@ -1,4 +1,7 @@
+import { ReactNode } from "react";
+
 export interface Offer {
+  description: ReactNode;
   _id: string;
   title: string;
   code: string;

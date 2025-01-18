@@ -16,6 +16,8 @@ import { ScrollToTop } from "./utils/scrollToTop.util";
 import AdminLayout from "./modules/admin/layout/AdminLayout";
 import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
 import OffersPage from "./modules/users/pages/OffersPage";
+import OfferPage from "./modules/users/pages/OfferPage";
+
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import BlueprintManager from "./modules/admin/pages/BlueprintManager";
 import EventManagerPage from "./modules/admin/pages/AdminEventPages/EventManager";
@@ -47,14 +49,16 @@ const App: React.FC = () => {
         <Route path="/bookings" element={<BookingPage />} />
         <Route path="/packages" element={<PackagesPage />} />
         <Route path="/about" element={<AboutPage />} />
-        <Route path="/offers" element={<OffersPage />} />
+        <Route path="/offers" element={<OfferPage />} />
         <Route path="/memberships" element={<MembershipPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
-        
-        <Route path="/events" element={<EventPage/>} />
-        <Route path="/team-registration/:eventId" element={<TeamRegistration userId="64a32f3b6f10b5a10b34d672" />} />
 
+        <Route path="/events" element={<EventPage />} />
+        <Route
+          path="/team-registration/:eventId"
+          element={<TeamRegistration userId="64a32f3b6f10b5a10b34d672" />}
+        />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>
@@ -64,7 +68,7 @@ const App: React.FC = () => {
           <Route path="offers" element={<AdminOfferPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="layout-manager" element={<BlueprintManager />} />
-          <Route path="events" element={<EventManagerPage/>}/>
+          <Route path="events" element={<EventManagerPage />} />
           <Route path="teams/:eventId" element={<TeamsManager />} />
           <Route path="memberships" element={<AdminMembershipPage />} />
           <Route path="booking" element={<AdminBookingPage />} />
