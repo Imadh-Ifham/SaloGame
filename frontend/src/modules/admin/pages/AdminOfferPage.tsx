@@ -1,290 +1,55 @@
-import React, { useEffect, useState, Fragment } from "react";
+import React, { Fragment, useState } from "react";
 import { Dialog, Transition, Switch } from "@headlessui/react";
-import axiosInstance from "@/axios.config";
 import HomeLayout from "@/modules/users/layout/HomeLayout";
 import ConfirmationDialog from "@/components/confirmationDialog";
-import { CheckCircleIcon } from "@heroicons/react/24/outline";
-
-interface Offer {
-  _id: string;
-  title: string;
-  code: string;
-  discountType: "percentage" | "fixed";
-  discountValue: number;
-  isActive: boolean;
-  startDate: string;
-  endDateTime: string;
-  usageLimit?: number;
-  usageCount: number;
-}
-
-// SuccessDialog component
-interface SuccessDialogProps {
-  isOpen: boolean;
-  onClose: () => void;
-  message: string;
-}
-
-const SuccessDialog: React.FC<SuccessDialogProps> = ({
-  isOpen,
-  onClose,
-  message,
-}) => {
-  return (
-    <Transition appear show={isOpen} as={Fragment}>
-      <Dialog
-        as="div"
-        className="fixed inset-0 z-10 overflow-y-auto"
-        onClose={onClose}
-      >
-        <div className="min-h-screen px-4 text-center">
-          <Transition.Child
-            as={Fragment}
-            enter="ease-out duration-300"
-            enterFrom="opacity-0"
-            enterTo="opacity-100"
-            leave="ease-in duration-200"
-            leaveFrom="opacity-100"
-            leaveTo="opacity-0"
-          >
-            <Dialog
-              className="fixed inset-0 bg-black bg-opacity-30"
-              onClose={onClose}
-            />
-          </Transition.Child>
-
-          <div className="inline-block w-full max-w-md p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-lg">
-            <div className="flex items-center justify-center mb-4">
-              <CheckCircleIcon className="h-12 w-12 text-primary" />
-            </div>
-            <Dialog.Title className="text-lg font-medium text-center leading-6 text-gray-900 dark:text-white">
-              Success
-            </Dialog.Title>
-            <div className="mt-2">
-              <p className="text-sm text-center text-gray-500 dark:text-gray-300">
-                {message}
-              </p>
-            </div>
-            <div className="mt-4 flex justify-center">
-              <button
-                onClick={onClose}
-                className="px-4 py-2 bg-primary text-white rounded-md shadow hover:bg-primary-dark"
-              >
-                Close
-              </button>
-            </div>
-          </div>
-        </div>
-      </Dialog>
-    </Transition>
-  );
-};
+import SuccessDialog from "../components/AdminOffer-page/SuccessDialog";
+import OfferForm from "../components/AdminOffer-page/OfferForm";
+import { useOffers } from "../../../hooks/useOffers";
+import { Offer } from "../../../types/offer";
+import axiosInstance from "@/axios.config";
 
 const AdminOfferPage: React.FC = () => {
-  const [offers, setOffers] = useState<Offer[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [error, setError] = useState<string | null>(null); // General error state
-  const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const {
+    offers,
+    loading,
+    error,
+    membershipTypes,
+    successMessage,
+    isModalOpen,
+    selectedOffer,
+    formData,
+    setSuccessMessage,
+    setError,
+    fetchOffers,
+    toggleActive,
+    handleSubmit,
+    handleInputChange,
+    openModal,
+    closeModal,
+  } = useOffers();
 
-  // State for Delete Confirmation Dialog
+  // Delete confirmation state
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [offerToDelete, setOfferToDelete] = useState<Offer | null>(null);
-  const [deleteError, setDeleteError] = useState<string | null>(null); // Separate error state for deletion
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  const [formData, setFormData] = useState<{
-    title: string;
-    code: string;
-    discountType: "percentage" | "fixed";
-    discountValue: number;
-    isActive: boolean;
-    startDate: string;
-    endDateTime: string;
-    usageLimit?: number;
-  }>({
-    title: "",
-    code: "",
-    discountType: "percentage",
-    discountValue: 0,
-    isActive: true,
-    startDate: "",
-    endDateTime: "",
-    usageLimit: undefined,
-  });
-
-  /**
-   * Fetch offers from the server.
-   */
-  const fetchOffers = async () => {
-    setLoading(true);
-    try {
-      const response = await axiosInstance.get("/offer");
-      setOffers(response.data.data);
-    } catch (error) {
-      console.error("Error fetching offers:", error);
-      setError("Failed to fetch offers.");
-    }
-    setLoading(false);
-  };
-
-  /**
-   * Handle input changes in the form.
-   */
-  const handleInputChange = (
-    e: React.ChangeEvent<
-      HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
-    >
-  ) => {
-    const { name, value, type } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: type === "number" ? Number(value) : value, // Handle number inputs appropriately
-    }));
-  };
-
-  /**
-   * Handle form submission for creating or updating an offer.
-   */
-  const handleSubmit = async () => {
-    // Validate required fields
-    if (
-      !formData.title ||
-      !formData.code ||
-      formData.discountValue === 0 ||
-      !formData.startDate ||
-      !formData.endDateTime
-    ) {
-      setError("Please fill in all required fields.");
-      return;
-    }
-
-    // Validate dates
-    const currentDate = new Date();
-    const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDateTime);
-
-    // Remove time portion from current date for comparison
-    currentDate.setHours(0, 0, 0, 0);
-
-    if (startDate < currentDate) {
-      setError("Start date cannot be in the past.");
-      return;
-    }
-
-    if (startDate > endDate) {
-      setError("End date must be after start date.");
-      return;
-    }
-
-    try {
-      if (selectedOffer) {
-        await axiosInstance.put(`/offer/${selectedOffer._id}`, {
-          ...formData,
-          endDate: formData.endDateTime, // Ensure correct field names match backend
-        });
-        setSuccessMessage("Offer updated successfully.");
-      } else {
-        await axiosInstance.post("/offer", {
-          ...formData,
-          endDate: formData.endDateTime, // Ensure correct field names match backend
-        });
-        setSuccessMessage("Offer created successfully.");
-      }
-      fetchOffers();
-      closeModal();
-      setError(null);
-    } catch (error: any) {
-      const errorMessage =
-        error.response?.data?.message || "An unexpected error occurred.";
-      setError(errorMessage);
-      console.error("Detailed Error:", error.response?.data);
-    }
-  };
-
-  /**
-   * Open the modal for creating or editing an offer.
-   */
-  const openModal = (offer: Offer | null = null) => {
-    setSelectedOffer(offer);
-    if (offer) {
-      setFormData({
-        title: offer.title,
-        code: offer.code,
-        discountType: offer.discountType,
-        discountValue: offer.discountValue,
-        isActive: offer.isActive,
-        startDate: offer.startDate,
-        endDateTime: offer.endDateTime,
-        usageLimit: offer.usageLimit,
-      });
-    } else {
-      setFormData({
-        title: "",
-        code: "",
-        discountType: "percentage",
-        discountValue: 0,
-        isActive: true,
-        startDate: "",
-        endDateTime: "",
-        usageLimit: undefined,
-      });
-    }
-    setIsModalOpen(true);
-    setError(null); // Reset general error when opening modal
-  };
-
-  /**
-   * Close the modal and reset form data and errors.
-   */
-  const closeModal = () => {
-    setSelectedOffer(null);
-    setIsModalOpen(false);
-    setError(null);
-  };
-
-  /**
-   * Toggle the active status of an offer.
-   */
-  const toggleActive = async (offerId: string, currentStatus: boolean) => {
-    try {
-      await axiosInstance.patch(`/offer/${offerId}/toggle-active`, {
-        isActive: !currentStatus,
-      });
-      fetchOffers(); // Refresh the offers list
-      setSuccessMessage("Offer status updated successfully!");
-    } catch (error) {
-      console.error("Error toggling active state:", error);
-      setError("Failed to toggle active status.");
-    }
-  };
-
-  /**
-   * Open the delete confirmation dialog.
-   */
   const openDeleteDialog = (offer: Offer) => {
     setOfferToDelete(offer);
     setIsDeleteDialogOpen(true);
-    setDeleteError(null); // Reset delete-specific error
+    setDeleteError(null);
   };
 
-  /**
-   * Close the delete confirmation dialog.
-   */
   const closeDeleteDialog = () => {
     setOfferToDelete(null);
     setIsDeleteDialogOpen(false);
     setDeleteError(null);
   };
 
-  /**
-   * Confirm and execute the deletion of an offer.
-   */
   const confirmDelete = async () => {
     if (!offerToDelete) return;
     try {
       await axiosInstance.delete(`/offer/${offerToDelete._id}`);
-      fetchOffers();
+      await fetchOffers();
       closeDeleteDialog();
       setSuccessMessage("Offer deleted successfully!");
     } catch (error) {
@@ -292,10 +57,6 @@ const AdminOfferPage: React.FC = () => {
       setDeleteError("Failed to delete offer.");
     }
   };
-
-  useEffect(() => {
-    fetchOffers();
-  }, []);
 
   return (
     <HomeLayout>
@@ -411,122 +172,12 @@ const AdminOfferPage: React.FC = () => {
                       {selectedOffer ? "Edit Offer" : "Create Offer"}
                     </Dialog.Title>
 
-                    <form className="mt-4 space-y-4">
-                      {/* Title */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          Title <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="title"
-                          value={formData.title}
-                          onChange={handleInputChange}
-                          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-                          required
-                        />
-                      </div>
-
-                      {/* Code */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          Code <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="code"
-                          value={formData.code}
-                          onChange={handleInputChange}
-                          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-                          required
-                        />
-                      </div>
-
-                      {/* Discount Type */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          Discount Type <span className="text-red-500">*</span>
-                        </label>
-                        <select
-                          name="discountType"
-                          value={formData.discountType}
-                          onChange={handleInputChange}
-                          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-                          required
-                        >
-                          <option value="percentage">Percentage</option>
-                          <option value="fixed">Fixed</option>
-                        </select>
-                      </div>
-
-                      {/* Discount Value */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          Discount Value <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="number"
-                          name="discountValue"
-                          value={formData.discountValue}
-                          onChange={handleInputChange}
-                          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-                          required
-                          min="0"
-                          step="0.01"
-                        />
-                      </div>
-
-                      {/* Start Date */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          Start Date <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="datetime-local"
-                          name="startDate"
-                          value={formData.startDate}
-                          onChange={handleInputChange}
-                          min={new Date().toISOString().slice(0, 16)}
-                          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-                          required
-                        />
-                      </div>
-
-                      {/* End Date & Time */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          End Date & Time{" "}
-                          <span className="text-red-500">*</span>
-                        </label>
-                        <input
-                          type="datetime-local"
-                          name="endDateTime"
-                          value={formData.endDateTime}
-                          onChange={handleInputChange}
-                          min={new Date().toISOString().slice(0, 16)}
-                          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-                          required
-                        />
-                      </div>
-
-                      {/* Usage Limit */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-                          Usage Limit
-                        </label>
-                        <input
-                          type="number"
-                          name="usageLimit"
-                          value={formData.usageLimit ?? ""}
-                          onChange={handleInputChange}
-                          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-                          min="0"
-                        />
-                      </div>
-
-                      {/* Display error if any */}
-                      {error && <p className="text-red-500 text-sm">{error}</p>}
-                    </form>
+                    <OfferForm
+                      formData={formData}
+                      membershipTypes={membershipTypes}
+                      handleInputChange={handleInputChange}
+                      error={error}
+                    />
 
                     {/* Modal Actions */}
                     <div className="mt-6 flex justify-end space-x-3">
@@ -552,7 +203,7 @@ const AdminOfferPage: React.FC = () => {
           </Transition>
         )}
 
-        {/* Delete Confirmation Dialog using ConfirmationDialog Component */}
+        {/* Delete Confirmation Dialog */}
         <ConfirmationDialog
           isOpen={isDeleteDialogOpen}
           onClose={closeDeleteDialog}
@@ -564,12 +215,12 @@ const AdminOfferPage: React.FC = () => {
           confirmButtonClassName="bg-red-600 hover:bg-red-700"
           cancelButtonClassName="bg-gray-300 hover:bg-gray-400"
         >
-          {/* Display delete-specific error if any */}
           {deleteError && (
             <p className="text-red-500 text-sm mt-2">{deleteError}</p>
           )}
         </ConfirmationDialog>
 
+        {/* Success Dialog */}
         <SuccessDialog
           isOpen={!!successMessage}
           onClose={() => setSuccessMessage(null)}

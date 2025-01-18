@@ -66,6 +66,7 @@ export const createOffer = async (
       startDate,
       endDateTime,
       usageLimit,
+      membershipType,
     } = req.body;
 
     /*
@@ -79,7 +80,8 @@ export const createOffer = async (
       !discountType ||
       !discountValue ||
       !startDate ||
-      !endDateTime
+      !endDateTime ||
+      !membershipType
     ) {
       res
         .status(400)
@@ -124,6 +126,7 @@ export const createOffer = async (
       startDate,
       endDateTime,
       usageLimit,
+      membershipType,
     });
 
     const savedOffer = await newOffer.save();

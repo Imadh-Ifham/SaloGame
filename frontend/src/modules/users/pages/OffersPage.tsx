@@ -112,13 +112,23 @@ const OfferCard = ({
 
 // OffersPage Component
 const OffersPage: React.FC = () => {
-  const [offers, setOffers] = useState([]);
+  interface Offer {
+    _id: string;
+    title: string;
+    code: string;
+    endDateTime: string;
+  }
+
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchOffers = async () => {
       try {
-        const response = await axiosInstance.get("/offer?isActive=true");
+        const response = await axiosInstance.get<{
+          success: boolean;
+          data: any[];
+        }>("/offer?isActive=true");
 
         if (response.data && response.data.success) {
           setOffers(response.data.data);
@@ -156,6 +166,12 @@ const OffersPage: React.FC = () => {
       </HomeLayout>
     );
   }
+
+  const userMembership = { _id: 1 }; // Replace with actual user membership data
+
+  const filteredOffers = offers.filter((offer: any) => {
+    return offer.membershipType <= userMembership._id;
+  });
 
   const firstRow = offers.slice(0, Math.ceil(offers.length / 2));
   const secondRow = offers.slice(Math.ceil(offers.length / 2));

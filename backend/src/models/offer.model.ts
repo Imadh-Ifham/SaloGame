@@ -12,6 +12,7 @@ interface IOffer extends Document {
   endDateTime: Date;
   usageLimit?: number;
   usageCount: number;
+  membershipType: mongoose.Types.ObjectId;
 }
 
 // Create the Offer schema
@@ -39,6 +40,11 @@ const offerSchema: Schema<IOffer> = new mongoose.Schema<IOffer>(
     },
     usageLimit: { type: Number }, // Optional
     usageCount: { type: Number, default: 0 }, // Default to 0
+    membershipType: {
+      type: Schema.Types.ObjectId,
+      ref: "MembershipType",
+      required: true,
+    },
   },
   { timestamps: true } // Adds createdAt and updatedAt fields automatically
 );
