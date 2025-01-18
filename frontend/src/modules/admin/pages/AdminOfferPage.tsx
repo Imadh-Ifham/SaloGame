@@ -246,12 +246,13 @@ const AdminOfferPage: React.FC = () => {
   /**
    * Toggle the active status of an offer.
    */
-  const toggleActive = async (offerId: string, isActive: boolean) => {
+  const toggleActive = async (offerId: string, currentStatus: boolean) => {
     try {
       await axiosInstance.patch(`/offer/${offerId}/toggle-active`, {
-        isActive: !isActive,
+        isActive: !currentStatus,
       });
-      fetchOffers();
+      fetchOffers(); // Refresh the offers list
+      setSuccessMessage("Offer status updated successfully!");
     } catch (error) {
       console.error("Error toggling active state:", error);
       setError("Failed to toggle active status.");
