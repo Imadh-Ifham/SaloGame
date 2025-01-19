@@ -10,6 +10,7 @@ export const useOffers = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
+  const [activeToggleId, setActiveToggleId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
     category: "general",
     title: "",

@@ -1,5 +1,5 @@
 import React, { Fragment, useState } from "react";
-import { Dialog, Transition, Switch } from "@headlessui/react";
+import { Dialog, Transition } from "@headlessui/react";
 import HomeLayout from "@/modules/users/layout/HomeLayout";
 import ConfirmationDialog from "@/components/confirmationDialog";
 import SuccessDialog from "../components/AdminOffer-page/SuccessDialog";
@@ -7,6 +7,10 @@ import OfferForm from "../components/AdminOffer-page/OfferForm";
 import { useOffers } from "../../../hooks/useOffers";
 import { Offer } from "../../../types/offer";
 import axiosInstance from "@/axios.config";
+import "antd/dist/reset.css";
+import { Table, Tag, Space, Switch } from "antd";
+import { ColumnType } from "antd/es/table";
+import { Key } from "antd/es/table/interface";
 
 const AdminOfferPage: React.FC = () => {
   const {
@@ -58,6 +62,107 @@ const AdminOfferPage: React.FC = () => {
     }
   };
 
+  // Define table columns
+  const columns: ColumnType<Offer>[] = [
+    {
+      title: "Title",
+      dataIndex: "title",
+      key: "title",
+      sorter: (a: Offer, b: Offer) => a.title.localeCompare(b.title),
+      filterSearch: true,
+      filters: [...new Set(offers.map((offer) => offer.title))].map(
+        (title) => ({ text: title, value: title })
+      ),
+      onFilter: (value: boolean | Key, record: Offer) =>
+        record.title.indexOf(value as string) === 0,
+    },
+    {
+      title: "Category",
+      dataIndex: "category",
+      key: "category",
+      filters: [
+        { text: "General", value: "general" },
+        { text: "Time-based", value: "time-based" },
+        { text: "Membership-based", value: "membership-based" },
+        { text: "Exclusive", value: "exclusive" },
+      ],
+      onFilter: (value: boolean | Key, record: Offer) =>
+        record.category === value,
+      render: (category: string) => {
+        if (!category) return null; // Handle undefined/null case
+
+        const getTagColor = (cat: string) => {
+          switch (cat) {
+            case "exclusive":
+              return "gold";
+            case "time-based":
+              return "blue";
+            case "membership-based":
+              return "green";
+            default:
+              return "default";
+          }
+        };
+
+        return (
+          <Tag color={getTagColor(category)}>
+            {category.charAt(0).toUpperCase() + category.slice(1)}
+          </Tag>
+        );
+      },
+    },
+    {
+      title: "Discount",
+      key: "discount",
+      sorter: (a: Offer, b: Offer) => a.discountValue - b.discountValue,
+      render: (_: any, record: Offer) => (
+        <span>
+          {record.discountType === "percentage"
+            ? `${record.discountValue}%`
+            : `$${record.discountValue}`}
+        </span>
+      ),
+    },
+    {
+      title: "Active",
+      dataIndex: "isActive",
+      key: "isActive",
+      filters: [
+        { text: "Active", value: true },
+        { text: "Inactive", value: false },
+      ],
+      onFilter: (value, record) => record.isActive === value,
+      render: (_, record) => (
+        <Switch
+          checked={record.isActive}
+          onChange={() => toggleActive(record._id, record.isActive)}
+          className={`${
+            record.isActive ? "bg-primary" : "bg-gray-200 dark:bg-gray-600"
+          }`}
+        />
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_: any, record: Offer) => (
+        <Space>
+          <button
+            onClick={() => openModal(record)}
+            className="text-blue-500 hover:underline"
+          >
+            Edit
+          </button>
+          <button
+            onClick={() => openDeleteDialog(record)}
+            className="text-red-500 hover:underline"
+          >
+            Delete
+          </button>
+        </Space>
+      ),
+    },
+  ];
   return (
     <HomeLayout>
       <div className="container mx-auto px-4 py-8 my-20">
@@ -72,79 +177,26 @@ const AdminOfferPage: React.FC = () => {
           </button>
         </div>
 
-        {/* Loading State */}
-        {loading ? (
-          <p>Loading...</p>
-        ) : (
-          /* Offers Table */
-          <div className="overflow-x-auto my-10 font-poppins bg-white dark:bg-gray-800 rounded-lg shadow-lg">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-100 dark:bg-gray-900">
-                <tr>
-                  <th className="px-4 py-2 text-left font-semibold">Active</th>
-                  <th className="px-4 py-2 text-left font-semibold">Title</th>
-                  <th className="px-4 py-2 text-left font-semibold">Code</th>
-                  <th className="px-4 py-2 text-left font-semibold">
-                    Discount
-                  </th>
-                  <th className="px-4 py-2 text-left font-semibold">Dates</th>
-                  <th className="px-4 py-2 text-left font-semibold">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800">
-                {offers.map((offer) => (
-                  <tr
-                    key={offer._id}
-                    className="hover:bg-gray-100 dark:hover:bg-gray-700"
-                  >
-                    <td className="px-4 py-2">
-                      <Switch
-                        checked={offer.isActive}
-                        onChange={() => toggleActive(offer._id, offer.isActive)}
-                        className={`${
-                          offer.isActive
-                            ? "bg-primary"
-                            : "bg-gray-200 dark:bg-gray-600"
-                        } relative inline-flex h-6 w-11 items-center rounded-full`}
-                      >
-                        <span
-                          className={`${
-                            offer.isActive ? "translate-x-6" : "translate-x-1"
-                          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
-                        />
-                      </Switch>
-                    </td>
-                    <td className="px-4 py-2">{offer.title}</td>
-                    <td className="px-4 py-2">{offer.code}</td>
-                    <td className="px-4 py-2">
-                      {offer.discountType === "percentage"
-                        ? `${offer.discountValue}%`
-                        : `$${offer.discountValue}`}
-                    </td>
-                    <td className="px-4 py-2">
-                      {new Date(offer.startDate).toLocaleDateString()} -{" "}
-                      {new Date(offer.endDateTime).toLocaleDateString()}
-                    </td>
-                    <td className="px-4 py-2 flex gap-x-2">
-                      <button
-                        onClick={() => openModal(offer)}
-                        className="text-blue-500 hover:underline"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => openDeleteDialog(offer)}
-                        className="text-red-500 hover:underline"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+        {/* New Ant Design Table */}
+        <Table
+          columns={columns}
+          dataSource={offers}
+          rowKey="_id"
+          loading={loading}
+          pagination={{
+            pageSize: 3,
+            showSizeChanger: true,
+            showTotal: (total) => `Total ${total} offers`,
+          }}
+          className="bg-white dark:bg-gray-800 rounded-lg shadow-lg"
+          onChange={(pagination, filters, sorter) => {
+            console.log("Table params changed:", {
+              pagination,
+              filters,
+              sorter,
+            });
+          }}
+        />
 
         {/* Create/Edit Offer Modal */}
         {isModalOpen && (
