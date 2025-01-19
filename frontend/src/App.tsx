@@ -18,6 +18,7 @@ import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
 
 import MembershipBased from "./modules/users/pages/OfferPages/MembershipBased";
 import TimeBased from "./modules/users/pages/OfferPages/TimeBased";
+import General from "./modules/users/pages/OfferPages/General";
 import OfferPage from "./modules/users/pages/OfferPage";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
@@ -65,6 +66,7 @@ const App: React.FC = () => {
         {/* Offer Category Routes */}
         <Route path="/offers/time-based" element={<TimeBased />} />
         <Route path="/offers/membership-based" element={<MembershipBased />} />
+        <Route path="/offers/general" element={<General />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>

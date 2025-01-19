@@ -8,22 +8,22 @@ const OfferCategoriesPage: React.FC = () => {
 
   const categories = [
     {
-      name: "Time-based Offers",
+      name: "TIME-BASED Offers",
       path: "/offers/time-based",
       description: "Limited-time discounts and seasonal promotions",
     },
     {
-      name: "Membership-based Offers",
+      name: "MEMBERSHIP Offers",
       path: "/offers/membership-based",
       description: "Exclusive deals for different membership tiers",
     },
     {
-      name: "General Offers",
+      name: "GENERAL Offers",
       path: "/offers/general",
       description: "Special offers available to all users",
     },
     {
-      name: "Exclusive Offers",
+      name: "SEASONAL Offers",
       path: "/offers/exclusive",
       description: "Premium deals for VIP members",
     },
