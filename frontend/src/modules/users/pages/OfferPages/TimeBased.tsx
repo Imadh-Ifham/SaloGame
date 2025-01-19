@@ -8,13 +8,24 @@ const OfferCard = ({
   title,
   code,
   endDateTime,
+  discountType,
+  discountValue,
 }: {
   title: string;
   code: string;
   endDateTime: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
 }) => {
   const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState("");
+
+  // Add formatDiscount function
+  const formatDiscount = () => {
+    return discountType === "percentage"
+      ? `${discountValue}% OFF`
+      : `$${discountValue} OFF`;
+  };
 
   // Calculate the time left for the offer to expire
   useEffect(() => {
@@ -83,6 +94,9 @@ const OfferCard = ({
       <h3 className="text-base sm:text-lg font-semibold mb-3 leading-snug">
         {title}
       </h3>
+      <p className="text-2xl font-bold text-yellow-400 mb-3">
+        {formatDiscount()}
+      </p>
       <div className="flex items-center justify-center space-x-2 mb-4">
         <span
           id="cpnCode"
@@ -193,6 +207,8 @@ const TimeBased: React.FC = () => {
               title={offer.title}
               code={offer.code}
               endDateTime={offer.endDateTime}
+              discountType={offer.discountType}
+              discountValue={offer.discountValue}
             />
           ))}
         </Marquee>
@@ -203,6 +219,8 @@ const TimeBased: React.FC = () => {
               title={offer.title}
               code={offer.code}
               endDateTime={offer.endDateTime}
+              discountType={offer.discountType}
+              discountValue={offer.discountValue}
             />
           ))}
         </Marquee>

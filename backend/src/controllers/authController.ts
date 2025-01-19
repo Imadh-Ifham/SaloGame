@@ -6,6 +6,7 @@ import { Request, Response, NextFunction } from "express";
 import admin from "../config/firebase";
 import User, { IUser } from "../models/user.model";
 import { generateToken } from "../utils/jwt";
+import MembershipType from "../models/membershipType.model";
 
 /*
   handles both signup and login based on the 
@@ -25,12 +26,19 @@ export const handleEmailPasswordAuth = async (
         password,
       });
 
+      const basicMembership = await MembershipType.findOne({ name: "Basic" });
+      if (!basicMembership) {
+        res.status(500).json({ message: "Basic membership type not found" });
+        return;
+      }
+
       // Create user in our database
       const user = new User({
         email,
         password,
         role: "user",
         firebaseUid: userRecord.uid,
+        defaultMembershipId: basicMembership._id,
       });
       await user.save();
 
@@ -73,10 +81,18 @@ export const handleGoogleAuth = async (req: Request, res: Response) => {
     // Find or create user
     let user = await User.findOne({ email });
     if (!user) {
+      const basicMembership = await MembershipType.findOne({ name: "Basic" });
+      if (!basicMembership) {
+        return res
+          .status(500)
+          .json({ message: "Basic membership type not found" });
+      }
+
       user = new User({
         email,
         role: "user",
         firebaseUid: uid,
+        defaultMembershipId: basicMembership._id,
       });
       await user.save();
     }

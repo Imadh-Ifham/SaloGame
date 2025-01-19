@@ -2,47 +2,83 @@ import axiosInstance from "@/axios.config";
 import Marquee from "@/components/ui/marquee";
 import { ClipboardIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import HomeLayout from "../../layout/HomeLayout";
+import { Divider } from "antd";
+import { SparklesIcon } from "@heroicons/react/24/outline"; // Add this import
 
-// OfferCard component for displaying individual offers
+interface UserProfile {
+  defaultMembershipId: {
+    _id: string;
+    name: string;
+  };
+}
+
+// Offer Card without the Copy functionality
+const ViewOnlyOfferCard = ({
+  title,
+  discountType,
+  discountValue,
+}: {
+  title: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
+}) => {
+  const formatDiscount = () => {
+    return discountType === "percentage"
+      ? `${discountValue}% OFF`
+      : `$${discountValue} OFF`;
+  };
+
+  return (
+    <div className="relative bg-emerald-900 text-white text-center py-6 px-6 sm:px-10 rounded-xl shadow-md md:min-w-96 w-full sm:w-2/3 lg:w-1/3 max-w-sm mx-auto sm:mx-4 my-4">
+      <h3 className="text-base sm:text-lg font-semibold mb-3">{title}</h3>
+      <p className="text-2xl font-bold text-yellow-400 mb-3">
+        {formatDiscount()}
+      </p>
+    </div>
+  );
+};
+
+// OfferCard component
 const OfferCard = ({
   title,
   code,
+  discountType,
+  discountValue,
 }: {
   title: string;
   code: string;
-  endDateTime: string;
+  discountType: "percentage" | "fixed";
+  discountValue: number;
 }) => {
   const [copied, setCopied] = useState(false);
 
-  // Copy coupon code to clipboard
   const handleCopy = () => {
     navigator.clipboard.writeText(code);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const formatDiscount = () => {
+    return discountType === "percentage"
+      ? `${discountValue}% OFF`
+      : `$${discountValue} OFF`;
+  };
+
   return (
     <div className="relative bg-emerald-900 text-white text-center py-6 px-6 sm:px-10 rounded-xl shadow-md md:min-w-96 w-full sm:w-2/3 lg:w-1/3 max-w-sm mx-auto sm:mx-4 my-4">
-      {/* Circular Cutouts */}
-      <div className="absolute top-1/2 left-0 -ml-5 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full pattern-dots pattern-green-200 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black pattern-size-2 pattern-opacity-100"></div>
-      <div className="absolute top-1/2 right-0 -mr-5 transform -translate-y-1/2 w-8 h-8 sm:w-10 sm:h-10 rounded-full bg-transparent pattern-dots pattern-green-200 dark:pattern-green-950 pattern-bg-white dark:pattern-bg-black pattern-size-2 pattern-opacity-100"></div>
-
-      {/* Offer Card Content */}
-      <h3 className="text-base sm:text-lg font-semibold mb-3 leading-snug">
-        {title}
-      </h3>
+      <h3 className="text-base sm:text-lg font-semibold mb-3">{title}</h3>
+      <p className="text-2xl font-bold text-yellow-400 mb-3">
+        {formatDiscount()}
+      </p>
       <div className="flex items-center justify-center space-x-2 mb-4">
-        <span
-          id="cpnCode"
-          className="border-dashed border font-press text-white px-2 sm:px-3 py-1 rounded-l text-xs sm:text-sm"
-        >
+        <span className="border-dashed border font-press text-white px-2 sm:px-3 py-1 rounded-l text-xs sm:text-sm">
           {code}
         </span>
         <button
-          id="cpnBtn"
           onClick={handleCopy}
-          className="border border-white bg-white text-green-950 px-2 sm:px-3 py-1 rounded-r cursor-pointer flex items-center space-x-1 text-xs sm:text-sm"
+          className="border border-white bg-white text-green-950 px-2 sm:px-3 py-1 rounded-r flex items-center space-x-1 text-xs sm:text-sm"
         >
           {copied ? (
             <span>Copied!</span>
@@ -58,41 +94,54 @@ const OfferCard = ({
   );
 };
 
-// MembershipBased Component
+// MembershipBased Offers Component
 const MembershipBased = () => {
   interface Offer {
     _id: string;
     title: string;
     code: string;
-    endDateTime: string;
     category: string;
     membershipType: string;
+    discountType: "percentage" | "fixed";
+    discountValue: number;
   }
-
+  const navigate = useNavigate();
   const [offers, setOffers] = useState<Offer[]>([]);
-  const [userOffers, setUserOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [userMembershipId, setUserMembershipId] = useState<string | null>(null);
+  const [membershipType, setMembershipType] = useState<string | null>(null);
 
-  // Fetch user's membership type
   useEffect(() => {
-    const fetchUserMembership = async () => {
+    const fetchUserProfile = async () => {
       try {
-        const response = await axiosInstance.get<{ _id: string }>(
-          "/memberships/current"
-        );
-        if (response.data) {
-          setUserMembershipId(response.data._id);
+        const response = await axiosInstance.get<UserProfile>("/users/profile");
+        if (response.data?.defaultMembershipId?._id) {
+          setUserMembershipId(response.data.defaultMembershipId._id);
         }
       } catch (error) {
-        console.error("Error fetching user membership:", error);
+        console.error("Error fetching user profile:", error);
       }
     };
 
-    fetchUserMembership();
+    fetchUserProfile();
+  }, []);
+  // Fetch User Membership Type
+  useEffect(() => {
+    const fetchMembershipType = async () => {
+      try {
+        const response = await axiosInstance.get<{ name: string }>(
+          "/membership/current"
+        );
+        setMembershipType(response.data.name);
+      } catch (error) {
+        console.error("Error fetching membership type:", error);
+      }
+    };
+
+    fetchMembershipType();
   }, []);
 
-  // Fetch all offers
+  // Fetch Active Offers
   useEffect(() => {
     const fetchOffers = async () => {
       try {
@@ -101,21 +150,16 @@ const MembershipBased = () => {
           data: Offer[];
         }>("/offer?isActive=true");
 
-        if (response.data && response.data.success) {
+        if (response.data.success) {
           const allOffers = response.data.data;
-          setOffers(allOffers);
-          console.log("All offers:", allOffers);
-
-          // Filter offers for user's membership type
-          if (userMembershipId) {
-            const userSpecificOffers = allOffers.filter(
-              (offer) => offer.membershipType === userMembershipId
+          console.log("Fetched Offers:", allOffers); // Debugging
+          // Check if offers have membershipType
+          allOffers.forEach((offer) => {
+            console.log(
+              `Offer ${offer.title} - MembershipType: ${offer.membershipType}`
             );
-            console.log("User membership ID:", userMembershipId);
-            console.log("User specific offers:", userSpecificOffers);
-
-            setUserOffers(userSpecificOffers);
-          }
+          });
+          setOffers(allOffers);
         }
       } catch (error) {
         console.error("Error fetching offers:", error);
@@ -125,21 +169,41 @@ const MembershipBased = () => {
     };
 
     fetchOffers();
-  }, [userMembershipId]);
+  }, []);
 
-  // Filter and split general membership offers
-  const filteredOffers = offers.filter(
+  // Filter Offers (Step 1): Only Membership-Based Offers
+  const membershipOffers = offers.filter(
     (offer) => offer.category === "membership-based"
   );
-  const firstRow = filteredOffers.slice(
-    0,
-    Math.ceil(filteredOffers.length / 2)
-  );
-  const secondRow = filteredOffers.slice(Math.ceil(filteredOffers.length / 2));
+  console.log("Membership-Based Offers:", membershipOffers); // Debugging
 
-  // Split user-specific offers
-  const userFirstRow = userOffers.slice(0, Math.ceil(userOffers.length / 2));
-  const userSecondRow = userOffers.slice(Math.ceil(userOffers.length / 2));
+  // Filter Offers (Step 2): Only for the Logged-in User’s Membership Type
+  const userSpecificOffers = membershipOffers.filter(
+    (offer) => String(offer.membershipType) === String(userMembershipId)
+  );
+
+  console.log("Filtered User Offers:", userSpecificOffers); // Debugging
+
+  const otherMembershipOffers = membershipOffers.filter(
+    (offer) => String(offer.membershipType) !== String(userMembershipId)
+  );
+
+  // Split Offers for Marquee Rows
+  const firstRow = otherMembershipOffers.slice(
+    0,
+    Math.ceil(otherMembershipOffers.length / 2)
+  );
+  const secondRow = otherMembershipOffers.slice(
+    Math.ceil(otherMembershipOffers.length / 2)
+  );
+
+  const userFirstRow = userSpecificOffers.slice(
+    0,
+    Math.ceil(userSpecificOffers.length / 2)
+  );
+  const userSecondRow = userSpecificOffers.slice(
+    Math.ceil(userSpecificOffers.length / 2)
+  );
 
   if (loading) {
     return (
@@ -151,23 +215,11 @@ const MembershipBased = () => {
     );
   }
 
-  if (offers.length === 0) {
-    return (
-      <HomeLayout>
-        <div className="flex items-center justify-center py-16">
-          <p className="text-xl text-gray-700">
-            No offers available at the moment.
-          </p>
-        </div>
-      </HomeLayout>
-    );
-  }
-
   return (
     <HomeLayout>
       <div className="flex flex-col items-center justify-center py-10 my-7 overflow-hidden">
         {/* Available for You Section */}
-        {userOffers.length > 0 && (
+        {userSpecificOffers.length > 0 ? (
           <>
             <h2 className="text-3xl sm:text-2xl font-press font-normal mb-4 text-primary">
               Available for{" "}
@@ -179,7 +231,8 @@ const MembershipBased = () => {
                   key={offer._id}
                   title={offer.title}
                   code={offer.code}
-                  endDateTime={offer.endDateTime}
+                  discountType={offer.discountType}
+                  discountValue={offer.discountValue}
                 />
               ))}
             </Marquee>
@@ -190,38 +243,68 @@ const MembershipBased = () => {
                     key={offer._id}
                     title={offer.title}
                     code={offer.code}
-                    endDateTime={offer.endDateTime}
+                    discountType={offer.discountType}
+                    discountValue={offer.discountValue}
                   />
                 ))}
               </Marquee>
             )}
           </>
+        ) : (
+          <p className="text-gray-700 text-lg font-semibold mb-8">
+            No personalized offers available.
+          </p>
         )}
-        {/* All Membership Offers Section */}
+
+        <Divider />
+        {/* Membership Offers Section */}
         <h2 className="text-3xl sm:text-2xl font-press font-normal mb-4 text-primary">
-          Membership{" "}
+          Check Other Membership-based{" "}
           <span className="text-gray-900 dark:text-white">Offers</span>
         </h2>
-        <Marquee pauseOnHover className="[--duration:20s]">
-          {firstRow.map((offer: any) => (
-            <OfferCard
-              key={offer._id}
-              title={offer.title}
-              code={offer.code}
-              endDateTime={offer.endDateTime}
-            />
-          ))}
-        </Marquee>
-        <Marquee reverse pauseOnHover className="[--duration:20s] mt-6">
-          {secondRow.map((offer: any) => (
-            <OfferCard
-              key={offer._id}
-              title={offer.title}
-              code={offer.code}
-              endDateTime={offer.endDateTime}
-            />
-          ))}
-        </Marquee>
+        {otherMembershipOffers.length > 0 ? (
+          <>
+            <Marquee pauseOnHover className="[--duration:20s]">
+              {firstRow.map((offer) => (
+                <ViewOnlyOfferCard
+                  key={offer._id}
+                  title={offer.title}
+                  discountType={offer.discountType}
+                  discountValue={offer.discountValue}
+                />
+              ))}
+            </Marquee>
+            {secondRow.length > 0 && (
+              <Marquee reverse pauseOnHover className="[--duration:20s] mt-6">
+                {secondRow.map((offer) => (
+                  <ViewOnlyOfferCard
+                    key={offer._id}
+                    title={offer.title}
+                    discountType={offer.discountType}
+                    discountValue={offer.discountValue}
+                  />
+                ))}
+              </Marquee>
+            )}
+          </>
+        ) : (
+          <p className="text-gray-700 text-lg font-semibold mb-8">
+            No other membership offers available.
+          </p>
+        )}
+
+        <div className="mt-12 text-center">
+          <div className="inline-flex items-center justify-center p-1 rounded-full bg-gradient-to-r from-emerald-500 to-primary">
+            <button
+              onClick={() => navigate("/memberships")}
+              className="group relative inline-flex items-center justify-center px-8 py-3 text-base font-medium text-white bg-gray-900 dark:bg-gray-800 rounded-full hover:bg-opacity-90 transition-all duration-300"
+            >
+              <SparklesIcon className="w-5 h-5 mr-2 animate-pulse" />
+              <span>Want to grab these? Upgrade your membership now!</span>
+              <span className="absolute -inset-0.5 bg-gradient-to-r from-primary to-emerald-500 rounded-full blur opacity-30 group-hover:opacity-50 transition duration-300" />
+            </button>
+          </div>
+        </div>
       </div>
     </HomeLayout>
   );
