@@ -2,7 +2,7 @@ import axiosInstance from "@/axios.config";
 import Marquee from "@/components/ui/marquee";
 import { ClipboardIcon } from "@heroicons/react/24/solid";
 import { useState, useEffect } from "react";
-import HomeLayout from "../layout/HomeLayout";
+import HomeLayout from "../../layout/HomeLayout";
 
 const OfferCard = ({
   title,
@@ -111,12 +111,13 @@ const OfferCard = ({
 };
 
 // OffersPage Component
-const OffersPage: React.FC = () => {
+const TimeBased: React.FC = () => {
   interface Offer {
     _id: string;
     title: string;
     code: string;
     endDateTime: string;
+    category: string;
   }
 
   const [offers, setOffers] = useState<Offer[]>([]);
@@ -167,14 +168,16 @@ const OffersPage: React.FC = () => {
     );
   }
 
-  const userMembership = { _id: 1 }; // Replace with actual user membership data
-
-  const filteredOffers = offers.filter((offer: any) => {
-    return offer.membershipType <= userMembership._id;
+  const filteredOffers = offers.filter((offer: Offer) => {
+    return offer.category === "time-based";
   });
 
-  const firstRow = offers.slice(0, Math.ceil(offers.length / 2));
-  const secondRow = offers.slice(Math.ceil(offers.length / 2));
+  // Split filtered offers into two rows
+  const firstRow = filteredOffers.slice(
+    0,
+    Math.ceil(filteredOffers.length / 2)
+  );
+  const secondRow = filteredOffers.slice(Math.ceil(filteredOffers.length / 2));
 
   return (
     <HomeLayout>
@@ -208,4 +211,4 @@ const OffersPage: React.FC = () => {
   );
 };
 
-export default OffersPage;
+export default TimeBased;

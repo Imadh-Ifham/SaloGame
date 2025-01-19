@@ -55,7 +55,7 @@ const OfferCategoriesPage: React.FC = () => {
                 cursor-pointer overflow-hidden backdrop-blur-sm border border-primary/10
                 hover:border-primary/30 flex flex-col items-center justify-center p-6 mb-4"
               >
-                {/* Background Image with Gradient */}
+                {/* Background Image with Gradient 
                 <div
                   className="absolute inset-0 bg-cover bg-center opacity-20 group-hover:opacity-30
                     transition-all duration-500 group-hover:scale-105"
@@ -64,7 +64,7 @@ const OfferCategoriesPage: React.FC = () => {
                       .toLowerCase()
                       .replace(/ /g, "-")}.jpg)`,
                   }}
-                />
+                />*/}
 
                 {/* Content Container */}
                 <div className="relative z-10 text-center">

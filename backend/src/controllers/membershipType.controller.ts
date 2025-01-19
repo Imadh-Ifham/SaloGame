@@ -1,11 +1,14 @@
 import { NextFunction, Request, Response } from "express";
+interface AuthenticatedRequest extends Request {
+  user?: { id: string };
+}
 import MembershipType from "../models/membershipType.model";
-
+import User from "../models/user.model";
 /**
  * Get all memberships with an optional isActive filter.
  */
 export const getMemberships = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -31,7 +34,7 @@ export const getMemberships = async (
  * Get a single membership by its ID.
  */
 export const getMembershipById = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -45,6 +48,78 @@ export const getMembershipById = async (
   } catch (error) {
     console.error("Error fetching membership by ID:", error);
     res.status(500).json({ error: "Failed to fetch MembershipType" });
+  }
+};
+
+/**
+ * Get Current user's membership information
+ */
+export const getCurrentMembership = async (
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): Promise<void> => {
+  try {
+    // Check if user exists in request
+    if (!req.user?.id) {
+      res.status(401).json({
+        success: false,
+        message: "User not authenticated",
+      });
+      return;
+    }
+
+    // Find user and populate membership data
+    const user = await User.findById(req.user.id)
+      .populate({
+        path: "defaultMembershipId",
+        select: "_id name price benefits tagline isActive",
+      })
+      .lean(); // Use lean() for better performance
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+      return;
+    }
+
+    // If user has no membership, return Basic Warrior as default
+    if (!user.defaultMembershipId) {
+      const basicMembership = await MembershipType.findOne({
+        name: "Basic Warrior",
+      })
+        .select("_id name price benefits tagline isActive")
+        .lean();
+
+      if (!basicMembership) {
+        res.status(404).json({
+          success: false,
+          message: "Default membership not found",
+        });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        data: basicMembership,
+      });
+      return;
+    }
+
+    // Return user's current membership
+    res.status(200).json({
+      success: true,
+      data: user.defaultMembershipId,
+    });
+  } catch (error) {
+    console.error("Error fetching current membership:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch current membership",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };
 

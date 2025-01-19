@@ -15,7 +15,9 @@ import DashboardPage from "./modules/admin/pages/DashboardPage";
 import { ScrollToTop } from "./utils/scrollToTop.util";
 import AdminLayout from "./modules/admin/layout/AdminLayout";
 import AdminGamesPage from "./modules/admin/pages/AdminGamesPage";
-import OffersPage from "./modules/users/pages/OffersPage";
+
+import MembershipBased from "./modules/users/pages/OfferPages/MembershipBased";
+import TimeBased from "./modules/users/pages/OfferPages/TimeBased";
 import OfferPage from "./modules/users/pages/OfferPage";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
@@ -59,6 +61,10 @@ const App: React.FC = () => {
           path="/team-registration/:eventId"
           element={<TeamRegistration userId="64a32f3b6f10b5a10b34d672" />}
         />
+
+        {/* Offer Category Routes */}
+        <Route path="/offers/time-based" element={<TimeBased />} />
+        <Route path="/offers/membership-based" element={<MembershipBased />} />
 
         {/* Admin Routes */}
         <Route path="/admin" element={<AdminLayout />}>

@@ -6,9 +6,13 @@ import {
   deleteMembership,
   getMemberships,
   toggleActiveMembership,
+  getCurrentMembership,
 } from "../controllers/membershipType.controller";
+import { authMiddleware } from "../middleware/authMiddleware"; // Add this import
+
 const router = express.Router();
 // Define routes
+router.get("/current", authMiddleware, getCurrentMembership);
 router.post("/", createMembership);
 router.get("/", getMemberships);
 router.get("/:id", getMembershipById);
