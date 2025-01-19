@@ -7,6 +7,7 @@ import {
   updateOffer,
   toggleActiveOffer,
 } from "../controllers/offer.controller";
+import { validateOfferData } from "../middleware/offer.validation";
 
 const router: Router = express.Router();
 
@@ -14,11 +15,10 @@ const router: Router = express.Router();
 router.get("/", getAllOffers);
 
 // Route to create a new offer
-router.post("/", createOffer);
+router.post("/", validateOfferData, createOffer);
 
 // Route to update an offer by ID
-router.put("/:offerID", updateOffer);
-
+router.put("/:id", validateOfferData, updateOffer);
 // Route to delete an offer by ID
 router.delete("/:offerID", deleteOffer);
 

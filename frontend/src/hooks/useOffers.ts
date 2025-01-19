@@ -11,15 +11,16 @@ export const useOffers = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
   const [formData, setFormData] = useState<FormData>({
+    category: "general",
     title: "",
     code: "",
     discountType: "percentage",
     discountValue: 0,
     isActive: true,
-    startDate: "",
-    endDateTime: "",
+    startDate: undefined,
+    endDateTime: undefined,
     usageLimit: undefined,
-    membershipType: "",
+    membershipType: undefined,
   });
 
   const fetchOffers = async () => {
@@ -57,31 +58,21 @@ export const useOffers = () => {
   };
 
   const handleSubmit = async () => {
-    if (
-      !formData.title ||
-      !formData.code ||
-      formData.discountValue === 0 ||
-      !formData.startDate ||
-      !formData.endDateTime ||
-      !formData.membershipType
-    ) {
+    if (!formData.title || !formData.code || formData.discountValue === 0) {
       setError("Please fill in all required fields.");
       return;
     }
 
-    const currentDate = new Date();
-    const startDate = new Date(formData.startDate);
-    const endDate = new Date(formData.endDateTime);
-
-    currentDate.setHours(0, 0, 0, 0);
-
-    if (startDate < currentDate) {
-      setError("Start date cannot be in the past.");
+    if (
+      formData.category === "time-based" &&
+      (!formData.startDate || !formData.endDateTime)
+    ) {
+      setError("Start date and end date are required for time-based offers.");
       return;
     }
 
-    if (startDate > endDate) {
-      setError("End date must be after start date.");
+    if (formData.category === "membership-based" && !formData.membershipType) {
+      setError("Membership type is required for membership-based offers.");
       return;
     }
 
@@ -89,13 +80,11 @@ export const useOffers = () => {
       if (selectedOffer) {
         await axiosInstance.put(`/offer/${selectedOffer._id}`, {
           ...formData,
-          endDate: formData.endDateTime,
         });
         setSuccessMessage("Offer updated successfully.");
       } else {
         await axiosInstance.post("/offer", {
           ...formData,
-          endDate: formData.endDateTime,
         });
         setSuccessMessage("Offer created successfully.");
       }
@@ -126,6 +115,7 @@ export const useOffers = () => {
     setSelectedOffer(offer);
     if (offer) {
       setFormData({
+        category: offer.category,
         title: offer.title,
         code: offer.code,
         discountType: offer.discountType,
@@ -138,15 +128,16 @@ export const useOffers = () => {
       });
     } else {
       setFormData({
+        category: "general",
         title: "",
         code: "",
         discountType: "percentage",
         discountValue: 0,
         isActive: true,
-        startDate: "",
-        endDateTime: "",
+        startDate: undefined,
+        endDateTime: undefined,
         usageLimit: undefined,
-        membershipType: "",
+        membershipType: undefined,
       });
     }
     setIsModalOpen(true);

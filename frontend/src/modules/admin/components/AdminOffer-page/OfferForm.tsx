@@ -9,6 +9,24 @@ const OfferForm: React.FC<OfferFormProps> = ({
 }) => {
   return (
     <form className="mt-4 space-y-4">
+      {/* Category */}
+      <div>
+        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+          Category <span className="text-red-500">*</span>
+        </label>
+        <select
+          name="category"
+          value={formData.category}
+          onChange={handleInputChange}
+          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
+          required
+        >
+          <option value="general">General</option>
+          <option value="time-based">Time-based</option>
+          <option value="membership-based">Membership-based</option>
+          <option value="exclusive">Exclusive</option>
+        </select>
+      </div>
       {/* Title */}
       <div>
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -73,37 +91,41 @@ const OfferForm: React.FC<OfferFormProps> = ({
         />
       </div>
 
-      {/* Start Date */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-          Start Date <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="datetime-local"
-          name="startDate"
-          value={formData.startDate}
-          onChange={handleInputChange}
-          min={new Date().toISOString().slice(0, 16)}
-          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-          required
-        />
-      </div>
+      {/* Conditionally render time-based fields */}
+      {(formData.category === "time-based" ||
+        formData.category === "exclusive") && (
+        <>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+              Start Date <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              name="startDate"
+              value={formData.startDate}
+              onChange={handleInputChange}
+              min={new Date().toISOString().slice(0, 16)}
+              className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
+              required
+            />
+          </div>
 
-      {/* End Date & Time */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-          End Date & Time <span className="text-red-500">*</span>
-        </label>
-        <input
-          type="datetime-local"
-          name="endDateTime"
-          value={formData.endDateTime}
-          onChange={handleInputChange}
-          min={new Date().toISOString().slice(0, 16)}
-          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-          required
-        />
-      </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+              End Date & Time <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="datetime-local"
+              name="endDateTime"
+              value={formData.endDateTime}
+              onChange={handleInputChange}
+              min={new Date().toISOString().slice(0, 16)}
+              className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
+              required
+            />
+          </div>
+        </>
+      )}
 
       {/* Usage Limit */}
       <div>
@@ -120,26 +142,29 @@ const OfferForm: React.FC<OfferFormProps> = ({
         />
       </div>
 
-      {/* MembershipType */}
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-          Membership Type <span className="text-red-500">*</span>
-        </label>
-        <select
-          name="membershipType"
-          value={formData.membershipType}
-          onChange={handleInputChange}
-          className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
-          required
-        >
-          <option value="">Select Membership Type</option>
-          {membershipTypes.map((type) => (
-            <option key={type._id} value={type._id}>
-              {type.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Conditionally render membership-based fields */}
+      {(formData.category === "membership-based" ||
+        formData.category === "exclusive") && (
+        <div>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
+            Membership Type <span className="text-red-500">*</span>
+          </label>
+          <select
+            name="membershipType"
+            value={formData.membershipType}
+            onChange={handleInputChange}
+            className="block w-full border-gray-300 rounded-md dark:border-gray-600 dark:bg-gray-700 dark:text-gray-200 shadow-sm"
+            required
+          >
+            <option value="">Select Membership Type</option>
+            {membershipTypes.map((type) => (
+              <option key={type._id} value={type._id}>
+                {type.name}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
 
       {/* Display error if any */}
       {error && <p className="text-red-500 text-sm">{error}</p>}

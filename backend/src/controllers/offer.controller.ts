@@ -61,88 +61,61 @@ export const createOffer = async (
     const {
       title,
       code,
-      discountType,
       discountValue,
+      category,
       startDate,
       endDateTime,
-      usageLimit,
       membershipType,
+      usageLimit,
     } = req.body;
 
-    /*
-      SERVER SIDE VALIDATION
-    */
+    // Validate required fields based on category
+    if (!title || !code || !discountValue || !category) {
+      res.status(400).json({
+        success: false,
+        message: "Missing required fields",
+      });
+    }
 
-    // Validate required fields
+    // Category-specific validation
     if (
-      !title ||
-      !code ||
-      !discountType ||
-      !discountValue ||
-      !startDate ||
-      !endDateTime ||
+      (category === "time-based" || category === "exclusive") &&
+      (!startDate || !endDateTime)
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Start date and end date are required for time-based offers",
+      });
+    }
+
+    if (
+      (category === "membership-based" || category === "exclusive") &&
       !membershipType
     ) {
-      res
-        .status(400)
-        .json({ success: false, message: "Missing required fields" });
-      return;
-    }
-
-    // Date validation
-    const currentDate = new Date();
-    const offerStartDate = new Date(startDate);
-    const offerEndDate = new Date(endDateTime);
-
-    // Remove milliseconds for accurate comparison
-    currentDate.setMilliseconds(0);
-    offerStartDate.setMilliseconds(0);
-    offerEndDate.setMilliseconds(0);
-
-    // Validate start date is not in the past
-    if (offerStartDate < currentDate) {
       res.status(400).json({
         success: false,
-        message: "Start date cannot be in the past",
+        message: "Membership type is required for membership-based offers",
       });
-      return;
     }
 
-    // Validate end date is after start date
-    if (offerEndDate <= offerStartDate) {
-      res.status(400).json({
-        success: false,
-        message: "End date must be after start date",
-      });
-      return;
-    }
-
-    //new offer
-    const newOffer = new Offer({
+    const offer = new Offer({
       title,
       code,
-      discountType,
       discountValue,
+      category,
       startDate,
       endDateTime,
-      usageLimit,
       membershipType,
+      usageLimit: usageLimit || null,
     });
 
-    const savedOffer = await newOffer.save();
-    res.status(201).json({ success: true, data: savedOffer });
-  } catch (error) {
-    if ((error as any).code === 11000) {
-      res
-        .status(400)
-        .json({ success: false, message: "Offer code must be unique" });
-    } else {
-      res.status(500).json({
-        success: false,
-        message: "Error creating the offer",
-        error: (error as Error).message,
-      });
-    }
+    await offer.save();
+    res.status(201).json({ success: true, data: offer });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
 

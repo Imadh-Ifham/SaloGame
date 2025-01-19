@@ -8,11 +8,12 @@ export interface Offer {
   discountType: "percentage" | "fixed";
   discountValue: number;
   isActive: boolean;
-  startDate: string;
-  endDateTime: string;
+  category: "general" | "time-based" | "membership-based" | "exclusive";
+  startDate?: string;
+  endDateTime?: string;
   usageLimit?: number;
   usageCount: number;
-  membershipType: string;
+  membershipType?: string;
 }
 
 export interface MembershipType {
@@ -21,15 +22,16 @@ export interface MembershipType {
 }
 
 export interface FormData {
+  category: "general" | "time-based" | "membership-based" | "exclusive";
   title: string;
   code: string;
   discountType: "percentage" | "fixed";
   discountValue: number;
   isActive: boolean;
-  startDate: string;
-  endDateTime: string;
+  startDate?: string;
+  endDateTime?: string;
   usageLimit?: number;
-  membershipType: string;
+  membershipType?: string;
 }
 
 export interface SuccessDialogProps {
