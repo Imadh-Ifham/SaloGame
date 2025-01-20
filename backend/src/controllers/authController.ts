@@ -32,10 +32,10 @@ export const handleEmailPasswordAuth = async (
         return;
       }
 
-      // Create user in our database
+      // Create MongoDB user without password
       const user = new User({
         email,
-        password,
+
         role: "user",
         firebaseUid: userRecord.uid,
         defaultMembershipId: basicMembership._id,
@@ -45,9 +45,9 @@ export const handleEmailPasswordAuth = async (
       const token = generateToken(user);
       res.status(201).json({ user, token });
     } else {
-      // For login, verify the user exists
+      // For login, only verify with Firebase
       const userRecord = await admin.auth().getUserByEmail(email);
-      const user = await User.findOne({ email });
+      const user = await User.findOne({ firebaseUid: userRecord.uid });
 
       if (!user) {
         res.status(401).json({ message: "User not found" });

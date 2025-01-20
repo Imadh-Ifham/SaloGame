@@ -19,27 +19,12 @@ interface UserProfile {
 }
 
 const ProfilePage: React.FC = () => {
-  const [membershipType, setMembershipType] = useState<string | null>(null);
-
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchMembershipType = async () => {
-      try {
-        const response = await axiosInstance.get<{ name: string }>(
-          "/membership/current"
-        );
-        setMembershipType(response.data.name);
-      } catch (error) {
-        console.error("Error fetching membership type:", error);
-      }
-    };
-
-    fetchMembershipType();
-
     const fetchProfile = async () => {
       try {
         setLoading(true);
@@ -161,30 +146,11 @@ const ProfilePage: React.FC = () => {
                     <h3 className="text-lg font-semibold text-primary dark:text-primary-light">
                       {profile?.defaultMembershipId?.name || "Basic Warrior"}
                     </h3>
-                    {/*{profile?.defaultMembershipId?.tagline && (
-                      <p className="text-sm text-gray-600 dark:text-gray-300 mt-1 italic">
-                        {profile.defaultMembershipId.tagline}
-                      </p>
-                    )}*/}
+
                     <div className="mt-3">
                       <p className="text-sm text-gray-600 dark:text-gray-300">
                         Price: ${profile?.defaultMembershipId?.price}/month
                       </p>
-                      {/*{profile?.defaultMembershipId?.benefits && (
-                        <ul className="mt-2 space-y-1">
-                          {profile.defaultMembershipId.benefits.map(
-                            (benefit, index) => (
-                              <li
-                                key={index}
-                                className="text-sm text-gray-600 dark:text-gray-300 flex items-center"
-                              >
-                                <span className="text-primary mr-2">✓</span>
-                                {benefit}
-                              </li>
-                            )
-                          )}
-                        </ul>
-                      )}*/}
                     </div>
                   </div>
                   <div className="mt-4">

@@ -82,7 +82,7 @@ export const createSubscription = async (
 
     // Update user's default membership
     await User.findByIdAndUpdate(req.user.id, {
-      defaultMembershipId: membershipId,
+      defaultMembershipId: subscription.membershipId,
     });
 
     res.status(201).json({

@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import HomeLayout from "../../layout/HomeLayout";
 import { Divider } from "antd";
-import { SparklesIcon } from "@heroicons/react/24/outline"; // Add this import
+import { SparklesIcon } from "@heroicons/react/24/outline";
 
 interface UserProfile {
   defaultMembershipId: {
@@ -40,7 +40,7 @@ const ViewOnlyOfferCard = ({
   );
 };
 
-// OfferCard component
+// OfferCard component (with copy functionality)
 const OfferCard = ({
   title,
   code,
@@ -109,7 +109,6 @@ const MembershipBased = () => {
   const [offers, setOffers] = useState<Offer[]>([]);
   const [loading, setLoading] = useState(true);
   const [userMembershipId, setUserMembershipId] = useState<string | null>(null);
-  const [membershipType, setMembershipType] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -125,21 +124,6 @@ const MembershipBased = () => {
 
     fetchUserProfile();
   }, []);
-  // Fetch User Membership Type
-  useEffect(() => {
-    const fetchMembershipType = async () => {
-      try {
-        const response = await axiosInstance.get<{ name: string }>(
-          "/membership/current"
-        );
-        setMembershipType(response.data.name);
-      } catch (error) {
-        console.error("Error fetching membership type:", error);
-      }
-    };
-
-    fetchMembershipType();
-  }, []);
 
   // Fetch Active Offers
   useEffect(() => {
@@ -152,13 +136,6 @@ const MembershipBased = () => {
 
         if (response.data.success) {
           const allOffers = response.data.data;
-          console.log("Fetched Offers:", allOffers); // Debugging
-          // Check if offers have membershipType
-          allOffers.forEach((offer) => {
-            console.log(
-              `Offer ${offer.title} - MembershipType: ${offer.membershipType}`
-            );
-          });
           setOffers(allOffers);
         }
       } catch (error) {
@@ -175,20 +152,21 @@ const MembershipBased = () => {
   const membershipOffers = offers.filter(
     (offer) => offer.category === "membership-based"
   );
-  console.log("Membership-Based Offers:", membershipOffers); // Debugging
 
-  // Filter Offers (Step 2): Only for the Logged-in User’s Membership Type
+  // Filter Offers (Step 2): Available for User's Membership Type
   const userSpecificOffers = membershipOffers.filter(
     (offer) => String(offer.membershipType) === String(userMembershipId)
   );
 
-  console.log("Filtered User Offers:", userSpecificOffers); // Debugging
-
+  // Filter Offers (Step 3): Offers for Other Membership Types
   const otherMembershipOffers = membershipOffers.filter(
     (offer) => String(offer.membershipType) !== String(userMembershipId)
   );
 
-  // Split Offers for Marquee Rows
+  /*
+   Split Offers for Marquee Rows
+  */
+  //Offers for Other Membership Types
   const firstRow = otherMembershipOffers.slice(
     0,
     Math.ceil(otherMembershipOffers.length / 2)
@@ -197,6 +175,7 @@ const MembershipBased = () => {
     Math.ceil(otherMembershipOffers.length / 2)
   );
 
+  //Offers for User's Membership Type
   const userFirstRow = userSpecificOffers.slice(
     0,
     Math.ceil(userSpecificOffers.length / 2)
