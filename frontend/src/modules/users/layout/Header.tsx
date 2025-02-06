@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { applyTheme, getInitialTheme } from "../../../utils/themeChange.util";
 
 const Header: React.FC = () => {
   const [navOpen, setNavOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   const handleToggle = () => {
     setNavOpen(!navOpen);
@@ -14,6 +16,9 @@ const Header: React.FC = () => {
 
   useEffect(() => {
     applyTheme(theme);
+    // Check if user is authenticated
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
   }, [theme]);
 
   const toggleTheme = (theme: string) => {
@@ -183,6 +188,52 @@ const Header: React.FC = () => {
           </div>
         </div>
       </nav>
+
+      {/* Authentication Buttons */}
+      <div className="flex items-center justify-end mt-4 mx-4 space-x-2">
+        {!isAuthenticated ? (
+          <>
+            <NavLink
+              to="/auth"
+              className="px-4 py-2 text-sm font-medium text-primary border border-primary rounded-md hover:bg-primary hover:text-white transition-colors duration-200"
+              onClick={() => navigate("/auth")}
+            >
+              Sign In
+            </NavLink>
+            <NavLink
+              to="/auth"
+              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors duration-200"
+              onClick={() => {
+                localStorage.setItem("isSignUp", "true");
+                navigate("/auth");
+              }}
+            >
+              Sign Up
+            </NavLink>
+          </>
+        ) : (
+          <NavLink
+            to="/profile"
+            className="flex items-center justify-center w-10 h-10 rounded-full border border-primary hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            title="Profile"
+          >
+            <svg
+              className="w-5 h-5 text-gray-700 dark:text-gray-300"
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+              />
+            </svg>
+          </NavLink>
+        )}
+      </div>
     </header>
   );
 };

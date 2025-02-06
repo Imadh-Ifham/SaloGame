@@ -13,7 +13,10 @@ const axiosInstance = axios.create({
 // Request interceptor (optional)
 axiosInstance.interceptors.request.use(
   (config) => {
-    // Modify request config if needed (e.g., add auth tokens)
+    const token = localStorage.getItem("token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   (error) => {
