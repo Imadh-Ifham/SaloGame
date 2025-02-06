@@ -12,10 +12,12 @@ interface IOffer extends Document {
   endDateTime: Date;
   usageLimit?: number;
   usageCount: number;
+  membershipType: mongoose.Types.ObjectId;
+  category: string;
 }
 
 // Create the Offer schema
-const offerSchema: Schema<IOffer> = new mongoose.Schema<IOffer>(
+const offerSchema = new Schema(
   {
     title: { type: String, required: true },
     code: { type: String, required: true, unique: true },
@@ -24,23 +26,38 @@ const offerSchema: Schema<IOffer> = new mongoose.Schema<IOffer>(
       enum: ["percentage", "fixed"],
       required: true,
     },
-    discountValue: { type: Number, required: true },
-    isActive: { type: Boolean, default: true },
-    startDate: { type: Date, required: true },
-    endDateTime: {
-      type: Date,
+    discountValue: { type: Number, required: true, min: 0 },
+    category: {
+      type: String,
       required: true,
-      validate: {
-        validator: function (value: Date): boolean {
-          return value > new Date();
-        },
-        message: "End date and time must be in the future.",
+      enum: ["general", "time-based", "membership-based", "exclusive"],
+    },
+    startDate: {
+      type: Date,
+      required: function (this: IOffer) {
+        return this.category === "time-based" || this.category === "exclusive";
       },
     },
-    usageLimit: { type: Number }, // Optional
-    usageCount: { type: Number, default: 0 }, // Default to 0
+    endDateTime: {
+      type: Date,
+      required: function (this: IOffer) {
+        return this.category === "time-based" || this.category === "exclusive";
+      },
+    },
+    membershipType: {
+      type: Schema.Types.ObjectId,
+      ref: "MembershipType",
+      required: function (this: IOffer) {
+        return (
+          this.category === "membership-based" || this.category === "exclusive"
+        );
+      },
+    },
+    isActive: { type: Boolean, default: true },
+    usageLimit: { type: Number, min: 0 },
+    usageCount: { type: Number, default: 0 },
   },
-  { timestamps: true } // Adds createdAt and updatedAt fields automatically
+  { timestamps: true }
 );
 
 // Query middleware to deactivate expired offers automatically

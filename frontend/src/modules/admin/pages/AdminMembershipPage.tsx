@@ -2,7 +2,6 @@ import React, { useEffect, useState, Fragment } from "react";
 import { Dialog, DialogTitle, Transition, Switch } from "@headlessui/react";
 import { CheckCircleIcon } from "@heroicons/react/24/outline";
 import axiosInstance from "@/axios.config";
-import HomeLayout from "@/modules/users/layout/HomeLayout";
 import ConfirmationDialog from "@/components/confirmationDialog";
 
 interface Membership {
@@ -261,7 +260,7 @@ const AdminMembershipPage: React.FC = () => {
   }, []);
 
   return (
-    <HomeLayout>
+    <section>
       <div className="container mx-auto px-4 py-8 my-20">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-4">
@@ -538,7 +537,7 @@ const AdminMembershipPage: React.FC = () => {
           message={successMessage || ""}
         />
       </div>
-    </HomeLayout>
+    </section>
   );
 };
 

@@ -3,7 +3,7 @@ import HomeLayout from "../layout/HomeLayout";
 import { NeonGradientCard } from "@/components/ui/neon-gradient-card";
 import axiosInstance from "@/axios.config";
 import MembershipSkeleton from "../components/membershipSkeleton";
-
+import SubscriptionForm from "../components/SubscriptionForm";
 const neonColorMapping: {
   [key: string]: { firstColor: string; secondColor: string };
 } = {
@@ -98,6 +98,8 @@ const MembershipPage: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0); // State for mobile view
   const [loading, setLoading] = useState(true); // State to track loading
   const [error, setError] = useState<string | null>(null);
+  const [isSubscriptionFormOpen, setIsSubscriptionFormOpen] = useState(false);
+  const [selectedTier, setSelectedTier] = useState<any>(null);
 
   // Fetch memberships on component mount
   useEffect(() => {
@@ -129,6 +131,10 @@ const MembershipPage: React.FC = () => {
     setCurrentIndex((prev) => (prev === 0 ? tiers.length - 1 : prev - 1));
   };
 
+  const handleSubscribe = (tier: any) => {
+    setSelectedTier(tier);
+    setIsSubscriptionFormOpen(true);
+  };
   if (loading) {
     return (
       <HomeLayout>
@@ -222,7 +228,11 @@ const MembershipPage: React.FC = () => {
                   </ul>
                 </div>
                 <div className="mt-6">
-                  <button type="button" className={subscribeButtonClasses}>
+                  <button
+                    type="button"
+                    className={subscribeButtonClasses}
+                    onClick={() => handleSubscribe(tier)}
+                  >
                     Subscribe
                   </button>
                 </div>
@@ -283,6 +293,18 @@ const MembershipPage: React.FC = () => {
                 </div>
               </div>
             </NeonGradientCard>
+            {selectedTier && (
+              <SubscriptionForm
+                isOpen={isSubscriptionFormOpen}
+                onClose={() => {
+                  setIsSubscriptionFormOpen(false);
+                  setSelectedTier(null);
+                }}
+                membershipId={selectedTier._id}
+                membershipName={selectedTier.name}
+                price={selectedTier.price}
+              />
+            )}
             <button
               onClick={handleNext}
               className="absolute right-0 p-2 text-gray-700 dark:text-gray-200 hover:scale-110 transition-transform"

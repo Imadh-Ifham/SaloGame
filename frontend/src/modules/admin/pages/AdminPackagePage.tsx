@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import {
@@ -8,13 +7,12 @@ import {
 } from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
 import axiosInstance from "../../../axios.config";
-import HomeLayout from "../../users/layout/HomeLayout";
 
 import Modal from "../../../components/Modal";
 import AdminPackageCard from "../components/AdminPackages-page/AdminPackageCard";
 import PackageForm from "../components/AdminPackages-page/PackageForm";
 
-import { Package } from '../../../types/package';
+import { Package } from "../../../types/package";
 import API_ENDPOINTS from "../../../api/endpoints"; // Import API_ENDPOINTS
 
 const AdminPackagePage: React.FC = () => {
@@ -33,7 +31,9 @@ const AdminPackagePage: React.FC = () => {
       setLoading(true);
       setError(null);
       try {
-        const response = await axiosInstance.get(API_ENDPOINTS.PACKAGES.GET_PACKAGES);
+        const response = await axiosInstance.get(
+          API_ENDPOINTS.PACKAGES.GET_PACKAGES
+        );
         console.log("Packages API Response:", response);
         if (response.data.success) {
           setPackages(response.data.data);
@@ -80,7 +80,7 @@ const AdminPackagePage: React.FC = () => {
   // Handlers for Create, Edit, Delete
   const handleCreatePackage = (newPackage: Package) => {
     if (!newPackage._id) {
-      console.error('Received package without _id:', newPackage);
+      console.error("Received package without _id:", newPackage);
       return;
     }
     setPackages((prevPackages) => [newPackage, ...prevPackages]);
@@ -101,7 +101,7 @@ const AdminPackagePage: React.FC = () => {
   };
 
   return (
-    <HomeLayout>
+    <section>
       <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-transparent">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -126,7 +126,6 @@ const AdminPackagePage: React.FC = () => {
           </Button>
         </motion.div>
 
-       
         {loading ? (
           <div className="flex justify-center items-center mt-16">
             <p className="text-lg text-gray-700 dark:text-gray-300">
@@ -152,7 +151,6 @@ const AdminPackagePage: React.FC = () => {
           </div>
         )}
 
-       
         {!loading &&
           !error &&
           showMoreButton &&
@@ -177,7 +175,6 @@ const AdminPackagePage: React.FC = () => {
             </motion.div>
           )}
 
-        
         <Modal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
@@ -185,16 +182,14 @@ const AdminPackagePage: React.FC = () => {
         >
           <PackageForm
             onSuccess={(pkg: Package) => {
-                handleCreatePackage(pkg);
-                setIsCreateModalOpen(false);
-              }}
-              onCancel={() => setIsCreateModalOpen(false)}
+              handleCreatePackage(pkg);
+              setIsCreateModalOpen(false);
+            }}
+            onCancel={() => setIsCreateModalOpen(false)}
           />
-
-          
         </Modal>
       </div>
-    </HomeLayout>
+    </section>
   );
 };
 

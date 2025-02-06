@@ -5,6 +5,7 @@ import {
   getAllOffers,
   getOfferById,
   updateOffer,
+  toggleActiveOffer,
 } from "../controllers/offer.controller";
 
 const router: Router = express.Router();
@@ -23,5 +24,7 @@ router.delete("/:offerID", deleteOffer);
 
 //Route to get an offer by ID
 router.get("/:offerID", getOfferById);
+
+router.patch("/:offerID/toggle-active", toggleActiveOffer);
 
 export default router;

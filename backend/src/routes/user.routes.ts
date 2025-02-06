@@ -1,26 +1,37 @@
 import express, { Router } from "express";
 import {
-  registerUser,
-  loginUser,
+  createManager,
+  handleFirebaseAuth,
   getUsers,
   updateUser,
   deleteUser,
+  getProfile,
+  handleAdminAuth,
+  createInitialOwner,
 } from "../controllers/user.controller";
-import { handleEmailPasswordAuth } from "../controllers/authController";
-import { setSignUpFlag, setLoginFlag } from "../middleware/authMiddleware";
-import { getProfile } from "../controllers/user.controller";
-import { authMiddleware } from "../middleware/authMiddleware";
+import {
+  authMiddleware,
+  ownerOnly,
+  managerOrOwner,
+} from "../middleware/authMiddleware";
 
 const router: Router = express.Router();
+// Public routes
+router.post("/auth/firebase", handleFirebaseAuth);
 
-// Use handleEmailPasswordAuth for both register and login
-router.post("/register", setSignUpFlag, handleEmailPasswordAuth);
-router.post("/login", setLoginFlag, handleEmailPasswordAuth);
+// Protected routes
+router.use(authMiddleware);
+router.get("/profile", getProfile);
 
-router.get("/", getUsers as express.RequestHandler);
-router.put("/:id", updateUser as express.RequestHandler);
-router.delete("/:id", deleteUser as express.RequestHandler);
+// Manager/Owner routes
+router.use(managerOrOwner);
+router.get("/", getUsers);
+router.put("/:id", updateUser);
 
-router.get("/profile", authMiddleware, getProfile);
+// Owner only routes
+router.post("/managers", ownerOnly, createManager);
+router.delete("/:id", ownerOnly, deleteUser);
 
+// Create owner (Testing environment)
+router.post("/testOwner", createInitialOwner);
 export default router;

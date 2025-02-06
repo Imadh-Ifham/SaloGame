@@ -1,37 +1,21 @@
 import mongoose, { Document, Schema } from "mongoose";
-import bcrypt from "bcryptjs";
 
 // Interface for the user model
 export interface IUser extends Document {
   email: string;
-  password: string;
-  role: "user" | "admin";
+  role: "user" | "manager" | "owner";
   firebaseUid: string;
-  comparePassword(candidatePassword: string): Promise<boolean>;
+  defaultMembershipId?: mongoose.Types.ObjectId;
 }
 
 const userSchema = new Schema<IUser>({
   email: { type: String, required: true, unique: true },
-  password: { type: String, required: true },
-  role: { type: String, enum: ["user", "admin"], default: "user" },
+  role: { type: String, enum: ["user", "manager", "owner"], default: "user" },
   firebaseUid: { type: String, unique: true },
+  defaultMembershipId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "MembershipType",
+  },
 });
-
-// Pre-save hook to hash the password before saving
-userSchema.pre("save", async function (next) {
-  if (!this.isModified("password")) {
-    return next();
-  }
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
-
-// Method to compare passwords
-userSchema.methods.comparePassword = async function (
-  candidatePassword: string
-): Promise<boolean> {
-  return bcrypt.compare(candidatePassword, this.password);
-};
 
 export default mongoose.model<IUser>("User", userSchema);

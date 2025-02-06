@@ -1,21 +1,21 @@
-import mongoose, { Schema, Document, Model } from "mongoose";
+import mongoose, { Document, Schema, Model } from "mongoose";
 
-interface IMachineType extends Document {
-  _id: Schema.Types.ObjectId;
+// Interface for the MachineType document
+export interface IMachineType extends Document {
   name: string;
   description: string;
   supportedGames: Schema.Types.ObjectId[];
   specifications: string;
-  rate: number;
+  rate: number; // Hourly rate
   imageUrl: string;
 }
 
-const MachineTypeSchema: Schema = new Schema({
+const MachineTypeSchema: Schema<IMachineType> = new Schema({
   name: { type: String, required: true },
   description: { type: String },
   supportedGames: [{ type: Schema.Types.ObjectId, ref: "Game", default: [] }],
   specifications: { type: String },
-  rate: { type: Number, required: true },
+  rate: { type: Number, required: true }, // Hourly rate is mandatory
   imageUrl: { type: String },
 });
 

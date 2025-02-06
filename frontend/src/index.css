@@ -64,3 +64,14 @@
     @apply bg-background text-foreground;
   }
 }
+
+.customBorder,
+.customBorder * {
+  border: 1px solid rgb(209, 208, 208);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0%;
+  padding: 0%;
+}

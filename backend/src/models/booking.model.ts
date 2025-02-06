@@ -1,45 +1,93 @@
-import mongoose, { Document, Model, Schema } from 'mongoose';
+import mongoose, { Schema, Document, Model } from "mongoose";
 
-
-// Define the interface
-interface IBooking extends Document {
-  date: Date;
-  time: TimeRanges;
-  name: string;
-  phone: number;
-  email: string;
+// Interface for machine booking details
+export interface IMachineBooking {
+  machineID: Schema.Types.ObjectId;
+  userCount: number;
 }
 
-// Define the schema with type annotations
-const bookingSchema: Schema<IBooking> = new mongoose.Schema(
+// Main booking interface
+export interface IBooking extends Document {
+  userID?: Schema.Types.ObjectId; // Optional user ID reference
+  customerName: string;
+  phoneNumber: string;
+  notes?: string;
+  startTime: Date;
+  endTime: Date;
+  machines: IMachineBooking[];
+  totalPrice?: number;
+  transactionID?: Schema.Types.ObjectId;
+  reservedAt?: Date;
+  isBooked?: boolean;
+  status: "Booked" | "InUse" | "Completed" | "Cancelled";
+}
+
+// Schema for booked time slots
+const userPerMachine: Schema<IMachineBooking> = new Schema({
+  machineID: {
+    type: Schema.Types.ObjectId,
+    required: true,
+    ref: "Machine",
+  },
+  userCount: {
+    type: Number,
+    default: 1,
+  },
+});
+
+// Main booking schema
+const bookingSchema: Schema<IBooking> = new Schema(
   {
-    date: {
+    userID: {
+      type: Schema.Types.ObjectId,
+      ref: "User",
+    },
+    customerName: {
+      type: String,
+      required: true,
+    },
+    phoneNumber: {
+      type: String,
+      required: true,
+    },
+    notes: {
+      type: String,
+    },
+    startTime: {
       type: Date,
       required: true,
     },
-    time: {
-      type: String, // TimeRanges can't directly map; use String or a custom type
+    endTime: {
+      type: Date,
       required: true,
     },
-    name: {
-      type: String,
-      required: true,
-    },
-    phone: {
+    machines: [userPerMachine],
+    totalPrice: {
       type: Number,
-      required: true,
     },
-    email: {
+    transactionID: {
+      type: Schema.Types.ObjectId,
+      ref: "Transaction",
+    },
+    reservedAt: {
+      type: Date,
+      default: Date.now,
+    },
+    isBooked: {
+      type: Boolean,
+      default: false,
+    },
+    status: {
       type: String,
-      required: true,
+      default: "Booked",
     },
   },
   {
-    timestamps: true, // Ensures createdAt and updatedAt fields are added
+    timestamps: true,
   }
 );
 
-// Define the model with the interface
-const Booking: Model<IBooking> = mongoose.model<IBooking>('Booking', bookingSchema);
+const Booking: Model<IBooking> =
+  mongoose.models.Booking || mongoose.model<IBooking>("Booking", bookingSchema);
 
 export default Booking;

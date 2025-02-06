@@ -1,7 +1,7 @@
 import axios from "axios";
 
-// Dynamically set the baseURL using the VITE_API_PORT environment variable
-const baseURL = `http://localhost:${import.meta.env.VITE_API_PORT}/api`;
+// ✅ Ensure baseURL always has a valid port
+const baseURL = `http://localhost:${import.meta.env.VITE_API_PORT || 4000}/api`;
 
 const axiosInstance = axios.create({
   baseURL,
@@ -10,7 +10,7 @@ const axiosInstance = axios.create({
   },
 });
 
-// Request interceptor (optional)
+// ✅ Request interceptor for adding auth token
 axiosInstance.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem("token");
@@ -19,16 +19,20 @@ axiosInstance.interceptors.request.use(
     }
     return config;
   },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// Response interceptor
+// ✅ Response interceptor with improved error handling
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Handle global errors here (e.g., logging, notifications)
+    if (error.response?.status === 404) {
+      console.error("API endpoint not found:", error.config.url);
+    }
+    if (error.response?.status === 401) {
+      localStorage.removeItem("token");
+      window.location.href = "/auth"; // Consider using an event-based approach
+    }
     return Promise.reject(error);
   }
 );

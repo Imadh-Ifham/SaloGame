@@ -3,13 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import HomeLayout from "../layout/HomeLayout";
 import axiosInstance from "../../../axios.config";
-
-interface UserProfile {
-  email: string;
-  name?: string;
-  role: string;
-  joinedDate?: string;
-}
+import { auth } from "../../../config/firebase";
 
 const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -21,22 +15,21 @@ const ProfilePage: React.FC = () => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-
-        // Retrieve the token from localStorage
         const token = localStorage.getItem("token");
-        if (token) {
-          // Set the token in axios headers
-          axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        if (!token) {
+          throw new Error("No authentication token found");
         }
 
+        axiosInstance.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${token}`;
         const response = await axiosInstance.get("/users/profile");
-
-        // Log the request headers for debugging
-        console.log("Request Headers:", axiosInstance.defaults.headers.common);
-
-        setProfile(response.data);
+        setProfile(response.data as UserProfile);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch profile");
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch profile"
+        );
+        console.error("Profile fetch error:", err);
       } finally {
         setLoading(false);
       }
@@ -45,18 +38,28 @@ const ProfilePage: React.FC = () => {
     fetchProfile();
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    navigate("/auth");
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      localStorage.removeItem("token");
+      delete axiosInstance.defaults.headers.common["Authorization"];
+
+      // Role-based redirect
+      if (profile?.role === "owner" || profile?.role === "manager") {
+        navigate("/admin/auth");
+      } else {
+        navigate("/auth");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   if (loading) {
     return (
       <HomeLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
-          <p className="text-lg text-gray-700 dark:text-gray-300">
-            Loading profile...
-          </p>
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
         </div>
       </HomeLayout>
     );
@@ -66,7 +69,9 @@ const ProfilePage: React.FC = () => {
     return (
       <HomeLayout>
         <div className="flex justify-center items-center min-h-[60vh]">
-          <p className="text-lg text-red-500">{error}</p>
+          <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-lg text-red-600 dark:text-red-400">
+            {error}
+          </div>
         </div>
       </HomeLayout>
     );
@@ -86,66 +91,100 @@ const ProfilePage: React.FC = () => {
           </h1>
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-primary">
-            <div className="space-y-6">
-              {/* Profile Picture Placeholder */}
-              <div className="flex justify-center">
-                <div className="w-32 h-32 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                  <svg
-                    className="w-16 h-16 text-gray-400 dark:text-gray-500"
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
+            {/* Profile Information */}
+            <div className="space-y-8">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Basic Info Section */}
+                <div className="space-y-6">
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Email
+                    </label>
+                    <p className="mt-1 text-lg font-medium text-gray-900 dark:text-white">
+                      {profile?.email}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                      Role
+                    </label>
+                    <p className="mt-1 text-lg font-medium capitalize bg-primary/10 dark:bg-primary/20 text-primary rounded-full px-3 py-1 inline-block">
+                      {profile?.role}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Membership Info Section */}
+                <div className="space-y-4">
+                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
+                    Current Membership
+                  </label>
+                  <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+                    {profile?.defaultMembershipId ? (
+                      <>
+                        <h3 className="text-lg font-semibold text-primary dark:text-primary-light">
+                          {profile.defaultMembershipId.name}
+                        </h3>
+                        <div className="mt-3 space-y-2">
+                          <p className="text-sm text-gray-600 dark:text-gray-300">
+                            Price: ${profile.defaultMembershipId.price}/month
+                          </p>
+                          <div className="space-y-1">
+                            {profile.defaultMembershipId.benefits.map(
+                              (benefit, index) => (
+                                <p
+                                  key={index}
+                                  className="text-sm text-gray-600 dark:text-gray-300 flex items-center"
+                                >
+                                  <span className="text-green-500 mr-2">✓</span>
+                                  {benefit}
+                                </p>
+                              )
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-center py-4">
+                        <h3 className="text-lg font-semibold text-gray-600 dark:text-gray-400">
+                          No Active Membership
+                        </h3>
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
+                          Subscribe to unlock exclusive benefits!
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => navigate("/memberships")}
+                    className="w-full mt-4 px-4 py-2 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg transition-colors duration-200"
                   >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                    />
-                  </svg>
-                </div>
-              </div>
-
-              {/* Profile Details */}
-              <div className="grid grid-cols-1 gap-6 mt-8">
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Email
-                  </label>
-                  <p className="text-lg font-medium text-gray-900 dark:text-white">
-                    {profile?.email}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Role
-                  </label>
-                  <p className="text-lg font-medium text-gray-900 dark:text-white capitalize">
-                    {profile?.role}
-                  </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-gray-500 dark:text-gray-400">
-                    Member Since
-                  </label>
-                  <p className="text-lg font-medium text-gray-900 dark:text-white">
-                    {profile?.joinedDate
-                      ? new Date(profile.joinedDate).toLocaleDateString()
-                      : "N/A"}
-                  </p>
+                    {profile?.defaultMembershipId
+                      ? "View Other Memberships"
+                      : "Browse Memberships"}
+                  </button>
                 </div>
               </div>
 
               {/* Logout Button */}
-              <div className="mt-8 flex justify-center">
+              <div className="pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
-                  type="button"
                   onClick={handleLogout}
-                  className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors duration-200"
+                  className="w-full sm:w-auto px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors duration-200 flex items-center justify-center"
                 >
-                  Logout
+                  <span className="mr-2">Logout</span>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M3 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3zm11.707 4.707a1 1 0 0 0-1.414-1.414L10 9.586 6.707 6.293a1 1 0 0 0-1.414 1.414L8.586 11l-3.293 3.293a1 1 0 1 0 1.414 1.414L10 12.414l3.293 3.293a1 1 0 0 0 1.414-1.414L11.414 11l3.293-3.293z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
                 </button>
               </div>
             </div>

@@ -6,7 +6,7 @@ import axiosInstance from "../axios.config";
 
 interface User {
   email: string;
-  role: "user" | "admin";
+  role: "user" | "manager" | "owner";
   id: string;
 }
 
@@ -18,11 +18,13 @@ export const useAuth = () => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
-          const idToken = await firebaseUser.getIdToken();
-          const response = await axiosInstance.post("/auth/verify-session", {
-            idToken
-          });
-          setUser(response.data.user);
+          const token = await firebaseUser.getIdToken();
+          axiosInstance.defaults.headers.common[
+            "Authorization"
+          ] = `Bearer ${token}`;
+
+          const response = await axiosInstance.get("/users/profile");
+          setUser(response.data as User);
         } catch (error) {
           console.error("Session verification failed:", error);
           setUser(null);

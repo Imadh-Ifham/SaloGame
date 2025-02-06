@@ -4,6 +4,9 @@ interface IBookedSlot {
   _id: Schema.Types.ObjectId;
   startTime: string;
   endTime: string;
+  reservedAt: Date;
+  isBooked: boolean;
+  status: "Booked" | "In-Use" | "Done"; // Add the status field to the interface
 }
 
 interface IMachineAvailability extends Document {
@@ -21,22 +24,42 @@ const BookedSlotSchema: Schema = new Schema({
     type: String,
     required: true,
   },
-});
-
-const MachineAvailabilitySchema: Schema = new Schema({
-  machineID: {
-    type: Schema.Types.ObjectId,
-    ref: "Machine",
-    required: true,
-  },
-  date: {
+  reservedAt: {
     type: Date,
-    required: true,
+    default: Date.now,
   },
-  bookedSlots: [BookedSlotSchema],
+  isBooked: {
+    type: Boolean,
+    default: false,
+  },
+  status: {
+    type: String,
+    enum: ["Booked", "In-Use", "Done"],
+    default: "Booked",
+  },
 });
 
-export default mongoose.model<IMachineAvailability>(
+const MachineAvailabilitySchema: Schema = new Schema(
+  {
+    machineID: {
+      type: Schema.Types.ObjectId,
+      ref: "Machine",
+      required: true,
+    },
+    date: {
+      type: Date,
+      required: true,
+    },
+    bookedSlots: [BookedSlotSchema],
+  },
+  {
+    timestamps: true,
+  }
+);
+
+export const MachineAvailability = mongoose.model<IMachineAvailability>(
   "MachineAvailability",
   MachineAvailabilitySchema
 );
+
+export { IBookedSlot, IMachineAvailability }; // Named exports

@@ -1,32 +1,22 @@
-// src/components/ProtectedRoute.tsx
-import React from "react";
-import { Navigate } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { Navigate, Outlet } from "react-router-dom";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-  requiredRole?: "admin" | "user";
+interface User {
+  role: string;
 }
 
-const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ 
-  children, 
-  requiredRole 
+interface ProtectedRouteProps {
+  user: User | null;
+  allowedRoles: string[];
+}
+
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
+  user,
+  allowedRoles,
 }) => {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return <div>Loading...</div>;
-  }
-
-  if (!user) {
+  if (!user || !allowedRoles.includes(user.role)) {
     return <Navigate to="/auth" />;
   }
-
-  if (requiredRole && user.role !== requiredRole) {
-    return <Navigate to="/" />;
-  }
-
-  return <>{children}</>;
+  return <Outlet />;
 };
 
 export default ProtectedRoute;

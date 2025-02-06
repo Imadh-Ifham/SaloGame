@@ -8,7 +8,6 @@ import {
 } from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
 import axiosInstance from "../../../axios.config";
-import HomeLayout from "../../users/layout/HomeLayout";
 
 import Modal from "../../../components/Modal";
 import AdminGameCard from "../components/AdminGames-page/AdminGameCard";
@@ -101,7 +100,7 @@ const AdminGamesPage: React.FC = () => {
   };
 
   return (
-    <HomeLayout>
+    <section>
       <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-transparent">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -192,7 +191,7 @@ const AdminGamesPage: React.FC = () => {
           />
         </Modal>
       </div>
-    </HomeLayout>
+    </section>
   );
 };
 

@@ -1,11 +1,14 @@
 import { NextFunction, Request, Response } from "express";
+interface AuthenticatedRequest extends Request {
+  user?: { id: string };
+}
 import MembershipType from "../models/membershipType.model";
 
 /**
  * Get all memberships with an optional isActive filter.
  */
 export const getMemberships = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
@@ -31,7 +34,7 @@ export const getMemberships = async (
  * Get a single membership by its ID.
  */
 export const getMembershipById = async (
-  req: Request,
+  req: AuthenticatedRequest,
   res: Response,
   next: NextFunction
 ): Promise<void> => {

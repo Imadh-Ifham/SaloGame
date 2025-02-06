@@ -7,6 +7,7 @@ import {
   getMemberships,
   toggleActiveMembership,
 } from "../controllers/membershipType.controller";
+
 const router = express.Router();
 // Define routes
 router.post("/", createMembership);
