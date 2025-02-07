@@ -155,10 +155,11 @@ export const createBooking = async (
     let totalPrice: number;
     try {
       totalPrice = await calculateTotalPrice(start, end, machines);
-    } catch (priceError) {
-      res
-        .status(500)
-        .json({ message: "Error calculating price", error: priceError });
+    } catch (error) {
+      res.status(400).json({
+        message: "Error calculating price",
+        error: (error as Error).message,
+      });
       return;
     }
 
@@ -189,7 +190,10 @@ export const createBooking = async (
     } catch (dbError) {
       await session.abortTransaction();
       session.endSession();
-      res.status(500).json({ message: "Error saving booking", error: dbError });
+      res.status(500).json({
+        message: "Error saving booking",
+        error: (dbError as Error).message,
+      });
     }
   } catch (error) {
     res.status(500).json({

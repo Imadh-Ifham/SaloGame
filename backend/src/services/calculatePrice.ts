@@ -37,15 +37,24 @@ const calculateTotalPrice = async (
         throw new Error(`Machine not found: ${machineBooking.machineID}`);
 
       const machineType = await MachineType.findById(machine.machineType);
+
       if (!machineType)
         throw new Error(
           `MachineType not found for machine: ${machineBooking.machineID}`
         );
 
       const userCount = machineBooking.userCount || 1; // Default to 1 user
-
+      console.log(machineType);
       // Fetch rate per hour based on the number of users (use bracket notation)
-      const ratePerHour = machineType.rateByPlayers[userCount];
+      // Convert MongoDB's Map to an object if necessary
+      const rateByPlayers =
+        machineType.rateByPlayers instanceof Map
+          ? Object.fromEntries(machineType.rateByPlayers)
+          : machineType.rateByPlayers;
+
+      const userCountKey = Number(userCount); // Ensure it's a number
+      const ratePerHour = rateByPlayers[userCountKey];
+
       if (!ratePerHour)
         throw new Error(
           `Rate not found for ${userCount} players in MachineType ${machineType.name}`
@@ -70,7 +79,7 @@ const calculateTotalPrice = async (
 
     return totalPrice;
   } catch (error) {
-    //console.error("Error calculating total price:", error);
+    console.error("Error calculating total price:", error);
     throw error;
   }
 };
