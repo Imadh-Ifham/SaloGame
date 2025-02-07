@@ -1,14 +1,19 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
 import { NavLink, useNavigate } from "react-router-dom";
 import { applyTheme, getInitialTheme } from "../../../utils/themeChange.util";
 import { useAuth } from "../../../hooks/useAuth";
+import { fetchXpBalance } from "@/store/slices/XPslice";
+import XPDisplay from "./XPDisplay";
+import { AppDispatch, RootState } from "@/store/store";
 
 const Header: React.FC = () => {
   const [navOpen, setNavOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth(); // To get user info
-
+  const dispatch = useDispatch<AppDispatch>();
+  const xpBalance = useSelector((state: RootState) => state.xp.xpBalance);
   const handleToggle = () => {
     setNavOpen(!navOpen);
   };
@@ -21,7 +26,12 @@ const Header: React.FC = () => {
     // Check if user is authenticated
     const token = localStorage.getItem("token");
     setIsAuthenticated(!!token);
-  }, [theme]);
+
+    // Fetch XP balance if authenticated
+    if (token) {
+      dispatch(fetchXpBalance());
+    }
+  }, [theme, dispatch]);
 
   const toggleTheme = (theme: string) => {
     setTheme(theme);
@@ -173,8 +183,8 @@ const Header: React.FC = () => {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 >
-                  <path d="M18 6 6 18" />
-                  <path d="m6 6 12 12" />
+                  <path d="M18 6 6 18"></path>
+                  <path d="m6 6 12 12"></path>
                 </svg>
               )}
             </button>
@@ -195,8 +205,15 @@ const Header: React.FC = () => {
         </div>
       </nav>
 
-      {/* Authentication Buttons */}
+      {/* Authentication Buttons and XP Balance */}
       <div className="flex items-center justify-end mt-4 mx-4 space-x-2">
+        {isAuthenticated && (
+          <XPDisplay
+            xpBalance={xpBalance}
+            showTooltip={true}
+            className="w-40"
+          />
+        )}
         {!isAuthenticated ? (
           <>
             <NavLink

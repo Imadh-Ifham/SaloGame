@@ -1,12 +1,16 @@
-// src/components/AdminGames-page/AdminGameCard.tsx
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { PencilIcon, TrashIcon } from "@heroicons/react/24/solid";
+import {
+  PencilIcon,
+  TrashIcon,
+  ComputerDesktopIcon,
+} from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
 
 import GameForm from "./GameForm";
 import Modal from "../../../../components/Modal";
 import axiosInstance from "../../../../axios.config";
+import AssignMachinesForm from "./AssignMachinesForm";
 
 interface Game {
   _id: string;
@@ -14,7 +18,7 @@ interface Game {
   name: string;
   rating: number;
   description: string;
-  genres: string[]; // Ensure genres are included
+  genres: string[];
 }
 
 interface AdminGameCardProps {
@@ -32,16 +36,9 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
 }) => {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
-
-  // Function to truncate the description
-  const truncateText = (text: string, limit: number) => {
-    if (text.length > limit) {
-      return text.slice(0, limit) + "...";
-    }
-    return text;
-  };
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -68,82 +65,60 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: index * 0.1 }}
+        transition={{ duration: 0.3, delay: index * 0.1 }}
         viewport={{ once: true }}
-        className="flex group relative p-6 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 overflow-hidden bg-background dark:bg-background-dark border border-border-primary"
+        className="flex bg-background dark:bg-background-dark border border-border-primary rounded-lg overflow-hidden shadow-md"
       >
-        {/* Game Image */}
-        <div className="w-1/3 h-40 rounded-lg overflow-hidden">
+        <div className="w-2/5">
           <img
             src={game.image}
             alt={game.name}
-            className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
+            className="w-full h-full object-cover"
           />
         </div>
-
-        {/* Card Content */}
-        <div className="ml-6 flex flex-col justify-between w-2/3">
+        <div className="p-4 w-3/5 flex flex-col justify-between">
           <div>
-            <h3 className="text-xl font-poppins font-semibold mb-2 text-text-primary">
+            <h3 className="text-lg font-poppins font-semibold text-text-primary dark:text-white mb-2">
               {game.name}
             </h3>
-            <p className="text-sm font-poppins text-text-secondary dark:text-neutral-500 mb-4">
-              {truncateText(game.description, 100)}{" "}
-              {/* Truncated Description */}
-            </p>
-            {/* Genres as Pill-Shaped Badges */}
-            <div className="flex flex-wrap gap-2 mt-2">
+            <div className="flex flex-wrap gap-1 mb-2">
               {game.genres.map((genre) => (
                 <span
                   key={genre}
-                  className="px-3 py-1 text-xs font-medium dark:text-white text-gamer-green-dark bg-transparent border border-gamer-green rounded-full shadow-sm"
+                  className="px-2 py-0.5 text-xs font-poppins text-gamer-green border border-gamer-green rounded-full"
                 >
                   {genre}
                 </span>
               ))}
             </div>
           </div>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center text-base font-poppins text-green-500">
-              {game.rating.toFixed(2)} {/* Formatted Rating */}
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className="w-4 h-4 mr-1"
-              >
-                <path
-                  fillRule="evenodd"
-                  d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.006 5.404.434c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.434 2.082-5.005Z"
-                  clipRule="evenodd"
-                />
-              </svg>
-            </div>
-            <div className="flex space-x-2">
-              <Button
-                onClick={() => setIsEditModalOpen(true)}
-                className="p-2 bg-gamer-green text-white rounded hover:bg-gamer-green-dark transition"
-                title="Edit Game"
-              >
-                <PencilIcon className="w-5 h-5" />
-              </Button>
-              <Button
-                onClick={() => setIsDeleteConfirmOpen(true)}
-                className="p-2 bg-red-500 text-white rounded hover:bg-red-600 transition"
-                disabled={isDeleting}
-                title="Delete Game"
-              >
-                <TrashIcon className="w-5 h-5" />
-              </Button>
-            </div>
+          <div className="flex justify-end space-x-1">
+            <Button
+              onClick={() => setIsEditModalOpen(true)}
+              className="p-1 hover:text-gamer-green transition"
+              title="Edit Game"
+            >
+              <PencilIcon className="w-4 h-4" />
+            </Button>
+            <Button
+              onClick={() => setIsDeleteConfirmOpen(true)}
+              className="p-1 hover:text-red-500 transition"
+              disabled={isDeleting}
+              title="Delete Game"
+            >
+              <TrashIcon className="w-4 h-4" />
+            </Button>
+            <Button
+              onClick={() => setIsAssignModalOpen(true)}
+              className="p-1 hover:text-blue-500 transition"
+              title="Assign Machines"
+            >
+              <ComputerDesktopIcon className="w-4 h-4" />
+            </Button>
           </div>
         </div>
-
-        {/* Glowing Outline */}
-        <div className="absolute inset-0 border-2 border-transparent group-hover:border-gamer-green rounded-2xl transition-all duration-300 pointer-events-none" />
       </motion.div>
 
-      {/* Edit Game Modal */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -159,7 +134,6 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
         />
       </Modal>
 
-      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={isDeleteConfirmOpen}
         onClose={() => setIsDeleteConfirmOpen(false)}
@@ -196,7 +170,18 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
         </div>
       </Modal>
 
-      {/* Delete Error Message */}
+      <Modal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        title="Assign Machines"
+      >
+        <AssignMachinesForm
+          game={game}
+          onSuccess={() => setIsAssignModalOpen(false)}
+          onCancel={() => setIsAssignModalOpen(false)}
+        />
+      </Modal>
+
       {deleteError && !isDeleteConfirmOpen && (
         <div className="mt-2 text-red-500 text-sm text-center">
           {deleteError}

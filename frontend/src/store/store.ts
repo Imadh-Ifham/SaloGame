@@ -2,11 +2,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import machineReducer from "./slices/machineSlice";
 import bookingReducer from "./slices/bookingSlice";
+import xpReducer from "./slices/XPslice";
 
 const store = configureStore({
   reducer: {
     machine: machineReducer,
     booking: bookingReducer,
+    xp: xpReducer,
   },
 });
 

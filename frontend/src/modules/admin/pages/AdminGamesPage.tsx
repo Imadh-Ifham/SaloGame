@@ -1,11 +1,6 @@
-// pages/admin/AdminGamesPage.tsx
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import {
-  ChevronDownIcon,
-  ChevronUpIcon,
-  PlusIcon,
-} from "@heroicons/react/24/solid";
+import { PlusIcon } from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
 import axiosInstance from "../../../axios.config";
 
@@ -19,7 +14,7 @@ interface Game {
   name: string;
   rating: number;
   description: string;
-  genres: string[]; // Ensure genres are included
+  genres: string[];
 }
 
 const AdminGamesPage: React.FC = () => {
@@ -32,7 +27,6 @@ const AdminGamesPage: React.FC = () => {
   );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
-  // Fetch games on component mount
   useEffect(() => {
     const fetchGames = async () => {
       setLoading(true);
@@ -56,7 +50,6 @@ const AdminGamesPage: React.FC = () => {
     fetchGames();
   }, []);
 
-  // Handle responsive screen size
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
@@ -70,17 +63,15 @@ const AdminGamesPage: React.FC = () => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // Determine visible games based on screen size and "showMore" state
   const visibleGames = (() => {
     if (showMore) return games;
     if (screenSize === "desktop") return games;
-    if (screenSize === "tablet") return games.slice(0, 4);
-    return games.slice(0, 2);
+    if (screenSize === "tablet") return games.slice(0, 6);
+    return games.slice(0, 3);
   })();
 
   const showMoreButton = screenSize === "mobile" || screenSize === "tablet";
 
-  // Handlers for Create, Edit, Delete
   const handleCreateGame = (newGame: Game) => {
     setGames((prevGames) => [newGame, ...prevGames]);
   };
@@ -125,7 +116,6 @@ const AdminGamesPage: React.FC = () => {
           </Button>
         </motion.div>
 
-        {/* Handling Loading and Error States */}
         {loading ? (
           <div className="flex justify-center items-center mt-16">
             <p className="text-lg text-gray-700 dark:text-gray-300">
@@ -137,8 +127,7 @@ const AdminGamesPage: React.FC = () => {
             <p className="text-lg text-red-500">{error}</p>
           </div>
         ) : (
-          // Game Cards
-          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 gap-8 sm:gap-10 mt-16">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mt-8">
             {visibleGames.map((game, index) => (
               <AdminGameCard
                 key={game._id}
@@ -151,11 +140,10 @@ const AdminGamesPage: React.FC = () => {
           </div>
         )}
 
-        {/* Show More Button */}
         {!loading &&
           !error &&
           showMoreButton &&
-          games.length > (screenSize === "mobile" ? 2 : 4) && (
+          games.length > (screenSize === "mobile" ? 3 : 6) && (
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -167,16 +155,10 @@ const AdminGamesPage: React.FC = () => {
                 className="flex items-center px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-light transition-all duration-300"
               >
                 {showMore ? "Show Less" : "Show More"}
-                {showMore ? (
-                  <ChevronUpIcon className="w-5 h-5 ml-2" />
-                ) : (
-                  <ChevronDownIcon className="w-5 h-5 ml-2" />
-                )}
               </Button>
             </motion.div>
           )}
 
-        {/* Create Game Modal */}
         <Modal
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}

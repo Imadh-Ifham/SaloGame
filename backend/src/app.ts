@@ -9,6 +9,8 @@ import membershipRoute from "./routes/membershipType.routes";
 import machineRoute from "./routes/machine.routes";
 import subscriptionRoutes from "./routes/subscription.routes";
 import userRoutes from "./routes/user.routes";
+import currencyRoutes from "./routes/currency.routes";
+import machineGameRoutes from "./routes/machineGame.routes";
 
 const app: Express = express();
 
@@ -27,7 +29,8 @@ app.use("/api/machine", machineRoute);
 app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
-
+app.use("/api/currency", currencyRoutes);
+app.use("/api/machinegames", machineGameRoutes);
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   const statusCode: number = err.statusCode || 500;
