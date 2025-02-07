@@ -2,8 +2,8 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 // Interface for machine booking details
 export interface IMachineBooking {
-  machineID: Schema.Types.ObjectId;
-  userCount: number;
+  machineID: String;
+  userCount: number | null;
 }
 
 // Main booking interface

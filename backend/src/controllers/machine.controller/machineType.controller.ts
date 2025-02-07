@@ -1,31 +1,80 @@
 import { Request, Response } from "express";
 import MachineType from "../../models/machine.model/machineType.model";
 
-// Create MachineType
-export const createMachineType = async (req: Request, res: Response) => {
+export const createMachineType = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const {
       name,
       description,
       supportedGames,
       specifications,
-      rate,
+      rateByPlayers, // Updated to rateByPlayers
       imageUrl,
     } = req.body;
 
+    // Validate required fields
+    if (!name) {
+      res.status(400).json({ message: "Name is required." });
+      return;
+    }
+
+    if (!rateByPlayers || typeof rateByPlayers !== "object") {
+      res.status(400).json({
+        message:
+          "Invalid rate format. rateByPlayers should be an object with player counts as keys.",
+      });
+      return;
+    }
+
+    // Validate that rateByPlayers values are numbers
+    for (const [key, value] of Object.entries(rateByPlayers)) {
+      if (isNaN(Number(key)) || typeof value !== "number" || value <= 0) {
+        res.status(400).json({
+          message: `Invalid rate value. Expected a number greater than 0 for key '${key}', received '${value}'.`,
+        });
+        return;
+      }
+    }
+
+    // Create new MachineType
     const newMachineType = new MachineType({
       name,
       description,
       supportedGames,
       specifications,
-      rate,
+      rateByPlayers, // Use the validated rateByPlayers object
       imageUrl,
     });
 
+    // Save to database
     const savedMachineType = await newMachineType.save();
-    res.status(201).json(savedMachineType);
-  } catch (error) {
-    res.status(500).json({ message: "Error creating machine type", error });
+    res.status(201).json({
+      message: "Machine type created successfully.",
+      machineType: savedMachineType,
+    });
+  } catch (error: any) {
+    // Handle MongoDB validation errors
+    if (error.name === "ValidationError") {
+      res
+        .status(400)
+        .json({ message: "Validation Error", error: error.message });
+      return;
+    }
+
+    // Handle duplicate key errors (e.g., if `name` should be unique)
+    if (error.code === 11000) {
+      res.status(409).json({ message: "Machine type already exists." });
+      return;
+    }
+
+    // Handle unexpected errors
+    res.status(500).json({
+      message: "An unexpected error occurred while creating the machine type.",
+      error: (error as Error).message,
+    });
   }
 };
 

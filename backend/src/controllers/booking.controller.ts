@@ -1,8 +1,11 @@
 import { Request, Response } from "express";
 import Machine from "../models/machine.model/machine.model";
-import findFirstAndNextBooking from "../services/bookingService";
+import findFirstAndNextBooking from "../services/findFirstAndNextBooking";
 import mongoose from "mongoose";
 import { CustomerBooking } from "../types/booking";
+import isSlotAvailable from "../services/isSlotAvailable";
+import Booking from "../models/booking.model";
+import calculateTotalPrice from "../services/calculatePrice";
 
 export const getFirstAndNextBookingForAllMachines = async (
   req: Request,
@@ -80,6 +83,119 @@ export const getFirstAndNextBookingForAllMachines = async (
       message: (error as Error).message || "Something went wrong.",
     });
     return;
+  }
+};
+
+export const createBooking = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const {
+      machines,
+      startTime,
+      endTime,
+      customerName,
+      phoneNumber,
+      notes,
+      status = "InUse",
+    } = req.body;
+
+    const { mode } = req.query;
+
+    // Validate required fields
+    if (!machines || !Array.isArray(machines) || machines.length === 0) {
+      res.status(400).json({ message: "At least one machine is required." });
+      return;
+    }
+
+    if (!customerName || typeof customerName !== "string") {
+      res.status(400).json({ message: "Invalid customer name." });
+      return;
+    }
+
+    if (!phoneNumber || !/^\d{10}$/.test(phoneNumber)) {
+      res.status(400).json({
+        message: "Invalid phone number. Must be 10 digits.",
+      });
+      return;
+    }
+
+    // Convert and Validate Dates
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      res.status(400).json({ message: "Invalid date format." });
+      return;
+    }
+
+    if (start < new Date()) {
+      res.status(400).json({ message: "Start time cannot be in the past." });
+      return;
+    }
+
+    if (end <= start) {
+      res.status(400).json({ message: "End time must be after start time." });
+      return;
+    }
+
+    // Check for overlapping bookings (handle race conditions)
+    for (const machine of machines) {
+      const isAvailable = await isSlotAvailable(machine.machineID, start, end);
+      if (!isAvailable) {
+        res.status(400).json({
+          message: `Machine ${machine.machineID} is already booked for the selected time slot.`,
+        });
+        return;
+      }
+    }
+
+    // Calculate total price securely
+    let totalPrice: number;
+    try {
+      totalPrice = await calculateTotalPrice(start, end, machines);
+    } catch (priceError) {
+      res
+        .status(500)
+        .json({ message: "Error calculating price", error: priceError });
+      return;
+    }
+
+    // Proceed to save booking (handle race conditions)
+    const session = await Booking.startSession();
+    session.startTransaction();
+
+    try {
+      const newBooking = new Booking({
+        customerName,
+        phoneNumber,
+        notes,
+        machines,
+        totalPrice,
+        startTime: start,
+        endTime: end,
+        isBooked: true,
+        status,
+      });
+
+      await newBooking.save({ session });
+      await session.commitTransaction();
+      session.endSession();
+
+      res
+        .status(201)
+        .json({ message: "Booking created successfully", booking: newBooking });
+    } catch (dbError) {
+      await session.abortTransaction();
+      session.endSession();
+      res.status(500).json({ message: "Error saving booking", error: dbError });
+    }
+  } catch (error) {
+    res.status(500).json({
+      message: "Unexpected server error",
+      error: (error as Error).message,
+    });
   }
 };
 
