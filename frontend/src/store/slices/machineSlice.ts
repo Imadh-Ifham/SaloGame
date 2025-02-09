@@ -1,17 +1,10 @@
-import { machineStatus } from "./../../types/machine";
-// src/redux/slices/machineSlice.ts
 import { Machine } from "@/types/machine";
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { fetchMachines } from "../thunks/machineThunks";
 
-interface MachineStatus {
-  [machineId: string]: "Booked" | "Available" | "InUse" | "Maintenance";
-}
-
 type MachineState = {
   machines: Machine[];
   selectedMachine: Machine | null;
-  machineStatus: MachineStatus;
   fetched: boolean;
   loading: boolean;
   error: string | null;
@@ -20,7 +13,6 @@ type MachineState = {
 const initialState: MachineState = {
   machines: [],
   selectedMachine: null,
-  machineStatus: machineStatus,
   fetched: false,
   loading: false,
   error: null,
@@ -51,6 +43,7 @@ const machineSlice = createSlice({
         state.loading = false;
         state.fetched = true;
         state.machines = action.payload;
+        state.selectedMachine = action.payload[0];
       })
       .addCase(fetchMachines.rejected, (state, action) => {
         state.loading = false;

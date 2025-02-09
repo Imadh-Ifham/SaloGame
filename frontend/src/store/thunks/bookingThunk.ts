@@ -4,7 +4,7 @@ import { AllMachineBookings } from "../slices/bookingSlice";
 
 export const fetchFirstAndNextBookings = createAsyncThunk<
   AllMachineBookings, // The type of the data returned
-  { startTime: Date; duration: number }, // The type of the argument (startTime and duration)
+  { startTime: String; duration: Number }, // The type of the argument (startTime and duration)
   { rejectValue: string } // The type of the error message on failure
 >(
   "bookings/fetchFirstAndNext",

@@ -13,10 +13,11 @@ export type CustomerBooking = {
   phoneNumber?: string | null;
   notes?: string | null;
   startTime: string;
-  endTime: string;
+  endTime?: string;
+  duration: number;
   machines: IMachineBooking[];
   totalPrice?: number;
-  status: "Booked" | "InUse" | "Completed" | "Cancelled";
+  status: "Booked" | "InUse" | "Completed" | "Cancelled" | "Available";
 };
 
 export interface MachineBooking {
@@ -32,6 +33,7 @@ export interface AllMachineBookings {
 interface BookingState {
   formData: CustomerBooking;
   allMachineBookings: AllMachineBookings;
+  showBookingForm: boolean;
   error: string | null;
   loading: boolean;
 }
@@ -41,11 +43,12 @@ const initialState: BookingState = {
   formData: {
     customerName: "",
     startTime: new Date().toISOString(),
-    endTime: new Date().toISOString(),
+    duration: 60,
     machines: [],
     status: "Booked",
   },
   allMachineBookings: dummyData,
+  showBookingForm: false,
   error: null,
   loading: false,
 };
@@ -60,32 +63,43 @@ const bookingSlice = createSlice({
       state.formData = { ...initialState.formData };
     },
 
-    updateBookingForm(state, action: PayloadAction<CustomerBooking>) {
-      state.formData = action.payload;
+    updateBookingForm(state, action: PayloadAction<Partial<CustomerBooking>>) {
+      state.formData = state.formData = {
+        ...state.formData,
+        ...action.payload,
+      }; // Update the form data with the payload
+    },
+
+    setShowBookingForm(state, action: PayloadAction<boolean>) {
+      state.showBookingForm = action.payload;
     },
   },
   extraReducers: (builder) => {
     builder
       .addCase(fetchFirstAndNextBookings.pending, (state) => {
+        state.showBookingForm = false;
         state.loading = true;
         state.error = null;
       })
       .addCase(
         fetchFirstAndNextBookings.fulfilled,
         (state, action: PayloadAction<AllMachineBookings>) => {
+          state.showBookingForm = true;
           state.loading = false;
           state.allMachineBookings = action.payload;
         }
       )
       .addCase(fetchFirstAndNextBookings.rejected, (state, action) => {
         state.loading = false;
+        state.showBookingForm = false;
         state.error = action.payload as string;
       });
   },
 });
 
 // Export actions
-export const { resetForm, updateBookingForm } = bookingSlice.actions;
+export const { resetForm, updateBookingForm, setShowBookingForm } =
+  bookingSlice.actions;
 
 // Reducer export
 export default bookingSlice.reducer;
@@ -94,4 +108,8 @@ export default bookingSlice.reducer;
 export const selectFormData = (state: RootState) => state.booking.formData;
 export const selectAllMachineBookings = (state: RootState) =>
   state.booking.allMachineBookings;
-export const selectLoading = (state: RootState) => state.booking.loading;
+export const selectBookingStatus = (state: RootState) => ({
+  loading: state.booking.loading,
+  error: state.booking.error,
+  showBookingForm: state.booking.showBookingForm,
+});
