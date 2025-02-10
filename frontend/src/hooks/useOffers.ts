@@ -10,7 +10,8 @@ export const useOffers = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedOffer, setSelectedOffer] = useState<Offer | null>(null);
-  const [activeToggleId, setActiveToggleId] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
+
   const [formData, setFormData] = useState<FormData>({
     category: "general",
     title: "",
@@ -42,6 +43,30 @@ export const useOffers = () => {
       setMembershipTypes(response.data as MembershipType[]);
     } catch (error) {
       console.error("Error fetching membership types:", error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axiosInstance.get("/offer/categories");
+      setCategories(response.data.categories);
+    } catch (error) {
+      console.error("Error fetching categories:", error);
+    }
+  };
+
+  const deleteOffer = async (id: string) => {
+    try {
+      const response = await axiosInstance.delete(`/offer/${id}`);
+      if (response.data.success) {
+        setOffers((prevOffers) =>
+          prevOffers.filter((offer) => offer._id !== id)
+        );
+        setSuccessMessage("Offer deleted successfully");
+      }
+    } catch (error) {
+      console.error("Error deleting offer:", error);
+      setError("Failed to delete offer");
     }
   };
 
@@ -154,6 +179,7 @@ export const useOffers = () => {
   useEffect(() => {
     fetchOffers();
     fetchMembershipTypes();
+    fetchCategories();
   }, []);
 
   return {
@@ -173,5 +199,7 @@ export const useOffers = () => {
     handleInputChange,
     openModal,
     closeModal,
+    deleteOffer,
+    categories,
   };
 };

@@ -7,6 +7,7 @@ export interface IMembershipType extends Document {
   xpRate: number; // a value that determines how much XP a user earns per LKR1000 spent
   benefits: string[];
   isActive: boolean;
+  subscriberCount: number;
 }
 
 const MembershipTypeSchema: Schema = new Schema({
@@ -16,6 +17,7 @@ const MembershipTypeSchema: Schema = new Schema({
   xpRate: { type: Number, default: 0 },
   benefits: { type: [String], default: [] },
   isActive: { type: Boolean, default: true },
+  subscriberCount: { type: Number, default: 0 },
 });
 
 export default mongoose.model<IMembershipType>(
