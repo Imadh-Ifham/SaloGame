@@ -5,7 +5,7 @@ import QuickActions from "../components/AdminMembership-page/QuickActions";
 
 export default function AdminMembershipPage() {
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="h-screen overflow-y-auto bg-gray-100 p-8">
       <h1 className="text-3xl font-bold mb-8">
         Membership Management Admin Panel
       </h1>

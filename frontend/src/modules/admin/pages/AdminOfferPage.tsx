@@ -4,7 +4,7 @@ import OfferManagement from "../components/AdminOffer-page/OfferManagement/Offer
 
 const AdminOfferPage = () => {
   return (
-    <div className="min-h-screen bg-gray-100 p-8">
+    <div className="h-screen overflow-y-auto bg-gray-100 p-8">
       <h1 className="text-3xl font-bold mb-8">Offer Management Admin Panel</h1>
       <DashboardSummary />
       <QuickActions />

@@ -2,6 +2,7 @@ import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { dummyData } from "@/types/machine";
 import { fetchFirstAndNextBookings } from "../thunks/bookingThunk";
+import { calculateEndTime, toUTC } from "@/utils/date.util";
 
 interface IMachineBooking {
   machineID: string;
@@ -42,9 +43,10 @@ interface BookingState {
 const initialState: BookingState = {
   formData: {
     customerName: "",
-    startTime: new Date().toISOString(),
+    startTime: toUTC(new Date().toISOString()),
+    endTime: calculateEndTime(toUTC(new Date().toISOString()), 60),
     duration: 60,
-    machines: [],
+    machines: [], // Initialize as an empty array
     status: "Booked",
   },
   allMachineBookings: dummyData,
@@ -61,17 +63,31 @@ const bookingSlice = createSlice({
     // Action to reset the form
     resetForm(state) {
       state.formData = { ...initialState.formData };
+      state.formData.endTime = calculateEndTime(
+        initialState.formData.startTime,
+        initialState.formData.duration
+      );
     },
 
     updateBookingForm(state, action: PayloadAction<Partial<CustomerBooking>>) {
-      state.formData = state.formData = {
+      state.formData = {
         ...state.formData,
         ...action.payload,
-      }; // Update the form data with the payload
+      };
+
+      // Recalculate endTime if startTime or duration is updated
+      if (action.payload.startTime || action.payload.duration) {
+        const { startTime, duration } = state.formData;
+        state.formData.endTime = calculateEndTime(startTime, duration);
+      }
     },
 
     setShowBookingForm(state, action: PayloadAction<boolean>) {
       state.showBookingForm = action.payload;
+    },
+
+    setInitialMachines(state, action: PayloadAction<string>) {
+      state.formData.machines = [{ machineID: action.payload, userCount: 1 }];
     },
   },
   extraReducers: (builder) => {
@@ -98,8 +114,12 @@ const bookingSlice = createSlice({
 });
 
 // Export actions
-export const { resetForm, updateBookingForm, setShowBookingForm } =
-  bookingSlice.actions;
+export const {
+  resetForm,
+  updateBookingForm,
+  setShowBookingForm,
+  setInitialMachines,
+} = bookingSlice.actions;
 
 // Reducer export
 export default bookingSlice.reducer;

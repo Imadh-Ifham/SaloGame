@@ -11,6 +11,7 @@ import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import DurationSelector from "./DurationSelector";
 import DateSelector from "./DateSelector";
+import { getCurrentUTC, toUTC } from "@/utils/date.util";
 
 const CheckAvailability: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -22,11 +23,19 @@ const CheckAvailability: React.FC = () => {
     dispatch(
       fetchFirstAndNextBookings({
         startTime: formData.startTime
-          ? formData.startTime
-          : new Date().toISOString(),
+          ? toUTC(formData.startTime)
+          : getCurrentUTC(),
         duration: formData.duration,
       })
     );
+
+    if (activeNav === "Now") {
+      dispatch(
+        updateBookingForm({
+          startTime: getCurrentUTC(),
+        } as Partial<CustomerBooking>)
+      );
+    }
   };
 
   const handleBookingNavChange = (nav: "Now" | "Later") => {
@@ -34,11 +43,12 @@ const CheckAvailability: React.FC = () => {
     if (nav === "Now") {
       dispatch(
         updateBookingForm({
-          startTime: new Date().toISOString(),
+          startTime: getCurrentUTC(),
         } as Partial<CustomerBooking>)
       );
     }
   };
+
   return (
     <>
       {/* Navigation buttons */}
