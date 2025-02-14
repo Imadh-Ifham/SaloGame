@@ -9,6 +9,7 @@ import membershipRoute from "./routes/membershipType.routes";
 import machineRoute from "./routes/machine.routes";
 import subscriptionRoutes from "./routes/subscription.routes";
 import userRoutes from "./routes/user.routes";
+import eventRoutes from "./routes/event.routes";
 
 const app: Express = express();
 
@@ -27,6 +28,7 @@ app.use("/api/machine", machineRoute);
 app.use("/api/users", userRoutes);
 app.use("/api/bookings", bookingRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
+app.use("/api/events", eventRoutes);
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
