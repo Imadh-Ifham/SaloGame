@@ -67,7 +67,8 @@ const DateSelector: React.FC<DatePickerProps> = ({ activeNav }) => {
               }
               dateFormat="MMMM d, yyyy h:mm aa"
               placeholderText="Select date & time"
-              className="w-full bg-transparent outline-none text-sm"
+              className="bg-transparent outline-none text-sm w-[200px]"
+              popperClassName="w-[350px]"
             />
           </div>
         </div>

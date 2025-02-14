@@ -1,6 +1,6 @@
 import React, { useEffect } from "react";
-import Console from "./MachineLibarary/Console"; // Component to render a console machine
-import PC from "./MachineLibarary/PC"; // Component to render a PC machine
+import Console from "./Console"; // Component to render a console machine
+import PC from "./PC"; // Component to render a PC machine
 import { useSelector } from "react-redux"; // Redux hook to access the store's state
 import {
   selectMachines,

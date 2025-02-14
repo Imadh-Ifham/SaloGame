@@ -1,7 +1,4 @@
-import {
-  selectMachineStatus,
-  selectSelectedMachine,
-} from "@/store/selectors/machineSelector";
+import { selectSelectedMachine } from "@/store/selectors/machineSelector";
 import { availabilityBgColors } from "@/types/machine";
 import React from "react";
 import { useSelector } from "react-redux";
@@ -10,7 +7,6 @@ import { selectAllMachineBookings } from "@/store/slices/bookingSlice";
 
 const BookingOverview: React.FC = () => {
   const machine = useSelector(selectSelectedMachine);
-  const machineStatus = useSelector(selectMachineStatus);
   const allMachineBookings = useSelector(selectAllMachineBookings);
   return (
     <div className="h-screen col-span-5 row-span-1 lg:col-span-2 lg:row-span-2 flex flex-col p-4 border-l shadow-md bg-white rounded-md">
@@ -36,7 +32,7 @@ const BookingOverview: React.FC = () => {
               >
                 {allMachineBookings[machine._id].status}
               </div>
-              {machineStatus[machine._id] !== "Maintenance" && (
+              {allMachineBookings[machine._id].status !== "Maintenance" && (
                 <div className="mt-3 text-sm text-gray-600 space-y-1">
                   <div>
                     <span className="font-medium">Till:</span>{" "}

@@ -52,7 +52,7 @@ const CheckAvailability: React.FC = () => {
   return (
     <>
       {/* Navigation buttons */}
-      <div className="flex gap-3 bg-gray-100 p-2 rounded-lg">
+      <div className="flex gap-3 bg-gray-100 p-2 rounded-lg mb-4">
         {["Now", "Later"].map((item) => (
           <Button
             key={item}
