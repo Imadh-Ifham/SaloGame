@@ -1,7 +1,10 @@
 import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { dummyData } from "@/types/machine";
-import { fetchFirstAndNextBookings } from "../thunks/bookingThunk";
+import {
+  createBooking,
+  fetchFirstAndNextBookings,
+} from "../thunks/bookingThunk";
 import { calculateEndTime, toUTC } from "@/utils/date.util";
 
 interface IMachineBooking {
@@ -108,6 +111,18 @@ const bookingSlice = createSlice({
       .addCase(fetchFirstAndNextBookings.rejected, (state, action) => {
         state.loading = false;
         state.showBookingForm = false;
+        state.error = action.payload as string;
+      })
+      .addCase(createBooking.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(createBooking.fulfilled, (state) => {
+        state.loading = false;
+        state.formData = initialState.formData; // Reset form data
+      })
+      .addCase(createBooking.rejected, (state, action) => {
+        state.loading = false;
         state.error = action.payload as string;
       });
   },

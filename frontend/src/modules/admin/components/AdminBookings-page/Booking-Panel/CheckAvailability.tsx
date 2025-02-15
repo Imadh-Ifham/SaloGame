@@ -68,15 +68,32 @@ const CheckAvailability: React.FC = () => {
           </Button>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-4 w-full">
+      <div className="flex flex-wrap items-center gap-2 w-full relative">
         {/* Date Picker - Only for "Later" Mode */}
-        <DateSelector activeNav={activeNav} />
+        <div
+          className={`transition-all duration-700 ease-in-out transform w-full ${
+            activeNav === "Later"
+              ? "opacity-100 max-h-64 translate-y-0"
+              : "opacity-0 max-h-0 -translate-y-4"
+          } overflow-hidden`}
+          style={{
+            transitionDelay: activeNav === "Later" ? "0ms" : "200ms", // Delay hiding for smoother transition
+          }}
+        >
+          <DateSelector activeNav={activeNav} />
+        </div>
 
         {/* Duration Selector */}
-        <DurationSelector />
+        <div
+          className={`transition-all duration-700 ease-in-out transform w-full ${
+            activeNav === "Later" ? "translate-y-2" : "translate-y-0"
+          }`}
+        >
+          <DurationSelector />
+        </div>
 
         {/* Check Availability Button */}
-        <div className="w-full flex justify-center">
+        <div className="w-full flex justify-center mt-4">
           <Button
             type="primary"
             onClick={handleCheckAvailability}

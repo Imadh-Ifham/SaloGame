@@ -29,10 +29,10 @@ const BookingPanel: React.FC = () => {
           {/* Check Availability */}
           <CheckAvailability />
         </div>
-        <div className="col-span-3">
+        <div className="col-span-3 max-h-[90vh] overflow-y-auto">
           {/* Current Booking Status */}
           {selectedMachine ? (
-            <div className="border rounded-lg p-4 flex-grow overflow-y-auto">
+            <div className="border rounded-lg p-4 w-full">
               {currentBooking ? (
                 <CurrentBookingDetails
                   currentBooking={currentBooking}

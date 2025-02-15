@@ -82,7 +82,7 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
           <div className="text-gray-800 font-semibold">Upcoming Booking</div>
           <div className="text-sm text-gray-600">
             <span className="font-medium">{nextBooking.customerName}</span> -{" "}
-            {dayjs(currentBooking.startTime).format("MMM D, YYYY h:mm A")}
+            {dayjs(nextBooking.startTime).format("MMM D, YYYY h:mm A")}
           </div>
         </div>
       )}

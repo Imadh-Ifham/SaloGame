@@ -1,9 +1,14 @@
 import { selectSelectedMachine } from "@/store/selectors/machineSelector";
-import { selectAllMachineBookings } from "@/store/slices/bookingSlice";
+import {
+  selectAllMachineBookings,
+  selectFormData,
+  updateBookingForm,
+} from "@/store/slices/bookingSlice";
 import { selectMachine } from "@/store/slices/machineSlice";
 import { availabilityBgColors, Machine } from "@/types/machine";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { selectIsMoreMachineClicked } from "@/store/slices/layoutSlice";
 
 interface PCProps {
   machine: Machine;
@@ -12,17 +17,44 @@ interface PCProps {
 
 const PC: React.FC<PCProps> = ({ machine, rotate }) => {
   const dispatch = useDispatch();
-  const handleMachineSelect = () => {
-    dispatch(selectMachine(machine._id));
-  };
   const selectedMachine = useSelector(selectSelectedMachine);
   const allMachineBookings = useSelector(selectAllMachineBookings);
+  const isMoreMachineClicked = useSelector(selectIsMoreMachineClicked);
+  const formData = useSelector(selectFormData);
+
+  const handleMachineSelect = () => {
+    if (isMoreMachineClicked) {
+      if (allMachineBookings[machine._id].status !== "Available") {
+        return; // Only allow selection of machines with status "Available"
+      }
+
+      const isSelected = formData.machines.some(
+        (m) => m.machineID === machine._id
+      );
+      const updatedMachines = isSelected
+        ? formData.machines.filter((m) => m.machineID !== machine._id)
+        : [...formData.machines, { machineID: machine._id, userCount: 1 }];
+
+      dispatch(updateBookingForm({ machines: updatedMachines }));
+    } else {
+      dispatch(selectMachine(machine._id));
+    }
+  };
+
+  const isSelected = formData.machines.some((m) => m.machineID === machine._id);
+  const isAvailable = allMachineBookings[machine._id].status === "Available";
+
   return (
     <div
       onClick={handleMachineSelect}
-      className={`w-20 h-20 border border-green-300 rounded-md hover:bg-gray-200 hover:scale-105 hover:shadow-lg transition-transform duration-300 ease-in-out flex flex-col items-center cursor-pointer ${
-        selectedMachine?.serialNumber === machine.serialNumber
-          ? "bg-gray-200 scale-105"
+      className={`w-20 h-20 border border-gray-300 rounded-md hover:bg-gray-200 hover:scale-105 hover:shadow-lg transition-transform duration-300 ease-in-out flex flex-col items-center cursor-pointer ${
+        selectedMachine?.serialNumber === machine.serialNumber &&
+        !isMoreMachineClicked
+          ? "bg-gray-300 scale-105"
+          : ""
+      } ${isSelected ? "bg-gray-300" : ""} ${
+        !isAvailable && isMoreMachineClicked
+          ? "opacity-50 cursor-not-allowed"
           : ""
       }`}
     >
