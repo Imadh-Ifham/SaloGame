@@ -322,10 +322,9 @@ const OffersSection: React.FC = () => {
 
 const StatsSection: React.FC = () => {
   const stats = [
-    { number: "150K+", label: "Active Players" },
-    { number: "50+", label: "Tournaments" },
-    { number: "24/7", label: "Support" },
-    { number: "99%", label: "Uptime" },
+    { number: "500+", label: "Active Players" },
+    { number: "20+", label: "Tournaments" },
+  { number: "99%", label: "Uptime" },
   ];
 
   return (
