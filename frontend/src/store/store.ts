@@ -4,6 +4,7 @@ import machineReducer from "./slices/machineSlice";
 import membershipReducer from "./slices/membershipSlice";
 import offerReducer from "./slices/offerSlice";
 import bookingReducer from "./slices/bookingSlice";
+import notificationReducer from "./slices/notificationSlice";
 
 const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ const store = configureStore({
     membership: membershipReducer,
     offer: offerReducer,
     booking: bookingReducer,
+    notification: notificationReducer,
   },
 });
 

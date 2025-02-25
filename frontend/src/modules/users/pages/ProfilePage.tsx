@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import HomeLayout from "../layout/HomeLayout";
 import axiosInstance from "../../../axios.config";
 import { auth } from "../../../config/firebase";
+import NotificationArea from "../../../components/notifications/NotificationArea";
 
 const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -89,6 +90,8 @@ const ProfilePage: React.FC = () => {
           <h1 className="text-3xl font-press text-primary mb-8 text-center">
             My Profile
           </h1>
+
+          <NotificationArea />
 
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 border border-primary">
             {/* Profile Information */}
