@@ -6,12 +6,16 @@ import {
   getOfferById,
   updateOffer,
   toggleActiveOffer,
+  getCategories,
 } from "../controllers/offer.controller";
 
 const router: Router = express.Router();
 
 // Route to get all offers
 router.get("/", getAllOffers);
+
+// Route to get all categories
+router.get("/categories", getCategories);
 
 // Route to create a new offer
 router.post("/", createOffer);

@@ -84,12 +84,10 @@ export const createOffer = async (
       (category === "time-based" || category === "exclusive") &&
       (!startDate || !endDateTime)
     ) {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: "Start date and end date are required for time-based offers",
-        });
+      res.status(400).json({
+        success: false,
+        message: "Start date and end date are required for time-based offers",
+      });
       return;
     }
 
@@ -97,12 +95,10 @@ export const createOffer = async (
       (category === "membership-based" || category === "exclusive") &&
       !membershipType
     ) {
-      res
-        .status(400)
-        .json({
-          success: false,
-          message: "Membership type is required for membership-based offers",
-        });
+      res.status(400).json({
+        success: false,
+        message: "Membership type is required for membership-based offers",
+      });
       return;
     }
 
@@ -148,22 +144,18 @@ export const updateOffer = async (
       const offerEndDate = new Date(updateFields.endDateTime || "");
 
       if (offerStartDate < currentDate) {
-        res
-          .status(400)
-          .json({
-            success: false,
-            message: "Start date cannot be in the past",
-          });
+        res.status(400).json({
+          success: false,
+          message: "Start date cannot be in the past",
+        });
         return;
       }
 
       if (offerEndDate <= offerStartDate) {
-        res
-          .status(400)
-          .json({
-            success: false,
-            message: "End date must be after start date",
-          });
+        res.status(400).json({
+          success: false,
+          message: "End date must be after start date",
+        });
         return;
       }
     }
@@ -179,13 +171,11 @@ export const updateOffer = async (
 
     res.status(200).json({ success: true, data: updatedOffer });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error updating the offer",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error updating the offer",
+      error: (error as Error).message,
+    });
   }
 };
 
@@ -209,13 +199,11 @@ export const deleteOffer = async (
       .status(200)
       .json({ success: true, message: "Offer deleted successfully" });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error deleting the offer",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error deleting the offer",
+      error: (error as Error).message,
+    });
   }
 };
 
@@ -254,13 +242,11 @@ export const validateOffer = async (
     await offer.save();
     res.status(200).json({ success: true, data: offer });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error validating the offer",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error validating the offer",
+      error: (error as Error).message,
+    });
   }
 };
 
@@ -294,12 +280,34 @@ export const toggleActiveOffer = async (
 
     res.status(200).json({ success: true, data: updatedOffer });
   } catch (error) {
-    res
-      .status(500)
-      .json({
-        success: false,
-        message: "Error toggling offer status",
-        error: (error as Error).message,
-      });
+    res.status(500).json({
+      success: false,
+      message: "Error toggling offer status",
+      error: (error as Error).message,
+    });
+  }
+};
+
+/**
+ * Get offers by category
+ */
+export const getCategories = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    // Get unique categories from the Offer model
+    const uniqueCategories = await Offer.distinct("category");
+
+    res.status(200).json({
+      success: true,
+      categories: uniqueCategories,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error fetching categories",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };

@@ -29,7 +29,7 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 my-20">
+    <div className="h-screen overflow-y-auto container mx-auto px-4 py-8">
       <h1 className="text-2xl font-bold text-primary dark:text-white mb-8">
         System Settings
       </h1>
