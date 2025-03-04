@@ -36,6 +36,7 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
 
       dispatch(updateBookingForm({ machines: updatedMachines }));
     } else {
+      dispatch(updateBookingForm({ machines: [] }));
       dispatch(selectMachine(machine._id));
     }
   };
@@ -46,14 +47,16 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
   return (
     <div
       onClick={handleMachineSelect}
-      className={`w-full h-32 border rounded-2xl border-gray-300 hover:bg-gray-200 hover:scale-105 hover:shadow-xl
+      className={`w-full h-32 border rounded-2xl border-gray-300 hover:bg-gray-200 hover:scale-105 shadow-xl
     transition-transform duration-300 ease-in-out overflow-hidden flex flex-col items-center cursor-pointer ${
       selectedMachine?.serialNumber === machine.serialNumber &&
       !isMoreMachineClicked
         ? "bg-gray-200 scale-105 shadow-lg"
         : ""
     } ${isSelected ? "bg-gray-200" : ""} ${
-        !isAvailable ? "opacity-50 cursor-not-allowed" : ""
+        !isAvailable && isMoreMachineClicked
+          ? "opacity-50 !cursor-default hover:scale-100"
+          : ""
       }`}
     >
       {/* Machine Info */}

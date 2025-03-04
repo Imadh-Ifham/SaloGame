@@ -14,16 +14,20 @@ import {
 } from "@/store/slices/bookingSlice";
 import { AppDispatch } from "@/store/store";
 import dayjs from "dayjs";
-import { fromUTC } from "@/utils/date.util";
+import { fromUTC, getCurrentUTC, toUTC } from "@/utils/date.util";
 import {
   selectSelectedMachine,
   selectMachines,
 } from "@/store/selectors/machineSelector";
 import {
+  resetMoreMachine,
   selectIsMoreMachineClicked,
   toggleMoreMachine,
 } from "@/store/slices/layoutSlice";
-import { createBooking } from "@/store/thunks/bookingThunk";
+import {
+  createBooking,
+  fetchFirstAndNextBookings,
+} from "@/store/thunks/bookingThunk";
 
 const NewBookingForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -40,8 +44,22 @@ const NewBookingForm: React.FC = () => {
   }, [selectedMachine, dispatch]);
 
   const handleStartBooking = () => {
+    dispatch(resetMoreMachine());
     dispatch(setShowBookingForm(false));
-    dispatch(createBooking(formData));
+    dispatch(createBooking(formData))
+      .then(() => {
+        dispatch(
+          fetchFirstAndNextBookings({
+            startTime: formData.startTime
+              ? toUTC(formData.startTime)
+              : getCurrentUTC(),
+            duration: formData.duration,
+          })
+        );
+      })
+      .catch((error) => {
+        console.error("Booking failed:", error);
+      });
   };
 
   // Convert UTC times to user's local timezone

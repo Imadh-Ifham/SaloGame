@@ -8,6 +8,7 @@ import { selectSelectedMachine } from "@/store/selectors/machineSelector";
 import CheckAvailability from "./CheckAvailability";
 import NewBookingForm from "./NewBookingForm";
 import CurrentBookingDetails from "./CurrentBookingDetails";
+import UpcomingBooking from "./UpcomingBooking";
 
 const BookingPanel: React.FC = () => {
   const selectedMachine = useSelector(selectSelectedMachine);
@@ -22,12 +23,18 @@ const BookingPanel: React.FC = () => {
   }
 
   return (
-    <div className="py-2 px-4 flex flex-col gap-4 h-screen">
-      <div className="text-lg font-bold">Booking Mode</div>
-      <div className="grid grid-cols-5 gap-4">
-        <div className="col-span-2">
+    <div className="py-2 px-4 flex flex-col gap-4 h-screen shadow-lg">
+      <div className="text-base font-poppins font-semibold">Booking Mode</div>
+      <div className="grid grid-cols-5 gap-4 h-screen">
+        <div className="grid grid-rows-5 col-span-2 gap-4 h-[calc(100vh-4rem)]">
           {/* Check Availability */}
-          <CheckAvailability />
+          <div className="row-span-2">
+            <CheckAvailability />
+          </div>
+          {/* Upcoming Bookings */}
+          <div className="row-span-3">
+            <UpcomingBooking />
+          </div>
         </div>
         <div className="col-span-3 max-h-[90vh] overflow-y-auto">
           {/* Current Booking Status */}

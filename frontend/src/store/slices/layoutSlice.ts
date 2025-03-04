@@ -16,10 +16,13 @@ const layoutSlice = createSlice({
     toggleMoreMachine(state) {
       state.isMoreMachineClicked = !state.isMoreMachineClicked;
     },
+    resetMoreMachine(state) {
+      state.isMoreMachineClicked = false;
+    },
   },
 });
 
-export const { toggleMoreMachine } = layoutSlice.actions;
+export const { resetMoreMachine, toggleMoreMachine } = layoutSlice.actions;
 
 export default layoutSlice.reducer;
 

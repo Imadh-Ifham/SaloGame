@@ -52,7 +52,7 @@ const CheckAvailability: React.FC = () => {
   return (
     <>
       {/* Navigation buttons */}
-      <div className="flex gap-3 bg-gray-100 p-2 rounded-lg mb-4">
+      <div className="flex gap-3 bg-gray-100 p-2 rounded-lg mb-4 shadow-sm">
         {["Now", "Later"].map((item) => (
           <Button
             key={item}
@@ -97,7 +97,7 @@ const CheckAvailability: React.FC = () => {
           <Button
             type="primary"
             onClick={handleCheckAvailability}
-            className="w-52 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition"
+            className="w-52 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-lg"
           >
             {loading ? "Checking..." : "Check Availability"}
           </Button>
