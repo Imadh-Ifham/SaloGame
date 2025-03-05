@@ -129,11 +129,30 @@ export default {
         marquee: "marquee var(--duration) infinite linear",
         "marquee-vertical": "marquee-vertical var(--duration) linear infinite",
       },
+
+// animations for authpage.tsx
+transitionProperty: {
+  opacity: "opacity",
+},
+transitionDuration: {
+  '1000': "1000ms",
+},
+
+//profilepage.tsx
+backdropBlur: {
+  xs: '2px',
+},
+boxShadow: {
+  'glow': '0 0 20px rgba(16, 185, 129, 0.2)',
+},
+
     },
   },
   plugins: [
     require("preline/plugin"),
     require("tailwindcss-bg-patterns"),
     require("tailwindcss-animate"),
-  ],
+]
+
+
 };
