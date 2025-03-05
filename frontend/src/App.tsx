@@ -26,6 +26,7 @@ import AdminMembershipPage from "./modules/admin/pages/AdminMembershipPage";
 import AdminPackagePage from "./modules/admin/pages/AdminPackagePage";
 import PackagesPage from "./modules/users/pages/PackagesPage";
 import AuthPage from "./modules/users/pages/AuthPage";
+import ForgotPassword from "./modules/users/pages/ForgotPassword"
 import ProfilePage from "./modules/users/pages/ProfilePage";
 import AdminBookingManager from "./modules/admin/pages/AdminBookingManager";
 import AdminAuthPage from "./modules/admin/pages/AdminAuthPage";
@@ -53,6 +54,7 @@ const App: React.FC = () => {
         <Route path="/memberships" element={<MembershipPage />} />
         <Route path="/profile" element={<ProfilePage />} />
         <Route path="*" element={<NotFoundPage />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
 
         {/* Offer Category Routes */}
         <Route path="/offers/time-based" element={<TimeBased />} />
