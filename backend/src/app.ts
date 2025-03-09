@@ -1,5 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
+import { AutoRenewalService } from "./services/autoRenewalService";
 
 import packageroute from "./routes/package.routes";
 import gameRoutes from "./routes/game.routes";
@@ -12,6 +13,10 @@ import userRoutes from "./routes/user.routes";
 import eventRoutes from "./routes/event.routes";
 
 const app: Express = express();
+
+// Auto renewal service
+const autoRenewalService = new AutoRenewalService();
+autoRenewalService.start();
 
 // Middleware
 app.use(cors());

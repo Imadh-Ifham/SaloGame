@@ -46,10 +46,26 @@ const SubscriptionSchema: Schema = new Schema(
       enum: ["active", "expired", "cancelled"],
       default: "active",
     },
+
     paymentStatus: {
       type: String,
       enum: ["pending", "completed", "failed"],
       default: "pending",
+    },
+
+    autoRenew: {
+      type: Boolean,
+      default: false,
+    },
+    paymentDetails: {
+      cardNumber: {
+        type: String,
+        // In production, you'd encrypt this field
+      },
+      expiryDate: {
+        type: String,
+      },
+      // No CVV for security reasons
     },
   },
   { timestamps: true }
