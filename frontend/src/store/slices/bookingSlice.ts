@@ -132,7 +132,12 @@ const bookingSlice = createSlice({
       // Booking successful - Reset form
       .addCase(createBooking.fulfilled, (state) => {
         state.loading = false;
-        state.formData = initialState.formData;
+        state.formData = {
+          ...initialState.formData,
+          startTime: state.formData.startTime,
+          endTime: state.formData.endTime,
+          duration: state.formData.duration,
+        };
       })
       // Booking failed - Store error
       .addCase(createBooking.rejected, (state, action) => {

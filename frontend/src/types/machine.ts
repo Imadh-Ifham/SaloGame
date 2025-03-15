@@ -90,7 +90,7 @@ export const dummyData: AllMachineBookings = {
   },
   "679b07b0f752557623abe17f": {
     firstBooking: null,
-    status: "Available",
+    status: "Maintenance",
     nextBooking: null,
   },
   "679b07b5f752557623abe181": {
