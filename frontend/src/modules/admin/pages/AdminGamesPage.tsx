@@ -7,6 +7,7 @@ import axiosInstance from "../../../axios.config";
 import Modal from "../../../components/Modal";
 import AdminGameCard from "../components/AdminGames-page/AdminGameCard";
 import GameForm from "../components/AdminGames-page/GameForm";
+import GameCardSkeleton from "../../../components/GameCardSkeleton";
 
 interface Game {
   _id: string;
@@ -175,6 +176,22 @@ const AdminGamesPage: React.FC = () => {
     fetchGames(nextPage);
   };
 
+  // Helper function to render skeleton loaders
+  const renderSkeletons = (count: number) => {
+    return Array(count)
+      .fill(0)
+      .map((_, index) => (
+        <motion.div
+          key={`skeleton-${index}`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: index * 0.1 }}
+        >
+          <GameCardSkeleton />
+        </motion.div>
+      ));
+  };
+
   return (
     <section>
       <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-transparent">
@@ -248,10 +265,8 @@ const AdminGamesPage: React.FC = () => {
         </motion.div>
 
         {loading ? (
-          <div className="flex justify-center items-center mt-16">
-            <p className="text-lg text-gray-700 dark:text-gray-300">
-              Loading games...
-            </p>
+          <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
+            {renderSkeletons(12)}
           </div>
         ) : error ? (
           <div className="flex justify-center items-center mt-16">
@@ -272,6 +287,12 @@ const AdminGamesPage: React.FC = () => {
             </div>
 
             {/* Load More Section */}
+            {loadingMore && (
+              <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
+                {renderSkeletons(4)}
+              </div>
+            )}
+
             {!searchQuery && hasMore && (
               <motion.div
                 initial={{ opacity: 0 }}
@@ -284,15 +305,9 @@ const AdminGamesPage: React.FC = () => {
                   disabled={loadingMore}
                   className="flex items-center px-6 py-3 bg-gamer-green text-white rounded-lg hover:bg-gamer-green/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {loadingMore ? (
-                    <span className="flex items-center">
-                      Loading more games...
-                    </span>
-                  ) : (
-                    <span className="flex items-center">
-                      Load More Games
-                    </span>
-                  )}
+                  <span className="flex items-center">
+                    Load More Games
+                  </span>
                 </Button>
               </motion.div>
             )}

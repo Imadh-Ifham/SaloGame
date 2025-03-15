@@ -5,6 +5,7 @@ import { Button } from "@headlessui/react";
 import HomeLayout from "../layout/HomeLayout";
 import axiosInstance from "../../../axios.config";
 import { FaStar, FaStarHalfAlt, FaRegStar } from "react-icons/fa"; // Importing star icons from react-icons
+import GameCardSkeleton from "../../../components/GameCardSkeleton";
 
 interface Game {
   _id: string;
@@ -362,11 +363,16 @@ const GamesPage: React.FC = () => {
         <div className="px-4 sm:px-6 lg:px-8 py-8">
           {/* Handling Loading and Error States */}
           {loading && page === 1 ? (
-            <div className="flex justify-center items-center">
-              <p className="text-lg text-gray-400">
-                Loading games...
-              </p>
-            </div>
+            <motion.div 
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+            >
+              {Array.from({ length: GAMES_PER_PAGE }).map((_, index) => (
+                <GameCardSkeleton key={index} index={index} />
+              ))}
+            </motion.div>
           ) : error ? (
             <div className="flex justify-center items-center">
               <p className="text-lg text-red-500">{error}</p>

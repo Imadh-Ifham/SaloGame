@@ -4,6 +4,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .skeleton-shine {
+    animation: shimmer 2s infinite;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
