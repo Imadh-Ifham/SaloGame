@@ -4,6 +4,7 @@ import {
   PencilIcon,
   TrashIcon,
   ComputerDesktopIcon,
+  StarIcon,
 } from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
 
@@ -39,6 +40,7 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleDelete = async () => {
     setIsDeleting(true);
@@ -67,54 +69,69 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3, delay: index * 0.1 }}
         viewport={{ once: true }}
-        className="flex bg-background dark:bg-background-dark border border-border-primary rounded-lg overflow-hidden shadow-md"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+        className="group relative bg-background/30 dark:bg-background-dark/30 backdrop-blur-md border border-border-primary/50 rounded-xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300"
       >
-        <div className="w-2/5">
+        {/* Game Image with Overlay */}
+        <div className="relative h-36 w-full overflow-hidden">
           <img
             src={game.image}
             alt={game.name}
-            className="w-full h-full object-cover"
+            className={`w-full h-full object-cover transition-all duration-300 ${isHovered ? 'scale-105 brightness-[0.85] blur-[2px]' : ''}`}
           />
-        </div>
-        <div className="p-4 w-3/5 flex flex-col justify-between">
-          <div>
-            <h3 className="text-lg font-poppins font-semibold text-text-primary dark:text-white mb-2">
-              {game.name}
-            </h3>
-            <div className="flex flex-wrap gap-1 mb-2">
-              {game.genres.map((genre) => (
-                <span
-                  key={genre}
-                  className="px-2 py-0.5 text-xs font-poppins text-gamer-green border border-gamer-green rounded-full"
-                >
-                  {genre}
-                </span>
-              ))}
-            </div>
-          </div>
-          <div className="flex justify-end space-x-1">
+          
+          {/* Admin Actions Overlay */}
+          <div className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-3 transition-all duration-300 ${isHovered ? 'opacity-100 scale-100' : 'opacity-0 scale-90'}`}>
             <Button
               onClick={() => setIsEditModalOpen(true)}
-              className="p-1 hover:text-gamer-green transition"
+              className="p-3 bg-gamer-green text-white rounded-full shadow-xl transition-all transform hover:scale-110 hover:bg-gamer-green/90"
               title="Edit Game"
             >
-              <PencilIcon className="w-4 h-4" />
+              <PencilIcon className="w-5 h-5" />
             </Button>
             <Button
               onClick={() => setIsDeleteConfirmOpen(true)}
-              className="p-1 hover:text-red-500 transition"
+              className="p-3 bg-red-500 text-white rounded-full shadow-xl transition-all transform hover:scale-110 hover:bg-red-500/90"
               disabled={isDeleting}
               title="Delete Game"
             >
-              <TrashIcon className="w-4 h-4" />
+              <TrashIcon className="w-5 h-5" />
             </Button>
             <Button
               onClick={() => setIsAssignModalOpen(true)}
-              className="p-1 hover:text-blue-500 transition"
+              className="p-3 bg-blue-500 text-white rounded-full shadow-xl transition-all transform hover:scale-110 hover:bg-blue-500/90"
               title="Assign Machines"
             >
-              <ComputerDesktopIcon className="w-4 h-4" />
+              <ComputerDesktopIcon className="w-5 h-5" />
             </Button>
+          </div>
+        </div>
+
+        {/* Game Info */}
+        <div className="p-3">
+          <div className="flex justify-between items-start mb-2">
+            <h3 className="text-base font-press font-semibold text-text-primary dark:text-white truncate flex-1">
+              {game.name}
+            </h3>
+            <div className="flex items-center gap-1 bg-gamer-green/10 px-2 py-0.5 rounded-full ml-2">
+              <StarIcon className="w-3.5 h-3.5 text-gamer-green" />
+              <span className="text-xs font-medium text-gamer-green">
+                {game.rating.toFixed(1)}
+              </span>
+            </div>
+          </div>
+
+          {/* Genres */}
+          <div className="flex flex-wrap gap-1">
+            {game.genres.map((genre) => (
+              <span
+                key={genre}
+                className="px-1.5 py-0.5 text-xs font-medium text-gamer-green bg-gamer-green/10 rounded-full border border-gamer-green/20"
+              >
+                {genre}
+              </span>
+            ))}
           </div>
         </div>
       </motion.div>
