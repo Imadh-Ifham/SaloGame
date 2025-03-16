@@ -4,7 +4,7 @@ import { CleanupService } from "../services/cleanupService";
 const connectDB = async () => {
   try {
     const conn = await mongoose.connect(process.env.MONGO_URI || "");
-    CleanupService.initializeCleanupJob();
+    //CleanupService.initializeCleanupJob();
     console.log(`MongoDB Connected to Salo/SaloGame (AWS) - Clustor 0`);
   } catch (error) {
     console.error(`Error: ${error instanceof Error ? error.message : error}`);

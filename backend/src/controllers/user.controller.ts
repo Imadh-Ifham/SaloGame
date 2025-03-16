@@ -123,10 +123,26 @@ export const getUsers = async (
       return;
     }
 
-    const users = await User.find().select("-password");
+    const users = await User.find()
+      .select("-password")
+      .populate({
+        path: "defaultMembershipId",
+        select: "name _id",
+      })
+      .populate({
+        path: "subscription", // Add this to populate subscription data
+        select: "startDate endDate status",
+      })
+      .sort({ createdAt: -1 })
+      .lean();
+
     res.json(users);
   } catch (error) {
-    res.status(500).json({ message: "Error fetching users", error });
+    console.error("Error fetching users:", error);
+    res.status(500).json({
+      message: "Error fetching users",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };
 

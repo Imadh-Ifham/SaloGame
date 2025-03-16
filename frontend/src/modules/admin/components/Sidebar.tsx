@@ -62,6 +62,7 @@ const Sidebar = ({ user }: { user: User }) => {
         {renderNavLink("/admin/packages", "Packages", "📦")}
         {renderNavLink("/admin/offers", "Offers", "🎁")}
         {renderNavLink("/admin/memberships", "Memberships", "🌟")}
+        {renderNavLink("/admin/events", "Events", "🎯")}
 
         {user?.role === "owner" &&
           renderNavLink("/admin/settings", "Settings", "⚙️")}
