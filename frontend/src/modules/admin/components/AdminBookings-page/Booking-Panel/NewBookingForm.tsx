@@ -4,6 +4,7 @@ import {
   FileTextOutlined,
   PhoneOutlined,
   UserOutlined,
+  PlusOutlined,
 } from "@ant-design/icons";
 import {
   selectFormData,
@@ -13,17 +14,27 @@ import {
 } from "@/store/slices/bookingSlice";
 import { AppDispatch } from "@/store/store";
 import dayjs from "dayjs";
-import { fromUTC } from "@/utils/date.util";
+import { fromUTC, getCurrentUTC, toUTC } from "@/utils/date.util";
 import {
   selectSelectedMachine,
   selectMachines,
 } from "@/store/selectors/machineSelector";
+import {
+  resetMoreMachine,
+  selectIsMoreMachineClicked,
+  toggleMoreMachine,
+} from "@/store/slices/layoutSlice";
+import {
+  createBooking,
+  fetchFirstAndNextBookings,
+} from "@/store/thunks/bookingThunk";
 
 const NewBookingForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const formData = useSelector(selectFormData);
   const selectedMachine = useSelector(selectSelectedMachine);
   const machines = useSelector(selectMachines);
+  const isPlusButtonSelected = useSelector(selectIsMoreMachineClicked);
   const userTimezone = dayjs.tz.guess(); // Automatically detect user's timezone
 
   useEffect(() => {
@@ -33,7 +44,22 @@ const NewBookingForm: React.FC = () => {
   }, [selectedMachine, dispatch]);
 
   const handleStartBooking = () => {
+    dispatch(resetMoreMachine());
     dispatch(setShowBookingForm(false));
+    dispatch(createBooking(formData))
+      .then(() => {
+        dispatch(
+          fetchFirstAndNextBookings({
+            startTime: formData.startTime
+              ? toUTC(formData.startTime)
+              : getCurrentUTC(),
+            duration: formData.duration,
+          })
+        );
+      })
+      .catch((error) => {
+        console.error("Booking failed:", error);
+      });
   };
 
   // Convert UTC times to user's local timezone
@@ -60,6 +86,22 @@ const NewBookingForm: React.FC = () => {
     return machine ? machine.serialNumber : machineID;
   };
 
+  const handlePlusButtonClick = () => {
+    dispatch(toggleMoreMachine());
+  };
+
+  // Separate machines into consoles and others
+  const consoleMachines = formData.machines.filter(
+    (machine) =>
+      machines.find((m) => m._id === machine.machineID)?.machineCategory ===
+      "Console"
+  );
+  const otherMachines = formData.machines.filter(
+    (machine) =>
+      machines.find((m) => m._id === machine.machineID)?.machineCategory !==
+      "Console"
+  );
+
   return (
     <div className="bg-white p-6 rounded-2xl shadow-lg w-full max-w-md mx-auto">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">New Booking</h3>
@@ -76,16 +118,44 @@ const NewBookingForm: React.FC = () => {
       </div>
 
       <div className="mb-4 text-sm">
-        <strong>Selected Machines:</strong>
-        <div className="space-y-2 mt-2">
-          {formData.machines.map((machine, index) => (
+        <div className="flex justify-between items-center">
+          <strong>Selected Machines:</strong>
+          <button
+            onClick={handlePlusButtonClick}
+            className={`w-6 h-6 flex items-center justify-center rounded-full transition-colors duration-300 ${
+              isPlusButtonSelected ? "bg-green-600" : "bg-gray-400"
+            }`}
+          >
+            <PlusOutlined className="text-white" />
+          </button>
+        </div>
+        {/* Display other machines in a row */}
+        {otherMachines.length !== 0 ? (
+          <div className="flex flex-wrap gap-2 mt-2">
+            {otherMachines.map((machine, index) => (
+              <span
+                key={index}
+                className="rounded-xl bg-blue-600 px-4 py-1 text-yellow-50 font-bold border border-blue-700 shadow-lg cursor-default"
+              >
+                {getMachineSerialNumber(machine.machineID)}
+              </span>
+            ))}
+          </div>
+        ) : null}
+        {/* Display console machines in the existing format */}
+        <div className="space-y-2 mt-4">
+          {consoleMachines.map((machine, index) => (
             <div key={index} className="flex items-center gap-2">
-              <span>{getMachineSerialNumber(machine.machineID)}</span>
+              <span className="rounded-xl bg-blue-600 px-4 py-1 text-yellow-50 font-bold border border-blue-700 shadow-lg cursor-default">
+                {getMachineSerialNumber(machine.machineID)}
+              </span>
+              <span>{"=>"}</span>
+
               <div className="flex gap-1">
-                {[1, 2, 3, 4].map((count) => (
+                {[1, 2, 4].map((count) => (
                   <button
                     key={count}
-                    className={`px-3 py-1 rounded-md border ${
+                    className={`px-3 py-1 rounded-md border  transition-all duration-300 ease-in-out transform hover:translate-y-[-2px] hover:shadow-xl cursor-pointer ${
                       machine.userCount === count
                         ? "bg-blue-600 text-white"
                         : "bg-white text-gray-600 border-gray-300"

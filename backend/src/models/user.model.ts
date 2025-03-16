@@ -6,6 +6,7 @@ export interface IUser extends Document {
   role: "user" | "manager" | "owner";
   firebaseUid: string;
   defaultMembershipId?: mongoose.Types.ObjectId;
+  xp: number;
   subscription: mongoose.Types.ObjectId;
 }
 
@@ -17,6 +18,7 @@ const userSchema = new Schema<IUser>({
     type: mongoose.Schema.Types.ObjectId,
     ref: "MembershipType",
   },
+  xp: { type: Number, default: 0 },
   subscription: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "Subscription",
