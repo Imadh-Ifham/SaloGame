@@ -1,29 +1,63 @@
 import { selectSelectedMachine } from "@/store/selectors/machineSelector";
-import { selectAllMachineBookings } from "@/store/slices/bookingSlice";
+import {
+  selectAllMachineBookings,
+  selectFormData,
+  updateBookingForm,
+} from "@/store/slices/bookingSlice";
 import { selectMachine } from "@/store/slices/machineSlice";
 import { availabilityBgColors, Machine } from "@/types/machine";
 import React from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { selectIsMoreMachineClicked } from "@/store/slices/layoutSlice";
 
 interface ConsoleProp {
   machine: Machine;
 }
+
 const Console: React.FC<ConsoleProp> = ({ machine }) => {
   const dispatch = useDispatch();
-  const handleMachineSelect = () => {
-    dispatch(selectMachine(machine._id));
-  };
   const selectedMachine = useSelector(selectSelectedMachine);
   const allMachineBookings = useSelector(selectAllMachineBookings);
+  const isMoreMachineClicked = useSelector(selectIsMoreMachineClicked);
+  const formData = useSelector(selectFormData);
+
+  const handleMachineSelect = () => {
+    if (isMoreMachineClicked) {
+      if (allMachineBookings[machine._id].status !== "Available") {
+        return; // Only allow selection of machines with status "Available"
+      }
+
+      const isSelected = formData.machines.some(
+        (m) => m.machineID === machine._id
+      );
+      const updatedMachines = isSelected
+        ? formData.machines.filter((m) => m.machineID !== machine._id)
+        : [...formData.machines, { machineID: machine._id, userCount: 1 }];
+
+      dispatch(updateBookingForm({ machines: updatedMachines }));
+    } else {
+      dispatch(updateBookingForm({ machines: [] }));
+      dispatch(selectMachine(machine._id));
+    }
+  };
+
+  const isSelected = formData.machines.some((m) => m.machineID === machine._id);
+  const isAvailable = allMachineBookings[machine._id].status === "Available";
+
   return (
     <div
       onClick={handleMachineSelect}
-      className={`w-full h-32 border rounded-2xl border-gray-300 hover:bg-gray-200 hover:scale-105 hover:shadow-xl
+      className={`w-full h-32 border rounded-2xl border-gray-300 hover:bg-gray-200 hover:scale-105 shadow-xl
     transition-transform duration-300 ease-in-out overflow-hidden flex flex-col items-center cursor-pointer ${
-      selectedMachine?.serialNumber === machine.serialNumber
+      selectedMachine?.serialNumber === machine.serialNumber &&
+      !isMoreMachineClicked
         ? "bg-gray-200 scale-105 shadow-lg"
         : ""
-    }`}
+    } ${isSelected ? "bg-gray-200" : ""} ${
+        !isAvailable && isMoreMachineClicked
+          ? "opacity-50 !cursor-default hover:scale-100"
+          : ""
+      }`}
     >
       {/* Machine Info */}
       <div className="flex justify-center items-center gap-x-2">
