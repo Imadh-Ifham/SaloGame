@@ -1,13 +1,15 @@
 import {
   CustomerBooking,
+  selectActiveNav,
   selectBookingStatus,
   selectFormData,
+  setActiveNav,
   updateBookingForm,
 } from "@/store/slices/bookingSlice";
 import { AppDispatch } from "@/store/store";
 import { fetchFirstAndNextBookings } from "@/store/thunks/bookingThunk";
 import { Button } from "antd";
-import React, { useState } from "react";
+import React from "react";
 import { useDispatch, useSelector } from "react-redux";
 import DurationSelector from "./DurationSelector";
 import DateSelector from "./DateSelector";
@@ -18,7 +20,7 @@ const CheckAvailability: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const formData = useSelector(selectFormData);
   const { loading } = useSelector(selectBookingStatus);
-  const [activeNav, setActiveNav] = useState<"Now" | "Later">("Now");
+  const activeNav = useSelector(selectActiveNav);
 
   const handleCheckAvailability = () => {
     if (activeNav === "Now") {
@@ -39,11 +41,18 @@ const CheckAvailability: React.FC = () => {
   };
 
   const handleBookingNavChange = (nav: "Now" | "Later") => {
-    setActiveNav(nav);
+    dispatch(setActiveNav(nav));
     if (nav === "Now") {
       dispatch(
         updateBookingForm({
           startTime: getCurrentUTC(),
+          status: "InUse",
+        } as Partial<CustomerBooking>)
+      );
+    } else {
+      dispatch(
+        updateBookingForm({
+          status: "Booked",
         } as Partial<CustomerBooking>)
       );
     }

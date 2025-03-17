@@ -21,6 +21,7 @@ const findFirstAndNextBooking = async (
         machineID: machineID, // Check for matching machineID in the array
       },
     },
+    status: { $in: ["Booked", "InUse"] }, // Add status condition
     $or: [
       { startTime: { $gte: inputStartTime, $lt: InputEndTime } },
       { endTime: { $gt: inputStartTime, $lte: InputEndTime } },
@@ -50,6 +51,7 @@ const findFirstAndNextBooking = async (
           machineID: machineID, // Check for matching machineID in the array
         },
       },
+      status: { $in: ["Booked", "InUse"] }, // Add status condition
       startTime: {
         $gte: InputEndTime, // Start time should be after InputEndTime
         $lte: CalculatedEndTime, // Or it should be before CalculatedEndTime

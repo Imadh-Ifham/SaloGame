@@ -20,6 +20,7 @@ interface IMachineBooking {
 }
 
 export type CustomerBooking = {
+  _id?: string;
   customerName: string;
   phoneNumber?: string | null;
   notes?: string | null;
@@ -48,6 +49,7 @@ interface BookingState {
   allMachineBookings: AllMachineBookings;
   showBookingForm: boolean;
   bookingModel: bookingModalString | null;
+  activeNav: "Now" | "Later";
   error: string | null;
   loading: boolean;
 }
@@ -60,11 +62,12 @@ const initialState: BookingState = {
     endTime: calculateEndTime(toUTC(new Date().toISOString()), 60), // Auto-calculate based on duration
     duration: 60,
     machines: [], // Machines will be added when selected
-    status: "Booked",
+    status: "InUse",
   },
   allMachineBookings: dummyData, // Dummy data for testing
   showBookingForm: false, // Booking form starts hidden
   bookingModel: null,
+  activeNav: "Now",
   error: null,
   loading: false,
 };
@@ -112,6 +115,11 @@ const bookingSlice = createSlice({
     // Reset booking modal state
     resetBookingModal(state) {
       state.bookingModel = null;
+    },
+
+    // Set active navigation tab
+    setActiveNav(state, action: PayloadAction<"Now" | "Later">) {
+      state.activeNav = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -169,6 +177,7 @@ export const {
   setInitialMachines,
   setBookingModal,
   resetBookingModal,
+  setActiveNav,
 } = bookingSlice.actions;
 
 // Reducer export
@@ -180,6 +189,7 @@ export const selectAllMachineBookings = (state: RootState) =>
   state.booking.allMachineBookings;
 export const selectBookingModal = (state: RootState) =>
   state.booking.bookingModel;
+export const selectActiveNav = (state: RootState) => state.booking.activeNav;
 const selectBookingState = (state: RootState) => state.booking;
 
 export const selectBookingStatus = createSelector(

@@ -9,6 +9,7 @@ import {
   selectSelectedMachine,
 } from "@/store/selectors/machineSelector";
 import { setBookingModal } from "@/store/slices/bookingSlice";
+import BookingModals from "./BookingModals";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -159,6 +160,7 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
           </div>
         </div>
       )}
+      <BookingModals bookingID={currentBooking._id} />
     </div>
   );
 };

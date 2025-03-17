@@ -43,10 +43,11 @@ const NewBookingForm: React.FC = () => {
     }
   }, [selectedMachine, dispatch]);
 
-  const handleStartBooking = () => {
+  const handleStartBooking = async () => {
     dispatch(resetMoreMachine());
     dispatch(setShowBookingForm(false));
-    dispatch(createBooking(formData))
+
+    await dispatch(createBooking(formData))
       .then(() => {
         dispatch(
           fetchFirstAndNextBookings({

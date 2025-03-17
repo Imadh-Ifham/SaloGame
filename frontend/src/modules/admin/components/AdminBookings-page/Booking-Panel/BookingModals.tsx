@@ -7,8 +7,10 @@ import {
   selectBookingModal,
   selectBookingStatus,
 } from "@/store/slices/bookingSlice";
+import { AppDispatch } from "@/store/store";
+import { updateBookingStatus } from "@/store/thunks/bookingThunk";
 
-const BookingModels: React.FC = () => {
+const BookingModals: React.FC<{ bookingID: string }> = ({ bookingID }) => {
   const bookingModalString = useSelector(selectBookingModal);
   const dispatch = useDispatch();
 
@@ -28,7 +30,9 @@ const BookingModels: React.FC = () => {
           : ""
       }
     >
-      {bookingModalString === "cancel" && <CancelBookingModal />}
+      {bookingModalString === "cancel" && (
+        <CancelBookingModal bookingID={bookingID} />
+      )}
       {bookingModalString === "extend" && <ExtendBookingModal />}
       {bookingModalString === "start" && <StartBookingModal />}
       {bookingModalString === "end" && <EndBookingModal />}
@@ -37,18 +41,21 @@ const BookingModels: React.FC = () => {
 };
 
 // Cancel Booking Modal - Cancels booking with confirmation
-const CancelBookingModal: React.FC = () => {
+const CancelBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
   const { loading, error } = useSelector(selectBookingStatus);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
 
   const handleCancel = async () => {
-    // handle cancel
+    const data = { bookingID, status: "Cancelled" };
+    // API call to cancel booking
+    await dispatch(updateBookingStatus(data));
+    dispatch(resetBookingModal());
   };
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 dark:text-gray-300">
-        Are you sure you want to cancel this booking? This action cannot be
-        undone.
+        Are you sure you want to cancel this booking {"( " + bookingID + " )"}?
+        This action cannot be undone.
       </p>
       {error && <div className="text-red-500 text-sm text-center">{error}</div>}
       <div className="flex justify-end space-x-2">
@@ -266,4 +273,4 @@ const EndBookingModal: React.FC = () => {
   );
 };
 
-export default BookingModels;
+export default BookingModals;
