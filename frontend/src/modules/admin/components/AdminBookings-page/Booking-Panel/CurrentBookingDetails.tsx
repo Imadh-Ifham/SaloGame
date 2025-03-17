@@ -3,11 +3,12 @@ import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   selectMachines,
   selectSelectedMachine,
 } from "@/store/selectors/machineSelector";
+import { setBookingModal } from "@/store/slices/bookingSlice";
 
 dayjs.extend(utc);
 dayjs.extend(timezone);
@@ -21,6 +22,7 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
   currentBooking,
   nextBooking,
 }) => {
+  const dispatch = useDispatch();
   const machines = useSelector(selectMachines);
   const [machineSerialNumbers, setMachineSerialNumbers] = useState<string[]>(
     []
@@ -46,11 +48,9 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
 
   useEffect(() => {
     if (selectedMachine && currentBooking) {
-      console.log(currentBooking);
       const playerCountMachine = currentBooking.machines.find(
         (machine: any) => machine.machineID === selectedMachine?._id
       );
-      console.log(playerCountMachine);
       setPlayerCount(playerCountMachine?.userCount || 1);
     }
   }, [selectedMachine, currentBooking]);
@@ -60,7 +60,7 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
       {/* Booking Info */}
       <div className="flex justify-between items-center border-b pb-3">
         <div className="flex items-center gap-2">
-          <div className="p-2 bg-blue-500 text-white rounded-full">
+          <div className="py-2 px-3 bg-blue-500 text-white rounded-full">
             <UserOutlined className="text-lg" />
           </div>
           <span className="font-semibold text-lg">
@@ -123,13 +123,28 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
 
       {/* Action Buttons */}
       <div className="mt-4 flex justify-end gap-3">
-        <button className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600">
+        <button
+          className="px-4 py-2 bg-red-500 text-white rounded-lg shadow hover:bg-red-600"
+          onClick={() => dispatch(setBookingModal("cancel"))}
+        >
           Cancel
         </button>
-        <button className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg shadow hover:bg-gray-300">
-          Extend Time
+        <button
+          className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg shadow hover:bg-gray-300"
+          onClick={() => dispatch(setBookingModal("extend"))}
+        >
+          Extend
         </button>
-        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700">
+        <button
+          className="px-4 py-2 bg-green-500 text-white rounded-lg shadow hover:bg-green-600"
+          onClick={() => dispatch(setBookingModal("start"))}
+        >
+          Start
+        </button>
+        <button
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700"
+          onClick={() => dispatch(setBookingModal("end"))}
+        >
           End
         </button>
       </div>

@@ -9,14 +9,12 @@ export const fetchFirstAndNextBookings = createAsyncThunk<
 >(
   "bookings/fetchFirstAndNext",
   async ({ startTime, duration }, { rejectWithValue }) => {
-    console.log("Start Time: ", startTime, " Duration: ", duration);
     try {
       // Make sure the data is correctly passed to the API
       const response = await axiosInstance.post(
         `/bookings/get-first-and-next/`, // Use POST request
         { inputStartTime: startTime, duration: duration } // Pass the body
       );
-      console.log(response.data.data);
       return response.data.data; // Return the data from the API
     } catch (error: any) {
       return rejectWithValue(

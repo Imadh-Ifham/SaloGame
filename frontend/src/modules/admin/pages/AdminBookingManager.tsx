@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectFetched } from "@/store/selectors/machineSelector";
 import { fetchMachines } from "@/store/thunks/machineThunks";
 import { AppDispatch } from "@/store/store";
+import BookingModels from "../components/AdminBookings-page/Booking-Panel/BookingModels";
 
 const AdminBookingManager: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -24,6 +25,7 @@ const AdminBookingManager: React.FC = () => {
       <div className="col-span-3 h-screen">
         <BookingPanel />
       </div>
+      <BookingModels />
     </section>
   );
 };

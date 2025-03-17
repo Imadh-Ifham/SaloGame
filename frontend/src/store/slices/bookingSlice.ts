@@ -5,7 +5,7 @@
  * Uses async thunks for API calls and stores customer booking details.
  */
 
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
 import { dummyData } from "@/types/machine";
 import {
@@ -41,10 +41,13 @@ export interface AllMachineBookings {
   [machineId: string]: MachineBooking;
 }
 
+type bookingModalString = "cancel" | "extend" | "end" | "start";
+
 interface BookingState {
   formData: CustomerBooking;
   allMachineBookings: AllMachineBookings;
   showBookingForm: boolean;
+  bookingModel: bookingModalString | null;
   error: string | null;
   loading: boolean;
 }
@@ -61,6 +64,7 @@ const initialState: BookingState = {
   },
   allMachineBookings: dummyData, // Dummy data for testing
   showBookingForm: false, // Booking form starts hidden
+  bookingModel: null,
   error: null,
   loading: false,
 };
@@ -98,6 +102,16 @@ const bookingSlice = createSlice({
     // Set selected machine for a new booking
     setInitialMachines(state, action: PayloadAction<string>) {
       state.formData.machines = [{ machineID: action.payload, userCount: 1 }];
+    },
+
+    // Set booking modal type
+    setBookingModal(state, action: PayloadAction<bookingModalString>) {
+      state.bookingModel = action.payload;
+    },
+
+    // Reset booking modal state
+    resetBookingModal(state) {
+      state.bookingModel = null;
     },
   },
   extraReducers: (builder) => {
@@ -153,6 +167,8 @@ export const {
   updateBookingForm,
   setShowBookingForm,
   setInitialMachines,
+  setBookingModal,
+  resetBookingModal,
 } = bookingSlice.actions;
 
 // Reducer export
@@ -162,8 +178,15 @@ export default bookingSlice.reducer;
 export const selectFormData = (state: RootState) => state.booking.formData;
 export const selectAllMachineBookings = (state: RootState) =>
   state.booking.allMachineBookings;
-export const selectBookingStatus = (state: RootState) => ({
-  loading: state.booking.loading,
-  error: state.booking.error,
-  showBookingForm: state.booking.showBookingForm,
-});
+export const selectBookingModal = (state: RootState) =>
+  state.booking.bookingModel;
+const selectBookingState = (state: RootState) => state.booking;
+
+export const selectBookingStatus = createSelector(
+  [selectBookingState],
+  (bookingState) => ({
+    loading: bookingState.loading,
+    error: bookingState.error,
+    showBookingForm: bookingState.showBookingForm,
+  })
+);
