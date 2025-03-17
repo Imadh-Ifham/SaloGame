@@ -4,6 +4,13 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer utilities {
+  .skeleton-shine {
+    animation: shimmer 2s infinite;
+  }
+}
+
 @layer base {
   :root {
     --background: 0 0% 100%;
@@ -74,4 +81,14 @@
   box-sizing: border-box;
   margin: 0%;
   padding: 0%;
+}
+
+/* Hide scrollbar for WebKit browsers */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Hide scrollbar for Firefox */
+.scrollbar-hide {
+  scrollbar-width: none;
 }

@@ -19,6 +19,8 @@ import OfferPage from "./modules/users/pages/OfferPage";
 import TimeBased from "./modules/users/pages/OfferPages/TimeBased";
 import MembershipBased from "./modules/users/pages/OfferPages/MembershipBased";
 import General from "./modules/users/pages/OfferPages/General";
+import EventPage from "./modules/users/pages/EventPage";
+import VerifyEmail from './modules/users/pages/EventPages/VerifyEmail';
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import MembershipPage from "./modules/users/pages/MembershipPage";
@@ -30,7 +32,10 @@ import ForgotPassword from "./modules/users/pages/ForgotPassword"
 import ProfilePage from "./modules/users/pages/ProfilePage";
 import AdminBookingManager from "./modules/admin/pages/AdminBookingManager";
 import AdminAuthPage from "./modules/admin/pages/AdminAuthPage";
+import AdminEventPage from "./modules/admin/pages/AdminEventPage";
 import OverviewPage from "./modules/admin/pages/OverviewPage";
+import SingleBattle from "./modules/users/pages/EventPages/SingleBattle";
+import TeamBattle from "./modules/users/pages/EventPages/TeamBattle";
 const App: React.FC = () => {
   useEffect(() => {
     // Always set dark mode as default
@@ -53,6 +58,7 @@ const App: React.FC = () => {
         <Route path="/offers" element={<OfferPage />} />
         <Route path="/memberships" element={<MembershipPage />} />
         <Route path="/profile" element={<ProfilePage />} />
+        <Route path="/events" element={<EventPage />} />
         <Route path="*" element={<NotFoundPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
 
@@ -60,6 +66,10 @@ const App: React.FC = () => {
         <Route path="/offers/time-based" element={<TimeBased />} />
         <Route path="/offers/membership-based" element={<MembershipBased />} />
         <Route path="/offers/general" element={<General />} />
+
+        <Route path="/single-battle" element={<SingleBattle />} />
+        <Route path="/team-battle" element={< TeamBattle/>} />
+        <Route path="/verify/:token" element={<VerifyEmail />} />
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="overview" />} />
@@ -71,6 +81,7 @@ const App: React.FC = () => {
           <Route path="memberships" element={<AdminMembershipPage />} />
           <Route path="packages" element={<AdminPackagePage />} />
           <Route path="booking" element={<AdminBookingManager />} />
+          <Route path="events" element={<AdminEventPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
       </Routes>

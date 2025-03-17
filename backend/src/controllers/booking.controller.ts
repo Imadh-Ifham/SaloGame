@@ -130,8 +130,16 @@ export const createBooking = async (
       return;
     }
 
-    if (start < new Date()) {
-      res.status(400).json({ message: "Start time cannot be in the past." });
+    const currentTimeMinusFiveMinutes = new Date(
+      new Date().getTime() - 5 * 60 * 1000
+    );
+
+    if (start < currentTimeMinusFiveMinutes) {
+      res
+        .status(400)
+        .json({
+          message: "Start time cannot be in the past by more than 5 minutes.",
+        });
       return;
     }
 

@@ -3,8 +3,9 @@ import {
   createGame,
   deleteGame,
   getAllGames,
-  getGameById,
+  fetchGameByID,
   updateGame,
+  previewGame,
 } from "../controllers/game.controller";
 
 const router: Router = express.Router();
@@ -13,7 +14,10 @@ const router: Router = express.Router();
 router.get("/", getAllGames);
 
 // GET a single game by ID
-router.get("/:gameID", getGameById);
+router.get("/:gameID", fetchGameByID);
+
+// Preview game details from RAWG
+router.post("/preview", previewGame);
 
 // CREATE a new game
 router.post("/", createGame);
