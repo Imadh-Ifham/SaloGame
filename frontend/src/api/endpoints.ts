@@ -26,6 +26,10 @@ export const API_ENDPOINTS = {
     CREATE: `${BASE_URL}/api/subscriptions`,
     GET_USER_SUBSCRIPTIONS: `${BASE_URL}/api/subscriptions/user`,
   },
+  TRANSACTIONS: {
+    GET_ALL: `${BASE_URL}/api/transactions`,
+    GET_USER_TRANSACTIONS: `${BASE_URL}/api/transactions/my-transactions`,
+  },
 };
 
 export default API_ENDPOINTS;
