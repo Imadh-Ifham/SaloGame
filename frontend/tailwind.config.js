@@ -93,6 +93,9 @@ export default {
           4: "hsl(var(--chart-4))",
           5: "hsl(var(--chart-5))",
         },
+        "primary-light": "#6EE5A8",
+        "gamer-green-light": "#6EE5A8",
+        "gamer-dark": "#0A0A0A",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -124,16 +127,40 @@ export default {
             backgroundPosition: "bottom center",
           },
         },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(100%)' }
+        }
       },
       animation: {
         marquee: "marquee var(--duration) infinite linear",
         "marquee-vertical": "marquee-vertical var(--duration) linear infinite",
+        shimmer: 'shimmer 2s infinite'
       },
+
+// animations for authpage.tsx
+transitionProperty: {
+  opacity: "opacity",
+},
+transitionDuration: {
+  '1000': "1000ms",
+},
+
+//profilepage.tsx
+backdropBlur: {
+  xs: '2px',
+},
+boxShadow: {
+  'glow': '0 0 20px rgba(16, 185, 129, 0.2)',
+},
+
     },
   },
   plugins: [
     require("preline/plugin"),
     require("tailwindcss-bg-patterns"),
     require("tailwindcss-animate"),
-  ],
+]
+
+
 };

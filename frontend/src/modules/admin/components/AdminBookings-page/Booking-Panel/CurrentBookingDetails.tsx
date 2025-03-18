@@ -1,22 +1,60 @@
 import { UserOutlined } from "@ant-design/icons";
-import React from "react";
+import React, { useEffect, useState } from "react";
 import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
+import { useSelector } from "react-redux";
+import {
+  selectMachines,
+  selectSelectedMachine,
+} from "@/store/selectors/machineSelector";
+
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface CurrentBookingDetailsProps {
   currentBooking: any;
   nextBooking: any;
 }
 
-// Extend dayjs with timezone support
-dayjs.extend(utc);
-dayjs.extend(timezone);
-
 const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
   currentBooking,
   nextBooking,
 }) => {
+  const machines = useSelector(selectMachines);
+  const [machineSerialNumbers, setMachineSerialNumbers] = useState<string[]>(
+    []
+  );
+  const [playerCount, setPlayerCount] = useState<number>(1);
+  const selectedMachine = useSelector(selectSelectedMachine);
+
+  useEffect(() => {
+    if (currentBooking?.machines?.length > 0) {
+      const serialNumbers = currentBooking.machines
+        .map((currentBookingMachine: any) => {
+          const machine = machines.find(
+            (m: any) => m._id === currentBookingMachine.machineID
+          );
+          return machine ? machine.serialNumber : null;
+        })
+        .filter(Boolean); // Remove null values
+      setMachineSerialNumbers(serialNumbers);
+    } else {
+      setMachineSerialNumbers([]); // Reset if no machines
+    }
+  }, [machines, currentBooking]);
+
+  useEffect(() => {
+    if (selectedMachine && currentBooking) {
+      console.log(currentBooking);
+      const playerCountMachine = currentBooking.machines.find(
+        (machine: any) => machine.machineID === selectedMachine?._id
+      );
+      console.log(playerCountMachine);
+      setPlayerCount(playerCountMachine?.userCount || 1);
+    }
+  }, [selectedMachine, currentBooking]);
+
   return (
     <div className="w-full p-4 bg-white shadow-lg rounded-xl border">
       {/* Booking Info */}
@@ -41,24 +79,44 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
         </span>
       </div>
 
-      {/* Contact & Booking Details */}
+      {/* Booking Details */}
       <div className="mt-4 text-gray-700 text-sm space-y-2">
         <div className="flex justify-between">
-          <span className="font-medium">Contact:</span>{" "}
+          <span className="font-medium">Contact:</span>
           {currentBooking.phoneNumber}
         </div>
         <div className="flex justify-between">
-          <span className="font-medium">Start:</span>{" "}
+          <span className="font-medium">Start:</span>
           {dayjs(currentBooking.startTime).format("MMM D, YYYY h:mm A")}
         </div>
         <div className="flex justify-between">
-          <span className="font-medium">End:</span>{" "}
+          <span className="font-medium">End:</span>
           {dayjs(currentBooking.endTime).format("MMM D, YYYY h:mm A")}
         </div>
         <div className="flex justify-between">
+          <span className="font-medium">Duration:</span>
+          {dayjs(currentBooking.endTime).diff(
+            dayjs(currentBooking.startTime),
+            "minute"
+          )}{" "}
+          minutes
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Price:</span>
+          Rs. {currentBooking.price}
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Description:</span>
+          {currentBooking.notes || "No description provided"}
+        </div>
+        <div className="flex justify-between">
+          <span className="font-medium">Players:</span>
+          {playerCount || "1"}
+        </div>
+        <div className="flex justify-between">
           <span className="font-medium">Other Machines:</span>
-          {currentBooking.machines
-            ? currentBooking.machines.join(", ")
+          {machineSerialNumbers.length > 0
+            ? machineSerialNumbers.join(", ")
             : "None"}
         </div>
       </div>
@@ -76,13 +134,13 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
         </button>
       </div>
 
-      {/* Next Booking Section */}
+      {/* Next Booking */}
       {nextBooking && (
         <div className="mt-5 p-4 bg-gray-50 rounded-lg shadow">
           <div className="text-gray-800 font-semibold">Upcoming Booking</div>
           <div className="text-sm text-gray-600">
             <span className="font-medium">{nextBooking.customerName}</span> -{" "}
-            {dayjs(currentBooking.startTime).format("MMM D, YYYY h:mm A")}
+            {dayjs(nextBooking.startTime).format("MMM D, YYYY h:mm A")}
           </div>
         </div>
       )}

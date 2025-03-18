@@ -8,10 +8,12 @@ import {
   TransitionChild,
 } from "@headlessui/react";
 import axiosInstance from "../../../../axios.config";
+import GamePreviewForm from "./GamePreviewForm";
 
 interface Game {
   _id: string;
   image: string;
+  background_image?: string;
   name: string;
   rating: number;
   description: string;
@@ -38,6 +40,7 @@ const GameForm: React.FC<GameFormProps> = ({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [previewData, setPreviewData] = useState<Game | null>(null);
 
   const isEditMode = !!initialData._id;
 
@@ -55,52 +58,25 @@ const GameForm: React.FC<GameFormProps> = ({
     setGenres(genres.filter((genre) => genre !== genreToRemove));
   };
 
-  // Handle form submission
-  const handleSubmit = async (e: React.FormEvent) => {
+  // Handle form submission for create mode
+  const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!name) {
+      setError("Please provide the game name.");
+      return;
+    }
     setLoading(true);
     setError(null);
 
-    if (isEditMode) {
-      // Edit Mode: Validate required fields
-      if (!name || !description || genres.length === 0) {
-        setError(
-          "Please fill in all required fields and add at least one genre."
-        );
-        setLoading(false);
-        return;
-      }
-    } else {
-      // Create Mode: Validate only name
-      if (!name) {
-        setError("Please provide the game name.");
-        setLoading(false);
-        return;
-      }
-    }
-
     try {
-      let response;
-      if (isEditMode && initialData._id) {
-        // Update existing game
-        response = await axiosInstance.put(`/games/${initialData._id}`, {
-          name,
-          description,
-          rating: parseFloat(rating.toFixed(2)), // Ensure two decimal places
-          image,
-          genres,
-        });
-      } else {
-        // Create new game with only name
-        response = await axiosInstance.post("/games", {
-          name,
-        });
-      }
-
+      // First, fetch game details from the backend (which will use RAWG API)
+      const response = await axiosInstance.post("/games/preview", { name });
+      
       if (response.data.success) {
-        onSuccess(response.data.data);
+        // Show preview with fetched data
+        setPreviewData(response.data.data);
       } else {
-        setError(response.data.message || "Failed to create/update the game.");
+        setError(response.data.message || "Failed to fetch game details.");
       }
     } catch (err: any) {
       setError(err.response?.data?.message || "An unexpected error occurred.");
@@ -109,7 +85,69 @@ const GameForm: React.FC<GameFormProps> = ({
     }
   };
 
-  // Handle deletion (optional, based on user request)
+  // Handle confirmation of game creation
+  const handleConfirmCreate = async () => {
+    if (!previewData) return;
+    
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Format the data to match backend expectations
+      const gameData = {
+        name: previewData.name,
+        description: previewData.description,
+        rating: previewData.rating,
+        image: previewData.background_image || previewData.image, // Handle both field names
+        genres: previewData.genres
+      };
+
+      const response = await axiosInstance.post("/games", gameData);
+      
+      if (response.data.success) {
+        onSuccess(response.data.data);
+      } else {
+        setError(response.data.message || "Failed to create the game.");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle form submission for edit mode
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name || !description || genres.length === 0) {
+      setError("Please fill in all required fields and add at least one genre.");
+      return;
+    }
+    setLoading(true);
+    setError(null);
+
+    try {
+      const response = await axiosInstance.put(`/games/${initialData._id}`, {
+        name,
+        description,
+        rating: parseFloat(rating.toFixed(2)),
+        image,
+        genres,
+      });
+
+      if (response.data.success) {
+        onSuccess(response.data.data);
+      } else {
+        setError(response.data.message || "Failed to update the game.");
+      }
+    } catch (err: any) {
+      setError(err.response?.data?.message || "An unexpected error occurred.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle deletion
   const handleDelete = async () => {
     if (!initialData._id) return;
     setLoading(true);
@@ -128,9 +166,24 @@ const GameForm: React.FC<GameFormProps> = ({
     }
   };
 
+  // If we have preview data and we're in create mode, show the preview form
+  if (previewData && !isEditMode) {
+    return (
+      <GamePreviewForm
+        gameData={previewData}
+        onConfirm={handleConfirmCreate}
+        onCancel={() => {
+          setPreviewData(null);
+          setError(null);
+        }}
+        loading={loading}
+      />
+    );
+  }
+
   return (
     <div className="bg-transparent p-0 font-poppins rounded-lg shadow-none">
-      <form onSubmit={handleSubmit} className="space-y-6">
+      <form onSubmit={isEditMode ? handleEditSubmit : handleCreateSubmit} className="space-y-6">
         {/* Name */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -140,8 +193,9 @@ const GameForm: React.FC<GameFormProps> = ({
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            className="mt-1  block dark:bg-black w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+            className="mt-1 block dark:bg-black w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-0 focus:border-gamer-green"
             required
+            autoFocus
           />
         </div>
 
@@ -274,7 +328,11 @@ const GameForm: React.FC<GameFormProps> = ({
               loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
-            {isEditMode ? "Update Game" : "Create Game"}
+            {loading ? (
+              isEditMode ? "Updating..." : "Fetching..."
+            ) : (
+              isEditMode ? "Update Game" : "Preview Game"
+            )}
           </Button>
         </div>
       </form>

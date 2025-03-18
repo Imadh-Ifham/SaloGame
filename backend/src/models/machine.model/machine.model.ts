@@ -1,5 +1,5 @@
 import mongoose, { Document, Schema, Model } from "mongoose";
-import { IMachineType } from "./machineType.model"; // Import the interface for machine types
+import { IMachineType } from "./machineType.model";
 
 // Interface for the Machine document
 export interface IMachine extends Document {
