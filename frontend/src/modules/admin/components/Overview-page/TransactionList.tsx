@@ -3,6 +3,7 @@ import { FiSearch, FiDownload, FiX, FiFilter } from 'react-icons/fi';
 import { ITransaction } from '../../../../api/transactionService';
 import DatePicker from 'react-datepicker';
 import 'react-datepicker/dist/react-datepicker.css';
+import TransactionReport from './TransactionReport';
 
 interface TransactionListProps {
   transactions: ITransaction[];
@@ -27,6 +28,9 @@ const TransactionList: React.FC<TransactionListProps> = ({
   const [internalStartDate, setInternalStartDate] = useState<Date | null>(externalStartDate || null);
   const [internalEndDate, setInternalEndDate] = useState<Date | null>(externalEndDate || null);
   const [showDatePicker, setShowDatePicker] = useState(false);
+  const [showReportOptions, setShowReportOptions] = useState(false);
+  const [showReport, setShowReport] = useState(false);
+  const [reportPeriod, setReportPeriod] = useState<'3mo' | '6mo' | '1yr'>('3mo');
 
   // Update internal dates when external dates change
   useEffect(() => {
@@ -127,15 +131,51 @@ const TransactionList: React.FC<TransactionListProps> = ({
   // Determine if there are active filters
   const hasActiveFilters = internalStartDate !== null || internalEndDate !== null;
 
+  const handleGenerateReport = (period: '3mo' | '6mo' | '1yr') => {
+    setReportPeriod(period);
+    setShowReport(true);
+    setShowReportOptions(false);
+  };
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3">
-          <button className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
-            <FiDownload size={18} />
-          </button>
+          <div className="relative">
+            <button 
+              className="p-2 rounded-lg text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              onClick={() => setShowReportOptions(!showReportOptions)}
+            >
+              <FiDownload size={18} />
+            </button>
+            
+            {showReportOptions && (
+              <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
+                <div className="p-2">
+                  <button
+                    onClick={() => handleGenerateReport('3mo')}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    Last 3 Months
+                  </button>
+                  <button
+                    onClick={() => handleGenerateReport('6mo')}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    Last 6 Months
+                  </button>
+                  <button
+                    onClick={() => handleGenerateReport('1yr')}
+                    className="w-full text-left px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                  >
+                    Last Year
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
           
           <div className="w-full sm:w-auto flex flex-col gap-2">
             <div className="relative flex gap-2">
@@ -283,6 +323,34 @@ const TransactionList: React.FC<TransactionListProps> = ({
                     Apply Filter
                   </button>
                 </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showReport && (
+        <div className="fixed inset-0 z-50 overflow-hidden">
+          <div className="absolute inset-0 bg-black bg-opacity-50" onClick={() => setShowReport(false)} />
+          <div className="absolute inset-0 flex items-center justify-center p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl h-[90vh] overflow-hidden">
+              <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+                <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                  Transaction Report - {reportPeriod === '3mo' ? 'Last 3 Months' : reportPeriod === '6mo' ? 'Last 6 Months' : 'Last Year'}
+                </h3>
+                <button
+                  onClick={() => setShowReport(false)}
+                  className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                >
+                  <FiX size={20} />
+                </button>
+              </div>
+              <div className="h-[calc(90vh-4rem)]">
+                <TransactionReport
+                  period={reportPeriod}
+                  startDate={internalStartDate}
+                  endDate={internalEndDate}
+                />
               </div>
             </div>
           </div>

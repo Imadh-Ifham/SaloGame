@@ -600,4 +600,106 @@ export const getMonthlyRevenue = async (
     console.error("Error fetching monthly revenue:", error);
     res.status(500).json({ error: "Internal server error" });
   }
+};
+
+/**
+ * Get transactions report data for specified time period
+ */
+export const getTransactionReport = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const period = req.query.period as '3mo' | '6mo' | '1yr';
+    
+    // Calculate date range based on period
+    let endDate = new Date();
+    let startDate = new Date();
+    
+    switch (period) {
+      case '3mo':
+        startDate.setMonth(endDate.getMonth() - 3);
+        break;
+      case '6mo':
+        startDate.setMonth(endDate.getMonth() - 6);
+        break;
+      case '1yr':
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        break;
+      default:
+        // Default to 3 months if invalid period
+        startDate.setMonth(endDate.getMonth() - 3);
+    }
+    
+    // Use custom date range if provided
+    const customStartDate = req.query.startDate as string;
+    const customEndDate = req.query.endDate as string;
+    
+    if (customStartDate && !isNaN(new Date(customStartDate).getTime())) {
+      startDate = new Date(customStartDate);
+    }
+    
+    if (customEndDate && !isNaN(new Date(customEndDate).getTime())) {
+      endDate = new Date(customEndDate);
+    }
+    
+    // Ensure startDate is beginning of day and endDate is end of day
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+    
+    console.log('Report date range:', { startDate, endDate });
+    
+    // Build query for date range
+    const query: any = {
+      createdAt: {
+        $gte: startDate,
+        $lte: endDate
+      }
+    };
+    
+    // Fetch all transactions for the period (no pagination for reports)
+    const transactions = await Transaction.find(query)
+      .populate('userID', 'email name')
+      .sort({ createdAt: -1 });
+    
+    // Calculate metrics
+    const totalTransactions = transactions.length;
+    const completedTransactions = transactions.filter(t => t.status === 'completed').length;
+    const totalRevenue = transactions
+      .filter(t => t.status === 'completed')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const averageTransactionValue = totalRevenue / completedTransactions || 0;
+    
+    // Group transactions by type
+    const transactionsByType = transactions.reduce((acc, t) => {
+      const type = t.transactionType;
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Group transactions by payment method
+    const transactionsByPayment = transactions.reduce((acc, t) => {
+      const paymentType = t.paymentType;
+      acc[paymentType] = (acc[paymentType] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Return the report data
+    res.status(200).json({
+      transactions,
+      metrics: {
+        totalTransactions,
+        completedTransactions,
+        totalRevenue,
+        averageTransactionValue,
+        transactionsByType,
+        transactionsByPayment,
+      },
+      startDate,
+      endDate,
+    });
+  } catch (error) {
+    console.error("Error generating transaction report:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
 }; 
