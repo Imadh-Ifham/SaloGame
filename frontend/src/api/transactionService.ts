@@ -9,7 +9,7 @@ export interface ITransaction {
   };
   paymentType: "cash" | "card" | "XP";
   amount: number;
-  transactionType: "online-booking" | "walk-in-booking" | "membership";
+  transactionType: "online-booking" | "walk-in-booking" | "membership" | "refund";
   status: "pending" | "completed" | "failed";
   createdAt: string;
 }

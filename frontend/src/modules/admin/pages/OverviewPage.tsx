@@ -1,33 +1,37 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { FiDollarSign, FiUsers, FiCalendar } from 'react-icons/fi';
 import { useDispatch, useSelector } from 'react-redux';
 import MachineStats from '../components/Overview-page/MachineStats';
 import StatsCard from '../components/Overview-page/StatsCard';
 import TransactionList from '../components/Overview-page/TransactionList';
 import { RevenueChart } from '../components/Overview-page/RevenueChart';
-import { getTransactions, ITransaction, TransactionPaginationParams } from '../../../api/transactionService';
+import { TransactionPaginationParams } from '../../../api/transactionService';
 import { RootState } from '../../../store/store';
-import { fetchLast30DaysEarnings } from '../../../store/slices/revenueSlice';
+import { fetchLast30DaysEarnings, fetchLastSixMonthsRevenue } from '../../../store/slices/revenueSlice';
+import { fetchTransactions, setDateFilter } from '../../../store/slices/transactionSlice';
 
-// Sample data - replace with real data later
-const sampleRevenueData = [
-  { date: 'Jan', revenue: 4000 },
-  { date: 'Feb', revenue: 3000 },
-  { date: 'Mar', revenue: 5000 },
-  { date: 'Apr', revenue: 4500 },
-  { date: 'May', revenue: 6000 },
-  { date: 'Jun', revenue: 5500 },
-];
+// Remove sample data as we'll use real data from API
+// const sampleRevenueData = [
+//   { date: 'Jan', revenue: 4000 },
+//   { date: 'Feb', revenue: 3000 },
+//   { date: 'Mar', revenue: 5000 },
+//   { date: 'Apr', revenue: 4500 },
+//   { date: 'May', revenue: 6000 },
+//   { date: 'Jun', revenue: 5500 },
+// ];
 
 const OverviewPage: React.FC = () => {
   const dispatch = useDispatch();
-  const { last30DaysEarnings, isLoading: isLoadingRevenue } = useSelector((state: RootState) => state.revenue);
-  const [transactions, setTransactions] = useState<ITransaction[]>([]);
-  const [hasMore, setHasMore] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [page, setPage] = useState(1);
-  const [startDate, setStartDate] = useState<Date | null>(null);
-  const [endDate, setEndDate] = useState<Date | null>(null);
+  const { last30DaysEarnings, monthlyRevenue, isLoading: isLoadingRevenue, isLoadingMonthly } = useSelector((state: RootState) => state.revenue);
+  const { 
+    transactions, 
+    isLoading, 
+    hasMore, 
+    currentPage, 
+    startDate, 
+    endDate 
+  } = useSelector((state: RootState) => state.transactions);
+  
   const limit = 15;
 
   // Fetch last 30 days earnings when component mounts
@@ -35,73 +39,54 @@ const OverviewPage: React.FC = () => {
     dispatch(fetchLast30DaysEarnings() as any);
   }, [dispatch]);
 
-  const fetchTransactions = async (pageNum: number, dateFilters?: { startDate?: Date | null, endDate?: Date | null }) => {
-    try {
-      setIsLoading(true);
-      
-      // Only include date parameters if they are valid Date objects
-      const params: TransactionPaginationParams = { 
-        page: pageNum, 
-        limit
-      };
-      
-      if (dateFilters?.startDate) {
-        params.startDate = dateFilters.startDate;
-      }
-      
-      if (dateFilters?.endDate) {
-        params.endDate = dateFilters.endDate;
-      }
-      
-      console.log('Requesting transactions with filters:', params);
-      
-      const response = await getTransactions(params);
-      
-      if (pageNum === 1) {
-        setTransactions(response.transactions);
-      } else {
-        setTransactions((prev) => [...prev, ...response.transactions]);
-      }
-      
-      setHasMore(response.hasMore);
-    } catch (error) {
-      console.error('Error fetching transactions:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Fetch transactions when component mounts or date filters change
+  // Fetch last 6 months revenue data when component mounts
   useEffect(() => {
-    setPage(1); // Reset to first page when date filters change
-    fetchTransactions(1, { startDate: startDate || undefined, endDate: endDate || undefined });
-  }, [startDate, endDate]);
+    dispatch(fetchLastSixMonthsRevenue() as any);
+  }, [dispatch]);
+
+  // Fetch transactions when component mounts
+  useEffect(() => {
+    const params: TransactionPaginationParams = { 
+      page: 1, 
+      limit,
+      startDate,
+      endDate
+    };
+    
+    dispatch(fetchTransactions(params) as any);
+  }, [dispatch, startDate, endDate]);
 
   const handleLoadMore = () => {
-    const nextPage = page + 1;
-    setPage(nextPage);
-    fetchTransactions(nextPage, { startDate: startDate || undefined, endDate: endDate || undefined });
+    const nextPage = currentPage + 1;
+    
+    const params: TransactionPaginationParams = { 
+      page: nextPage, 
+      limit,
+      startDate,
+      endDate
+    };
+    
+    dispatch(fetchTransactions(params) as any);
   };
 
   const handleDateFilterChange = (start: Date | null, end: Date | null) => {
-    setStartDate(start);
-    setEndDate(end);
+    dispatch(setDateFilter({ startDate: start, endDate: end }));
   };
 
   // Format currency with commas
   const formatCurrency = (amount: number): string => {
-    return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `LKR ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   return (
-    <div id="overview-page-content" className="flex-1 h-screen overflow-y-auto scrollbar-hide bg-white dark:bg-background-dark">
-      <div className="p-6 space-y-8 pb-12">
+    <div className="h-full w-full bg-gray-50 dark:bg-gray-900">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
         <div className="mb-4">
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Dashboard Overview</h1>
         </div>
         
         {/* Stats Cards Row */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           <StatsCard
             title="Last 30 Days Revenue"
             value={isLoadingRevenue ? "Loading..." : formatCurrency(last30DaysEarnings)}
@@ -122,8 +107,12 @@ const OverviewPage: React.FC = () => {
         </div>
 
         {/* Charts Row */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <RevenueChart data={sampleRevenueData} />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <RevenueChart 
+            data={monthlyRevenue} 
+            isLoading={isLoadingMonthly}
+            error={null}
+          />
           <MachineStats />
         </div>
 

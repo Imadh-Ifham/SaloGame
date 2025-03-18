@@ -20,6 +20,7 @@ export const initializeSocketIO = (socketIO: SocketIOServer) => {
  * 1. Walk-in-booking: payment type must be cash and user role must be owner or manager
  * 2. Membership: payment can be cash or card, but cash is only acceptable for manager or owner
  * 3. Online-booking: payment must be XP and user role must be user
+ * 4. Refund: only admin/manager can create refunds, payment type must be cash or XP, amounts are automatically stored as negative
  */
 export const createTransaction = async (
   req: AuthRequest,
@@ -84,11 +85,29 @@ export const createTransaction = async (
       }
     }
 
+    // Validation rule 4: For refund
+    if (transactionType === "refund") {
+      if (req.user.role !== "owner" && req.user.role !== "manager") {
+        res.status(403).json({ 
+          error: "Only owners and managers can create refund transactions" 
+        });
+        return;
+      }
+
+      // Ensure refund payment type is cash or XP
+      if (paymentType !== "cash" && paymentType !== "XP") {
+        res.status(400).json({ 
+          error: "Refund payment type must be cash or XP" 
+        });
+        return;
+      }
+    }
+
     // Create transaction object
     const transaction = new Transaction({
       userID: req.user.id,
       paymentType,
-      amount,
+      amount: transactionType === "refund" ? -Math.abs(amount) : amount, // Ensure refund amount is negative
       transactionType,
       status: "pending"
     });
@@ -118,12 +137,24 @@ export const createTransaction = async (
     // Update Last30DaysTransactions collection
     await updateLast30DaysTransactions(transaction);
 
-    // Emit socket event for real-time updates
+    // Emit socket events for real-time updates
     if (io) {
+      // Emit event for revenue updates (used by overview page)
       io.emit('transaction:new', { 
         transactionId: transaction._id,
         amount: transaction.amount,
         transactionType: transaction.transactionType 
+      });
+      
+      // Emit detailed transaction data for TransactionList updates
+      io.emit('transaction:created', {
+        _id: transaction._id,
+        userID: transaction.userID,
+        paymentType: transaction.paymentType,
+        amount: transaction.amount,
+        transactionType: transaction.transactionType,
+        status: transaction.status,
+        createdAt: transaction.createdAt
       });
     }
 
@@ -473,5 +504,100 @@ const refreshLast30DaysTransactions = async () => {
     );
   } catch (error) {
     console.error("Error refreshing Last30DaysTransactions:", error);
+  }
+};
+
+/**
+ * Get the monthly revenue data for the last 6 months
+ */
+export const getMonthlyRevenue = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    // Get the current date
+    const currentDate = new Date();
+    
+    // Calculate the date 6 months ago
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(currentDate.getMonth() - 5); // -5 to include current month
+    sixMonthsAgo.setDate(1); // First day of the month
+    sixMonthsAgo.setHours(0, 0, 0, 0); // Start of the day
+
+    // Aggregate transactions by month
+    const monthlyRevenue = await Transaction.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sixMonthsAgo },
+          status: "completed"
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          revenue: { $sum: "$amount" }
+        }
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          date: {
+            $concat: [
+              { $toString: "$_id.year" },
+              "-",
+              {
+                $cond: {
+                  if: { $lt: ["$_id.month", 10] },
+                  then: { $concat: ["0", { $toString: "$_id.month" }] },
+                  else: { $toString: "$_id.month" }
+                }
+              }
+            ]
+          },
+          revenue: 1
+        }
+      }
+    ]);
+
+    // Fill in any missing months with zero revenue
+    const result = [];
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(sixMonthsAgo);
+      date.setMonth(sixMonthsAgo.getMonth() + i);
+      
+      const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      const existingData = monthlyRevenue.find(item => item.date === yearMonth);
+      
+      if (existingData) {
+        result.push(existingData);
+      } else {
+        result.push({ date: yearMonth, revenue: 0 });
+      }
+    }
+
+    // If socket is available, emit the monthly revenue data
+    if (io) {
+      io.emit('revenue:monthly', result);
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching monthly revenue:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 }; 

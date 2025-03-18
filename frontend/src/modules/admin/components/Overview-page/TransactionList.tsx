@@ -117,6 +117,8 @@ const TransactionList: React.FC<TransactionListProps> = ({
         return 'Walk-in Booking';
       case 'membership':
         return 'Membership';
+      case 'refund':
+        return 'Refund';
       default:
         return type;
     }
@@ -339,7 +341,10 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 </div>
                 
                 <div className="sm:col-span-2 text-right font-medium text-gray-900 dark:text-white">
-                  ${transaction.amount.toFixed(2)}
+                  <span className={transaction.amount < 0 ? 'text-red-600 dark:text-red-400' : ''}>
+                    LKR {Math.abs(transaction.amount).toFixed(2)}
+                    {transaction.amount < 0 && ' (Refund)'}
+                  </span>
                 </div>
               </div>
             ))}

@@ -6,7 +6,8 @@ import {
   getUserTransactions,
   getAllTransactions,
   deleteTransaction,
-  getLast30DaysEarnings
+  getLast30DaysEarnings,
+  getMonthlyRevenue
 } from "../controllers/transaction.controller";
 
 const router = express.Router();
@@ -25,6 +26,9 @@ router.get("/", managerOrOwner, getAllTransactions);
 
 // Get last 30 days earnings (requires owner or manager role)
 router.get("/last-30-days-earnings", managerOrOwner, getLast30DaysEarnings);
+
+// Get monthly revenue data for the last 6 months (requires owner or manager role)
+router.get("/monthly-revenue", managerOrOwner, getMonthlyRevenue);
 
 // Delete a transaction (requires owner role)
 router.delete("/:transactionId", ownerOnly, deleteTransaction);
