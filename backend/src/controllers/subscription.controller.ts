@@ -23,6 +23,16 @@ export const createSubscription = async (
       return;
     }
 
+    // Check if user has role "user"
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== "user") {
+      res.status(403).json({
+        success: false,
+        message: "Only users can create subscriptions"
+      });
+      return;
+    }
+
     const { membershipId, duration, totalAmount, startDate, endDate } =
       req.body;
 
@@ -73,7 +83,7 @@ export const createSubscription = async (
       {
         $set: {
           defaultMembershipId: membershipId,
-          subscription: subscription._id, // Update the subscription reference
+          subscription: subscription._id,
         },
       },
       { session }
@@ -130,6 +140,16 @@ export const getUserSubscriptions = async (
       return;
     }
 
+    // Check if user has role "user"
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== "user") {
+      res.status(403).json({
+        success: false,
+        message: "Only users can view their subscriptions"
+      });
+      return;
+    }
+
     const subscriptions = await Subscription.find({ userId: req.user.id })
       .populate("membershipId")
       .sort({ createdAt: -1 });
@@ -164,6 +184,16 @@ export const assignMembership = async (
       res.status(400).json({
         success: false,
         message: "Please provide both userId and membershipId",
+      });
+      return;
+    }
+
+    // Check if target user has role "user"
+    const targetUser = await User.findById(userId);
+    if (!targetUser || targetUser.role !== "user") {
+      res.status(403).json({
+        success: false,
+        message: "Membership can only be assigned to users"
       });
       return;
     }

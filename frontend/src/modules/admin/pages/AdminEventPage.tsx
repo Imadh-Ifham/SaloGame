@@ -112,70 +112,72 @@ const AdminEventPage: React.FC = () => {
   console.log("Events to render:", events);
 
   return (
-    <div className="p-6">
-      {error && ( // display error message if there is an error
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-          <strong className="font-bold">Error!</strong>
-          <span className="block sm:inline">{error}</span>
-        </div>
-      )}
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-semibold">Manage Events</h2>
-        <button
-          onClick={handleCreateEvent}
-          className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
-        >
-          Create Event
-        </button>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-        {events.map((event, index) => (
-          <AdminEventCard
-            key={index}
-            event={event}
-            onEdit={handleEditEvent}
-            onDelete={handleDeleteEvent}
-          />
-        ))}
-      </div>
-
-      <Modal
-        isOpen={isModalOpen}
-        onClose={() => {
-          setIsModalOpen(false);
-          setEditingEvent(null);
-        }}
-        title={editingEvent ? "Edit Event" : "Create New Event"}
-      >
-        <EventForm
-          onSubmit={handleSubmit}
-          initialData={editingEvent || undefined}
-        />
-      </Modal>
-
-      {/* Delete Confirmation Modal */}
-      {isDeleteConfirmOpen && (
-        <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} title="Confirm Delete">
-          <div className="p-4">
-            <p>Are you sure you want to delete this event?</p>
-            <div className="flex justify-end space-x-4 mt-4">
-              <button
-                onClick={() => setIsDeleteConfirmOpen(false)}
-                className="px-4 py-2 bg-gray-200 rounded"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={confirmDelete}
-                className="px-4 py-2 bg-red-500 text-white rounded"
-              >
-                Yes, Delete
-              </button>
-            </div>
+    <div className="flex-1 h-screen overflow-y-auto bg-white dark:bg-background-dark">
+      <div className="p-6">
+        {error && ( // display error message if there is an error
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
+            <strong className="font-bold">Error!</strong>
+            <span className="block sm:inline">{error}</span>
           </div>
+        )}
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-2xl font-semibold">Manage Events</h2>
+          <button
+            onClick={handleCreateEvent}
+            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+          >
+            Create Event
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          {events.map((event, index) => (
+            <AdminEventCard
+              key={index}
+              event={event}
+              onEdit={handleEditEvent}
+              onDelete={handleDeleteEvent}
+            />
+          ))}
+        </div>
+
+        <Modal
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false);
+            setEditingEvent(null);
+          }}
+          title={editingEvent ? "Edit Event" : "Create New Event"}
+        >
+          <EventForm
+            onSubmit={handleSubmit}
+            initialData={editingEvent || undefined}
+          />
         </Modal>
-      )}
+
+        {/* Delete Confirmation Modal */}
+        {isDeleteConfirmOpen && (
+          <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} title="Confirm Delete">
+            <div className="p-4">
+              <p>Are you sure you want to delete this event?</p>
+              <div className="flex justify-end space-x-4 mt-4">
+                <button
+                  onClick={() => setIsDeleteConfirmOpen(false)}
+                  className="px-4 py-2 bg-gray-200 rounded"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="px-4 py-2 bg-red-500 text-white rounded"
+                >
+                  Yes, Delete
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
+      </div>
     </div>
   );
 };
