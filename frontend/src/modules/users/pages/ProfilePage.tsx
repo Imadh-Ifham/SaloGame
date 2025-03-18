@@ -5,7 +5,9 @@ import { motion } from "framer-motion";
 import HomeLayout from "../layout/HomeLayout";
 import { FiEdit, FiSave, FiX, FiLogOut } from "react-icons/fi";
 import axiosInstance from "@/axios.config";
-import { useAuth } from "../../../hooks/useAuth"; // import useAuth hook
+import { useAuth } from "../../../hooks/useAuth"; 
+import { signOut } from "firebase/auth";
+import { auth } from "../../../config/firebase";
 
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
@@ -45,10 +47,15 @@ const ProfilePage: React.FC = () => {
     // Save logic here
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    delete axiosInstance.defaults.headers.common["Authorization"];
-    navigate("/auth");
+  const handleLogout = async () => {
+    try {
+      await signOut(auth); // Sign out from Firebase
+      localStorage.removeItem("token");
+      delete axiosInstance.defaults.headers.common["Authorization"];
+      navigate("/auth");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   const handleViewMemberships = () => {
