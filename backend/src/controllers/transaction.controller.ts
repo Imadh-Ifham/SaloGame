@@ -1,7 +1,16 @@
 import { Response } from "express";
 import { AuthRequest } from "../middleware/types";
 import Transaction from "../models/transaction.model";
+import Last30DaysTransactions from "../models/last30DaysTransactions.model";
 import User from "../models/user.model";
+import { Server as SocketIOServer } from "socket.io";
+
+let io: SocketIOServer | null = null;
+
+// Initialize Socket.IO instance
+export const initializeSocketIO = (socketIO: SocketIOServer) => {
+  io = socketIO;
+};
 
 /**
  * Create a new transaction
@@ -50,11 +59,9 @@ export const createTransaction = async (
         return;
       }
 
-      if (paymentType === "cash" && 
-          req.user.role !== "owner" && 
-          req.user.role !== "manager") {
+      if (paymentType === "cash" && req.user.role !== "owner" && req.user.role !== "manager") {
         res.status(403).json({ 
-          error: "Cash payment for membership is only allowed for owners and managers" 
+          error: "Only owners and managers can use cash payment for membership" 
         });
         return;
       }
@@ -108,6 +115,18 @@ export const createTransaction = async (
     transaction.status = "completed";
     await transaction.save();
 
+    // Update Last30DaysTransactions collection
+    await updateLast30DaysTransactions(transaction);
+
+    // Emit socket event for real-time updates
+    if (io) {
+      io.emit('transaction:new', { 
+        transactionId: transaction._id,
+        amount: transaction.amount,
+        transactionType: transaction.transactionType 
+      });
+    }
+
     res.status(201).json({ 
       message: "Transaction created successfully", 
       transaction 
@@ -115,6 +134,61 @@ export const createTransaction = async (
   } catch (error) {
     console.error("Error creating transaction:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+// Helper function to update the Last30DaysTransactions collection
+const updateLast30DaysTransactions = async (transaction: any) => {
+  try {
+    // Get or create the last 30 days document
+    const last30DaysDoc = await Last30DaysTransactions.findOne();
+    
+    if (!last30DaysDoc) {
+      // Create a new document if it doesn't exist
+      await Last30DaysTransactions.create({
+        transactions: [{
+          transactionId: transaction._id,
+          userID: transaction.userID,
+          paymentType: transaction.paymentType,
+          amount: transaction.amount,
+          transactionType: transaction.transactionType,
+          status: transaction.status,
+          createdAt: transaction.createdAt
+        }],
+        totalEarnings: transaction.status === "completed" ? transaction.amount : 0,
+        lastUpdated: new Date()
+      });
+    } else {
+      // Add the new transaction to the array
+      last30DaysDoc.transactions.push({
+        transactionId: transaction._id,
+        userID: transaction.userID,
+        paymentType: transaction.paymentType,
+        amount: transaction.amount,
+        transactionType: transaction.transactionType,
+        status: transaction.status,
+        createdAt: transaction.createdAt
+      });
+      
+      // Remove transactions older than 30 days
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      last30DaysDoc.transactions = last30DaysDoc.transactions.filter(t => 
+        new Date(t.createdAt) >= thirtyDaysAgo
+      );
+      
+      // Recalculate total earnings
+      last30DaysDoc.totalEarnings = last30DaysDoc.transactions
+        .filter(t => t.status === "completed")
+        .reduce((sum, t) => sum + t.amount, 0);
+      
+      last30DaysDoc.lastUpdated = new Date();
+      
+      await last30DaysDoc.save();
+    }
+  } catch (error) {
+    console.error("Error updating Last30DaysTransactions:", error);
   }
 };
 
@@ -291,5 +365,113 @@ export const deleteTransaction = async (
   } catch (error) {
     console.error("Error deleting transaction:", error);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/**
+ * Get Last 30 Days Earnings
+ * Returns the total earnings from the last 30 days
+ */
+export const getLast30DaysEarnings = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const last30DaysDoc = await Last30DaysTransactions.findOne();
+    
+    if (!last30DaysDoc) {
+      // If no document exists, calculate from scratch
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      
+      const completedTransactions = await Transaction.find({
+        status: "completed",
+        createdAt: { $gte: thirtyDaysAgo }
+      });
+      
+      const totalEarnings = completedTransactions.reduce((sum, t) => sum + t.amount, 0);
+      
+      // Create the document for future use
+      await Last30DaysTransactions.create({
+        transactions: completedTransactions.map(t => ({
+          transactionId: t._id,
+          userID: t.userID,
+          paymentType: t.paymentType,
+          amount: t.amount,
+          transactionType: t.transactionType,
+          status: t.status,
+          createdAt: t.createdAt
+        })),
+        totalEarnings,
+        lastUpdated: new Date()
+      });
+      
+      res.status(200).json({
+        success: true,
+        totalEarnings,
+        period: "Last 30 Days"
+      });
+    } else {
+      // Check if we need to refresh the data
+      const lastUpdated = new Date(last30DaysDoc.lastUpdated);
+      const now = new Date();
+      const hoursSinceLastUpdate = (now.getTime() - lastUpdated.getTime()) / (1000 * 60 * 60);
+      
+      // If last update was more than 6 hours ago, refresh the data
+      if (hoursSinceLastUpdate > 6) {
+        await refreshLast30DaysTransactions();
+        // Fetch the updated document
+        const updatedDoc = await Last30DaysTransactions.findOne();
+        res.status(200).json({
+          success: true,
+          totalEarnings: updatedDoc ? updatedDoc.totalEarnings : 0,
+          period: "Last 30 Days"
+        });
+      } else {
+        res.status(200).json({
+          success: true,
+          totalEarnings: last30DaysDoc.totalEarnings,
+          period: "Last 30 Days"
+        });
+      }
+    }
+  } catch (error) {
+    console.error("Error getting last 30 days earnings:", error);
+    res.status(500).json({ error: "Failed to get earnings data" });
+  }
+};
+
+// Function to refresh the Last30DaysTransactions collection
+const refreshLast30DaysTransactions = async () => {
+  try {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const completedTransactions = await Transaction.find({
+      status: "completed",
+      createdAt: { $gte: thirtyDaysAgo }
+    });
+    
+    const totalEarnings = completedTransactions.reduce((sum, t) => sum + t.amount, 0);
+    
+    await Last30DaysTransactions.findOneAndUpdate(
+      {}, // Find any document (there should be only one)
+      {
+        transactions: completedTransactions.map(t => ({
+          transactionId: t._id,
+          userID: t.userID,
+          paymentType: t.paymentType,
+          amount: t.amount,
+          transactionType: t.transactionType,
+          status: t.status,
+          createdAt: t.createdAt
+        })),
+        totalEarnings,
+        lastUpdated: new Date()
+      },
+      { upsert: true, new: true }
+    );
+  } catch (error) {
+    console.error("Error refreshing Last30DaysTransactions:", error);
   }
 }; 

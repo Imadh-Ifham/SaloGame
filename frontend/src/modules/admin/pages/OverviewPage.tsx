@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FiDollarSign, FiUsers, FiCalendar } from 'react-icons/fi';
+import { useDispatch, useSelector } from 'react-redux';
 import MachineStats from '../components/Overview-page/MachineStats';
 import StatsCard from '../components/Overview-page/StatsCard';
 import TransactionList from '../components/Overview-page/TransactionList';
 import { RevenueChart } from '../components/Overview-page/RevenueChart';
 import { getTransactions, ITransaction, TransactionPaginationParams } from '../../../api/transactionService';
+import { RootState } from '../../../store/store';
+import { fetchLast30DaysEarnings } from '../../../store/slices/revenueSlice';
 
 // Sample data - replace with real data later
 const sampleRevenueData = [
@@ -17,6 +20,8 @@ const sampleRevenueData = [
 ];
 
 const OverviewPage: React.FC = () => {
+  const dispatch = useDispatch();
+  const { last30DaysEarnings, isLoading: isLoadingRevenue } = useSelector((state: RootState) => state.revenue);
   const [transactions, setTransactions] = useState<ITransaction[]>([]);
   const [hasMore, setHasMore] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -24,6 +29,11 @@ const OverviewPage: React.FC = () => {
   const [startDate, setStartDate] = useState<Date | null>(null);
   const [endDate, setEndDate] = useState<Date | null>(null);
   const limit = 15;
+
+  // Fetch last 30 days earnings when component mounts
+  useEffect(() => {
+    dispatch(fetchLast30DaysEarnings() as any);
+  }, [dispatch]);
 
   const fetchTransactions = async (pageNum: number, dateFilters?: { startDate?: Date | null, endDate?: Date | null }) => {
     try {
@@ -78,6 +88,11 @@ const OverviewPage: React.FC = () => {
     setEndDate(end);
   };
 
+  // Format currency with commas
+  const formatCurrency = (amount: number): string => {
+    return `$${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
+
   return (
     <div id="overview-page-content" className="flex-1 h-screen overflow-y-auto scrollbar-hide bg-white dark:bg-background-dark">
       <div className="p-6 space-y-8 pb-12">
@@ -88,8 +103,8 @@ const OverviewPage: React.FC = () => {
         {/* Stats Cards Row */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <StatsCard
-            title="Total Revenue"
-            value="$24,500"
+            title="Last 30 Days Revenue"
+            value={isLoadingRevenue ? "Loading..." : formatCurrency(last30DaysEarnings)}
             icon={<FiDollarSign className="text-primary" />}
             trend={{ value: 12.5, isPositive: true }}
           />
