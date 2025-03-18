@@ -1,5 +1,4 @@
-const BASE_URL = "http://localhost:5000";
-
+const BASE_URL = `http://localhost:${import.meta.env.VITE_API_PORT || 4000}`;
 export const API_ENDPOINTS = {
   USERS: {
     GET_USERS: `${BASE_URL}/users`,
