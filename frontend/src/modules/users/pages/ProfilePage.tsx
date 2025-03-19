@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import HomeLayout from "../layout/HomeLayout";
@@ -17,7 +17,7 @@ interface UserProfile {
     price: number;
     benefits: string[];
   };
-  // Add more fields if available
+  profileImage?: string; 
 }
 
 const ProfilePage: React.FC = () => {
@@ -25,8 +25,11 @@ const ProfilePage: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewImage, setPreviewImage] = useState<string | null>(null);
   const navigate = useNavigate();
 
+
+  //profile fetching
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -37,7 +40,12 @@ const ProfilePage: React.FC = () => {
         }
         axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         const response = await axiosInstance.get("/users/profile");
-        setProfile(response.data as UserProfile);
+        const userProfile = response.data as UserProfile;
+        setProfile(userProfile);
+        // Set preview from profile image if exists
+        if (userProfile.profileImage) {
+          setPreviewImage(userProfile.profileImage);
+        }
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to fetch profile");
         console.error("Profile fetch error:", err);
@@ -49,7 +57,9 @@ const ProfilePage: React.FC = () => {
     fetchProfile();
   }, []);
 
-  const handleLogout = async () => {
+
+  //lgout handling
+    const handleLogout = async () => {
     try {
       await signOut(auth);
       localStorage.removeItem("token");
@@ -63,6 +73,53 @@ const ProfilePage: React.FC = () => {
       }
     } catch (error) {
       console.error("Logout error:", error);
+    }
+  };
+
+
+  //image uploading
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Preview file
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setPreviewImage(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+
+
+      
+      // Create a form data to upload image
+      const formData = new FormData();
+      formData.append("profileImage", file);
+      try {
+        const response = await axiosInstance.post("/users/profile/upload-image", formData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        
+        if (profile) {
+          setProfile({ ...profile, profileImage: response.data.imageUrl });
+        }
+      } catch (error) {
+        console.error("Image upload error:", error);
+      }
+    }
+  };
+
+
+  //delete image
+  const handleDeleteImage = async () => {
+    if (!window.confirm("Do you want to delete the image?")) return;
+    
+    try {
+      await axiosInstance.delete("/users/profile/delete-image");
+      setPreviewImage(null);
+      if (profile) {
+        setProfile({ ...profile, profileImage: undefined });
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
     }
   };
 
@@ -90,103 +147,139 @@ const ProfilePage: React.FC = () => {
 
   return (
     <HomeLayout>
-      <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 min-h-screen font-poppins">
+
+<div className="py-12 px-4 sm:px-6 lg:px-8 min-h-screen font-poppins">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-4xl mx-auto space-y-8"
         >
-          <h1 className="text-3xl font-press text-primary mb-8 text-center">
-            My Profile
-          </h1>
+          {/* Header Section */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Profile 
+            </h1>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition-colors"
+            >
+              <FiLogOut className="text-red-400" />
+              <span className="text-red-400 text-sm font-medium">Logout</span>
+            </motion.button>
+          </div>
 
           <NotificationArea />
 
-          <div className="bg-transparent backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-emerald-500/30 hover:border-emerald-500/50 transition-all duration-300 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 opacity-30" />
-
-            {/* Profile Info */}
-            <div className="flex flex-col items-center mb-8 relative z-10">
-              <div className="w-32 h-32 rounded-full bg-gray-800 border-4 border-emerald-500/30 overflow-hidden shadow-lg">
-                {/* Optionally display profile image if available */}
-                <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center">
-                  <span className="text-4xl font-bold text-emerald-400 font-orbitron">
-                    {profile?.email.charAt(0)}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-4 text-center">
-                <h2 className="text-2xl font-bold text-emerald-400 font-orbitron drop-shadow-glow">
-                  {profile?.email}
-                </h2>
-                <p className="text-lg text-gray-300">{profile?.email}</p>
-                <div className="mt-2 flex items-center justify-center gap-2">
-                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-sm font-medium tracking-wide">
-                    {profile?.role?.toUpperCase() || "VIP TERMINAL"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Membership Info Section */}
-            <div className="space-y-4 relative z-10">
-              <label className="text-sm font-medium text-gray-400">
-                Current Membership
-              </label>
-              <div className="p-4 bg-gray-800/50 rounded-lg border border-emerald-500/30">
-                {profile?.defaultMembershipId ? (
-                  <>
-                    <h3 className="text-lg font-semibold text-emerald-400">
-                      {profile.defaultMembershipId.name}
-                    </h3>
-                    <div className="mt-3 space-y-2">
-                      <p className="text-sm text-gray-300">
-                        Price: ${profile.defaultMembershipId.price}/month
-                      </p>
-                      <div className="space-y-1">
-                        {profile.defaultMembershipId.benefits.map((benefit, index) => (
-                          <p key={index} className="text-sm text-gray-300 flex items-center">
-                            <span className="text-emerald-400 mr-2">✓</span>
-                            {benefit}
-                          </p>
-                        ))}
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-center py-4">
-                    <h3 className="text-lg font-semibold text-gray-400">
-                      No Active Membership
-                    </h3>
-                    <p className="text-sm text-gray-500 mt-2">
-                      Subscribe to unlock exclusive benefits!
-                    </p>
+          {/* Profile Card */}
+          <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-8 border border-gray-700/50 shadow-2xl">
+            <div className="flex flex-col md:flex-row gap-8 items-center">
+              {/* Avatar Section */}
+              <div className="relative group">
+                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 p-1.5">
+                  <div className="w-full h-full rounded-xl bg-gray-900 flex items-center justify-center overflow-hidden">
+                    {previewImage ? (
+                      <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-5xl font-bold text-emerald-400">
+                        {profile?.email.charAt(0).toUpperCase()}
+                      </span>
+                    )}
                   </div>
-                )}
+                </div>
+                {/* Upload Label */}
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  <span className="text-sm text-white">Upload Image</span>
+                </label>
+              </div>
+
+              {/* If image exists, show Delete button */}
+              {previewImage && (
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleDeleteImage}
+                  className="px-3 py-1 bg-red-500/20 rounded text-red-400 text-sm hover:bg-red-500/30 transition-colors"
+                >
+                  Delete Image
+                </motion.button>
+              )}
+
+              {/* Profile Info */}
+              <div className="flex-1 space-y-3 text-center md:text-left">
+                <div>
+                  <p className="text-sm text-gray-400">Logged in as</p>
+                  <h2 className="text-2xl font-bold text-gray-100">
+                    {profile?.email}
+                  </h2>
+                </div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-900 rounded-full">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                  <span className="text-sm font-medium text-emerald-400">
+                    {profile?.role 
+                      ? (profile.role === "user" ? "USER" : `${profile.role.toUpperCase()} USER`)
+                      : "PREMIUM USER"}
+                  </span>
+                </div>
               </div>
             </div>
+          </div>
 
-            <div className="mt-8 flex flex-col gap-4 relative z-10">
+          {/* Membership Card */}
+          <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-8 border border-gray-700/50 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-100">Membership Details</h3>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => navigate("/memberships")}
-                className="w-full py-3 bg-gray-800/50 border border-emerald-500/30 text-emerald-400 rounded-xl hover:border-emerald-500/50 flex items-center justify-center gap-2"
+                className="px-4 py-2 bg-emerald-500/20 rounded-lg text-emerald-400 text-sm hover:bg-emerald-500/30 transition-colors"
               >
-                {profile?.defaultMembershipId
-                  ? "VIEW OTHER MEMBERSHIPS"
-                  : "EXPLORE MEMBERSHIPS"}
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleLogout}
-                className="w-full py-3 bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl hover:border-red-400/50 flex items-center justify-center gap-2 mt-6"
-              >
-                <FiLogOut size={18} />
-                LOG OUT
+                {profile?.defaultMembershipId ? "Change Plan" : "Get Membership"}
               </motion.button>
             </div>
+
+            {profile?.defaultMembershipId ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">Plan Name</p>
+                  <p className="text-lg font-medium text-emerald-400">
+                    {profile.defaultMembershipId.name}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">Price</p>
+                  <p className="text-lg font-medium text-cyan-400">
+                    ${profile.defaultMembershipId.price}/month
+                  </p>
+                </div>
+                <div className="md:col-span-2 space-y-4">
+                  <p className="text-sm text-gray-400">Benefits</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {profile.defaultMembershipId.benefits.map((benefit, index) => (
+                      <div
+                        key={index}
+                        className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg"
+                      >
+                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                          <span className="text-emerald-400">✓</span>
+                        </div>
+                        <span className="text-sm text-gray-300">{benefit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center space-y-4">
+                <div className="text-4xl">🔒</div>
+                <p className="text-gray-400">
+                  No active membership. Subscribe to unlock exclusive features!
+                </p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
