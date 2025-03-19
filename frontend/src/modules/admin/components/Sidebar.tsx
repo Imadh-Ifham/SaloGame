@@ -57,6 +57,7 @@ const Sidebar = ({ user }: { user: User }) => {
 
       <div className="flex flex-col space-y-2">
         {renderNavLink("/admin/overview", "Overview", "📊")}
+        {renderNavLink("/admin/Dashboard", "Users", "👤")}
         {renderNavLink("/admin/booking", "Bookings", "📝")}
         {renderNavLink("/admin/games", "Games", "🎮")}
         {renderNavLink("/admin/packages", "Packages", "📦")}
