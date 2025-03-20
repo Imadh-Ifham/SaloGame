@@ -1,13 +1,13 @@
 import { Request, Response } from "express";
 import Machine from "../models/machine.model/machine.model";
 import findFirstAndNextBooking from "../services/findFirstAndNextBooking";
-import mongoose from "mongoose";
-import { CustomerBooking } from "../types/booking";
 import isSlotAvailable from "../services/isSlotAvailable";
 import Booking from "../models/booking.model";
 import calculateTotalPrice from "../services/calculatePrice";
+import { getBookingStatus } from "../services/getBookingStatus";
 
-export const getFirstAndNextBookingForAllMachines = async (
+// Define controller for fetching booking status for all the machines
+export const getBookingStatusForAllMachines = async (
   req: Request,
   res: Response
 ): Promise<void> => {
@@ -32,40 +32,75 @@ export const getFirstAndNextBookingForAllMachines = async (
       return;
     }
 
-    // Step 2: Initialize an empty object to store booking details for each machine
-    const bookingDetails: Record<
-      string,
-      {
-        firstBooking: CustomerBooking | null;
-        status: string;
-        nextBooking: CustomerBooking | null;
-      }
-    > = {};
+    // Step 2: Fetch booking statuses in parallel using Promise.all
+    const entries = await Promise.all(
+      machines.map(async (machine) => {
+        const machineID = machine._id.toString();
+        const status = await getBookingStatus(
+          inputStartTime,
+          duration,
+          machineID
+        );
+        return [machineID, { status }];
+      })
+    );
 
-    // Step 3: Loop through each machine and call findFirstAndNextBooking
-    for (const machine of machines) {
-      const machineID = machine._id as mongoose.Types.ObjectId; // Correctly typed ObjectId
+    // Step 3: Convert the array to an object
+    const bookingStatusDetails = Object.fromEntries(entries);
 
-      // Call the function we created to find first and next bookings
-      const { firstBooking, secondBooking } = await findFirstAndNextBooking(
-        inputStartTime,
-        duration,
-        machineID
-      );
+    // Step 4: Return the structured result
+    res.json({
+      success: true,
+      data: bookingStatusDetails,
+    });
+  } catch (error) {
+    console.error("Error fetching booking status:", error);
 
-      // Get the status of the first booking (if it exists)
-      let status = "Available"; // Default status
-      if (firstBooking) {
-        status = firstBooking.status; // Adjust logic as needed
-      }
+    // Return a structured error response
+    res.status(500).json({
+      success: false,
+      error: "Error fetching booking status",
+      message: (error as Error).message || "Something went wrong.",
+    });
+  }
+};
 
-      // Step 4: Store the booking details for the machine
-      bookingDetails[machineID.toString()] = {
-        firstBooking: firstBooking ?? null, // Ensure it's null if undefined
-        status: status,
-        nextBooking: secondBooking ?? null, // Ensure it's null if undefined
-      };
+export const getFirstAndNextBooking = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const {
+      inputStartTime,
+      duration,
+      machineID,
+    }: { inputStartTime: Date; duration: number; machineID: String } = req.body;
+
+    if (!inputStartTime || !duration || !machineID) {
+      res.status(400).json({
+        error: "InputStartTime, duration & machineID are required fields.",
+      });
+      return;
     }
+
+    // Call the function we created to find first and next bookings
+    const { firstBooking, secondBooking } = await findFirstAndNextBooking(
+      inputStartTime,
+      duration,
+      machineID
+    );
+
+    // Get the status of the first booking (if it exists)
+    let status = "Available"; // Default status
+    if (firstBooking) {
+      status = firstBooking.status; // Adjust logic as needed
+    }
+
+    const bookingDetails = {
+      firstBooking: firstBooking ?? null, // Ensure it's null if undefined
+      status: status,
+      nextBooking: secondBooking ?? null, // Ensure it's null if undefined
+    };
 
     // Step 5: Return the structured result
     res.json({

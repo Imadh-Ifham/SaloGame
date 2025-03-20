@@ -1,24 +1,51 @@
 import axiosInstance from "@/axios.config";
 import { createAsyncThunk } from "@reduxjs/toolkit";
-import { AllMachineBookings, CustomerBooking } from "../slices/bookingSlice";
+import {
+  bookingStatusString,
+  CustomerBooking,
+  MachineBooking,
+} from "../slices/bookingSlice";
 
-export const fetchFirstAndNextBookings = createAsyncThunk<
-  AllMachineBookings, // The type of the data returned
-  { startTime: String; duration: Number }, // The type of the argument (startTime and duration)
+// Fetch the current and next booking for the selected machine
+export const fetchFirstAndNextBooking = createAsyncThunk<
+  MachineBooking, // The type of the data returned
+  { startTime: String; duration: Number; machineID: String }, // The type of the argument (startTime and duration)
   { rejectValue: string } // The type of the error message on failure
 >(
   "bookings/fetchFirstAndNext",
-  async ({ startTime, duration }, { rejectWithValue }) => {
+  async ({ startTime, duration, machineID }, { rejectWithValue }) => {
     try {
       // Make sure the data is correctly passed to the API
       const response = await axiosInstance.post(
         `/bookings/get-first-and-next/`, // Use POST request
-        { inputStartTime: startTime, duration: duration } // Pass the body
+        { inputStartTime: startTime, duration, machineID } // Pass the body
       );
       return response.data.data; // Return the data from the API
     } catch (error: any) {
       return rejectWithValue(
         error.response?.data || "Failed to fetch bookings"
+      );
+    }
+  }
+);
+
+// Fetch all the bookings statuses for each machines
+export const fetchMachineStatus = createAsyncThunk<
+  { [machineID: string]: { status: bookingStatusString } }, // The return type (Machine ID → Status)
+  { startTime: string; duration: number }, // The arguments type
+  { rejectValue: string } // Error message type
+>(
+  "bookings/fetchMachineStatus",
+  async ({ startTime, duration }, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post("/bookings/machines-status", {
+        inputStartTime: startTime,
+        duration,
+      });
+      return response.data.data; // Return machine status object
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to fetch machine statuses"
       );
     }
   }

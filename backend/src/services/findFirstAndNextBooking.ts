@@ -1,10 +1,9 @@
-import mongoose from "mongoose";
 import Booking, { IMachineBooking } from "../models/booking.model";
 
 const findFirstAndNextBooking = async (
   inputStartTime: Date,
   duration: number,
-  machineID: mongoose.Types.ObjectId
+  machineID: String
 ) => {
   const InputStartTime = new Date(inputStartTime); // Convert inputStartTime to Date object
   const InputEndTime = new Date(
@@ -23,8 +22,7 @@ const findFirstAndNextBooking = async (
     },
     status: { $in: ["Booked", "InUse"] }, // Add status condition
     $or: [
-      { startTime: { $gte: inputStartTime, $lt: InputEndTime } },
-      { endTime: { $gt: inputStartTime, $lte: InputEndTime } },
+      { startTime: { $lt: InputEndTime }, endTime: { $gt: inputStartTime } }, // Any overlap
     ],
   })
     .sort({ startTime: 1, endTime: 1 }) // Sort by startTime and then endTime
