@@ -48,7 +48,7 @@ const Header: React.FC = () => {
     { to: "/events", label: "Events" },
     // Add conditional dashboard link for managers and owners
     ...(user?.role === "manager" || user?.role === "owner"
-      ? [{ to: "/admin/dashboard", label: "Dashboard" }]
+      ? [{ to: "/admin", label: "Dashboard" }]
       : []),
   ];
 

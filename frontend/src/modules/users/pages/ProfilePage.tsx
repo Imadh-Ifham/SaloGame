@@ -1,164 +1,305 @@
-// frontend/src/modules/users/pages/ProfilePage.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, ChangeEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import HomeLayout from "../layout/HomeLayout";
-import { FiEdit, FiSave, FiX, FiLogOut } from "react-icons/fi";
-import axiosInstance from "@/axios.config";
-import { useAuth } from "../../../hooks/useAuth"; // import useAuth hook
+import axiosInstance from "../../../axios.config";
+import { auth } from "../../../config/firebase";
+import { signOut } from "firebase/auth";
+import { useAuth } from "../../../hooks/useAuth";
+import { FiLogOut } from "react-icons/fi";
+import NotificationArea from "../../../components/notifications/NotificationArea";
+
+interface UserProfile {
+  email: string;
+  role?: string;
+  defaultMembershipId?: {
+    name: string;
+    price: number;
+    benefits: string[];
+  };
+  profileImage?: string;
+}
 
 const ProfilePage: React.FC = () => {
-  const navigate = useNavigate();
-  const { user, loading } = useAuth();
-  
-  // remove hard-coded initial values
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedName, setEditedName] = useState("");
-  const [editedEmail, setEditedEmail] = useState("");
+  const { user, loading: authLoading } = useAuth();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-  const [bookedEvents] = useState([
-    { id: "1", title: "CS:GO Tournament", date: "2023-12-15", machine: "PC #12" },
-    { id: "2", title: "Valorant Night", date: "2023-12-20", machine: "PC #05" },
-  ]);
-  const [memberships, setMemberships] = useState<any[]>([]);
+  const navigate = useNavigate();
 
+  //profile fetching
   useEffect(() => {
-    if (user) {
-      setEditedName(user.email); // update this if you have a name field
-      setEditedEmail(user.email);
-    }
-  }, [user]);
+    const fetchProfile = async () => {
+      try {
+        setLoading(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No authentication token found");
+        }
+        axiosInstance.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${token}`;
+        const response = await axiosInstance.get("/users/profile");
+        const userProfile = response.data as UserProfile;
+        setProfile(userProfile);
+        // Set preview from profile image if exists
+        if (userProfile.profileImage) {
+          setPreviewImage(userProfile.profileImage);
+        }
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch profile"
+        );
+        console.error("Profile fetch error:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    fetchProfile();
+  }, []);
+
+  //lgout handling
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      localStorage.removeItem("token");
+      delete axiosInstance.defaults.headers.common["Authorization"];
+
+      // Role-based redirect
+      if (profile?.role === "owner" || profile?.role === "manager") {
+        navigate("/admin/auth");
+      } else {
+        navigate("/auth");
+      }
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
+
+  //image uploading
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      // Preview file
       const reader = new FileReader();
       reader.onloadend = () => {
         setPreviewImage(reader.result as string);
       };
       reader.readAsDataURL(file);
+
+      // Create a form data to upload image
+      const formData = new FormData();
+      formData.append("profileImage", file);
+      try {
+        const response = await axiosInstance.post(
+          "/users/profile/upload-image",
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+
+        if (profile) {
+          setProfile({ ...profile, profileImage: response.data.imageUrl });
+        }
+      } catch (error) {
+        console.error("Image upload error:", error);
+      }
     }
   };
 
-  const handleSaveProfile = () => {
-    setIsEditing(false);
-    // Save logic here
+  //delete image
+  const handleDeleteImage = async () => {
+    if (!window.confirm("Do you want to delete the image?")) return;
+
+    try {
+      await axiosInstance.delete("/users/profile/delete-image");
+      setPreviewImage(null);
+      if (profile) {
+        setProfile({ ...profile, profileImage: undefined });
+      }
+    } catch (error) {
+      console.error("Error deleting image:", error);
+    }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem("token");
-    delete axiosInstance.defaults.headers.common["Authorization"];
-    navigate("/auth");
-  };
+  if (loading || authLoading) {
+    return (
+      <HomeLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+        </div>
+      </HomeLayout>
+    );
+  }
 
-  const handleViewMemberships = () => {
-    navigate("/memberships");
-  };
-
-  const handleBookNewEvent = () => {
-    navigate("/bookings");
-  };
-
-  if (loading) {
-    return <div>Loading...</div>;
+  if (error) {
+    return (
+      <HomeLayout>
+        <div className="flex justify-center items-center min-h-[60vh]">
+          <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-lg text-red-600 dark:text-red-400">
+            {error}
+          </div>
+        </div>
+      </HomeLayout>
+    );
   }
 
   return (
     <HomeLayout>
-      <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 min-h-screen font-poppins">
+      <div className="py-12 px-4 sm:px-6 lg:px-8 min-h-screen font-poppins">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="max-w-4xl mx-auto"
+          className="max-w-4xl mx-auto space-y-8"
         >
-         <div className="bg-transparent backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-emerald-500/30 hover:border-emerald-500/50 transition-all duration-300 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 opacity-30" />
-            {/* Profile Header */}
-            <div className="flex flex-col items-center mb-8 relative z-10">
+          {/* Header Section */}
+          <div className="flex items-center justify-between">
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
+              Profile
+            </h1>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleLogout}
+              className="flex items-center gap-2 px-4 py-2 bg-red-500/20 rounded-lg hover:bg-red-500/30 transition-colors"
+            >
+              <FiLogOut className="text-red-400" />
+              <span className="text-red-400 text-sm font-medium">Logout</span>
+            </motion.button>
+          </div>
+
+          <NotificationArea />
+
+          {/* Profile Card */}
+          <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-8 border border-gray-700/50 shadow-2xl">
+            <div className="flex flex-col md:flex-row gap-8 items-center">
+              {/* Avatar Section */}
               <div className="relative group">
-                <div className="w-32 h-32 rounded-full bg-gray-800 border-4 border-emerald-500/30 overflow-hidden shadow-lg hover:border-emerald-500/50 transition-colors">
-                  {previewImage ? (
-                    <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center">
-                      <span className="text-4xl font-bold text-emerald-400 font-orbitron">
-                        {editedName.charAt(0)}
+                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 p-1.5">
+                  <div className="w-full h-full rounded-xl bg-gray-900 flex items-center justify-center overflow-hidden">
+                    {previewImage ? (
+                      <img
+                        src={previewImage}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-5xl font-bold text-emerald-400">
+                        {profile?.email.charAt(0).toUpperCase()}
                       </span>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
-                {isEditing && (
-                  <label className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
-                    <FiEdit className="text-emerald-400 w-6 h-6" />
-                  </label>
-                )}
+                {/* Upload Label */}
+                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                  <span className="text-sm text-white">Upload Image</span>
+                </label>
               </div>
-              <div className="mt-4 text-center">
-                {isEditing ? (
-                  <>
-                    <input
-                      type="text"
-                      value={editedName}
-                      onChange={(e) => setEditedName(e.target.value)}
-                      className="text-2xl font-bold bg-gray-800/50 text-emerald-400 text-center border-b border-emerald-500/50 focus:outline-none font-orbitron"
-                    />
-                    <input
-                      type="email"
-                      value={editedEmail}
-                      onChange={(e) => setEditedEmail(e.target.value)}
-                      className="text-lg bg-gray-800/50 text-gray-300 text-center border-b border-emerald-500/50 focus:outline-none mt-2"
-                    />
-                  </>
-                ) : (
-                  <>
-                    <h2 className="text-2xl font-bold text-emerald-400 font-orbitron drop-shadow-glow">{editedName}</h2>
-                    <p className="text-lg text-gray-300">{editedEmail}</p>
-                  </>
-                )}
-                <div className="mt-2 flex items-center justify-center gap-2">
-                  <span className="px-3 py-1 bg-emerald-500/20 text-emerald-400 rounded-full text-sm font-medium tracking-wide">
-                    VIP TERMINAL
-                  </span>
-                  <button
-                    onClick={() => setIsEditing(!isEditing)}
-                    className="p-1.5 hover:bg-gray-800/50 rounded-full transition-colors text-emerald-400 hover:text-emerald-300"
-                  >
-                    {isEditing ? <FiX size={18} /> : <FiEdit size={18} />}
-                  </button>
-                </div>
-              </div>
-            </div>
-            {/* ... rest of your component */}
-            <div className="mt-8 flex flex-col gap-4 relative z-10">
-              {isEditing && (
+
+              {/* If image exists, show Delete button */}
+              {previewImage && (
                 <motion.button
                   whileHover={{ scale: 1.05 }}
-                  onClick={handleSaveProfile}
-                  className="w-full py-3 bg-gradient-to-r from-emerald-600 to-cyan-600 text-white rounded-xl hover:from-emerald-500 hover:to-cyan-500 flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20"
+                  whileTap={{ scale: 0.95 }}
+                  onClick={handleDeleteImage}
+                  className="px-3 py-1 bg-red-500/20 rounded text-red-400 text-sm hover:bg-red-500/30 transition-colors"
                 >
-                  <FiSave size={18} />
-                  COMMIT CHANGES
+                  Delete Image
                 </motion.button>
               )}
+
+              {/* Profile Info */}
+              <div className="flex-1 space-y-3 text-center md:text-left">
+                <div>
+                  <p className="text-sm text-gray-400">Logged in as</p>
+                  <h2 className="text-2xl font-bold text-gray-100">
+                    {profile?.email}
+                  </h2>
+                </div>
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-900 rounded-full">
+                  <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
+                  <span className="text-sm font-medium text-emerald-400">
+                    {profile?.role
+                      ? profile.role === "user"
+                        ? "USER"
+                        : `${profile.role.toUpperCase()} USER`
+                      : "PREMIUM USER"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Membership Card */}
+          <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-8 border border-gray-700/50 shadow-2xl space-y-6">
+            <div className="flex items-center justify-between">
+              <h3 className="text-xl font-semibold text-gray-100">
+                Membership Details
+              </h3>
               <motion.button
                 whileHover={{ scale: 1.05 }}
-                onClick={handleViewMemberships}
-                className="w-full py-3 bg-gray-800/50 border border-emerald-500/30 text-emerald-400 rounded-xl hover:border-emerald-500/50 flex items-center justify-center gap-2"
+                onClick={() => navigate("/memberships")}
+                className="px-4 py-2 bg-emerald-500/20 rounded-lg text-emerald-400 text-sm hover:bg-emerald-500/30 transition-colors"
               >
-                EXPLORE MEMBERSHIPS
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={handleLogout}
-                className="w-full py-3 bg-red-500/20 border border-red-500/30 text-red-400 rounded-xl hover:border-red-400/50 flex items-center justify-center gap-2 mt-6"
-              >
-                <FiLogOut size={18} />
-                LOG OUT
+                {profile?.defaultMembershipId
+                  ? "Change Plan"
+                  : "Get Membership"}
               </motion.button>
             </div>
+
+            {profile?.defaultMembershipId ? (
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">Plan Name</p>
+                  <p className="text-lg font-medium text-emerald-400">
+                    {profile.defaultMembershipId.name}
+                  </p>
+                </div>
+                <div className="space-y-2">
+                  <p className="text-sm text-gray-400">Price</p>
+                  <p className="text-lg font-medium text-cyan-400">
+                    ${profile.defaultMembershipId.price}/month
+                  </p>
+                </div>
+                <div className="md:col-span-2 space-y-4">
+                  <p className="text-sm text-gray-400">Benefits</p>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {profile.defaultMembershipId.benefits.map(
+                      (benefit, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg"
+                        >
+                          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                            <span className="text-emerald-400">✓</span>
+                          </div>
+                          <span className="text-sm text-gray-300">
+                            {benefit}
+                          </span>
+                        </div>
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="py-8 text-center space-y-4">
+                <div className="text-4xl">🔒</div>
+                <p className="text-gray-400">
+                  No active membership. Subscribe to unlock exclusive features!
+                </p>
+              </div>
+            )}
           </div>
         </motion.div>
       </div>

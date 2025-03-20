@@ -5,15 +5,24 @@ import { useDispatch, useSelector } from "react-redux";
 import { selectFetched } from "@/store/selectors/machineSelector";
 import { fetchMachines } from "@/store/thunks/machineThunks";
 import { AppDispatch } from "@/store/store";
+import { fetchMachineStatus } from "@/store/thunks/bookingThunk";
+import { getCurrentUTC } from "@/utils/date.util";
 
 const AdminBookingManager: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const fetched = useSelector(selectFetched);
 
   useEffect(() => {
-    if (!fetched) {
-      dispatch(fetchMachines());
-    }
+    const fetchData = async () => {
+      if (!fetched) {
+        await dispatch(fetchMachines());
+        await dispatch(
+          fetchMachineStatus({ startTime: getCurrentUTC(), duration: 60 })
+        );
+      }
+    };
+
+    fetchData(); // Call the async function
   }, [dispatch, fetched]);
 
   return (

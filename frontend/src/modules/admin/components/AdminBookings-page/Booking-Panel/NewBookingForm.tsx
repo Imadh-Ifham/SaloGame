@@ -26,7 +26,7 @@ import {
 } from "@/store/slices/layoutSlice";
 import {
   createBooking,
-  fetchFirstAndNextBookings,
+  fetchFirstAndNextBooking,
 } from "@/store/thunks/bookingThunk";
 
 const NewBookingForm: React.FC = () => {
@@ -43,19 +43,23 @@ const NewBookingForm: React.FC = () => {
     }
   }, [selectedMachine, dispatch]);
 
-  const handleStartBooking = () => {
+  const handleStartBooking = async () => {
     dispatch(resetMoreMachine());
     dispatch(setShowBookingForm(false));
-    dispatch(createBooking(formData))
+
+    await dispatch(createBooking(formData))
       .then(() => {
-        dispatch(
-          fetchFirstAndNextBookings({
-            startTime: formData.startTime
-              ? toUTC(formData.startTime)
-              : getCurrentUTC(),
-            duration: formData.duration,
-          })
-        );
+        if (selectedMachine) {
+          dispatch(
+            fetchFirstAndNextBooking({
+              startTime: formData.startTime
+                ? toUTC(formData.startTime)
+                : getCurrentUTC(),
+              duration: formData.duration,
+              machineID: selectedMachine._id,
+            })
+          );
+        }
       })
       .catch((error) => {
         console.error("Booking failed:", error);

@@ -1,7 +1,7 @@
 import { selectSelectedMachine } from "@/store/selectors/machineSelector";
 import {
-  selectAllMachineBookings,
   selectFormData,
+  selectMachineStatus,
   updateBookingForm,
 } from "@/store/slices/bookingSlice";
 import { selectMachine } from "@/store/slices/machineSlice";
@@ -17,13 +17,19 @@ interface ConsoleProp {
 const Console: React.FC<ConsoleProp> = ({ machine }) => {
   const dispatch = useDispatch();
   const selectedMachine = useSelector(selectSelectedMachine);
-  const allMachineBookings = useSelector(selectAllMachineBookings);
+  const allMachineStatus = useSelector(selectMachineStatus);
   const isMoreMachineClicked = useSelector(selectIsMoreMachineClicked);
   const formData = useSelector(selectFormData);
 
+  if (!allMachineStatus[machine._id]) {
+    return (
+      <div className="w-full h-32 border border-gray-300 rounded-md bg-gray-300 animate-pulse" />
+    );
+  }
+
   const handleMachineSelect = () => {
     if (isMoreMachineClicked) {
-      if (allMachineBookings[machine._id].status !== "Available") {
+      if (allMachineStatus[machine._id].status !== "Available") {
         return; // Only allow selection of machines with status "Available"
       }
 
@@ -42,7 +48,7 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
   };
 
   const isSelected = formData.machines.some((m) => m.machineID === machine._id);
-  const isAvailable = allMachineBookings[machine._id].status === "Available";
+  const isAvailable = allMachineStatus[machine._id].status === "Available";
 
   return (
     <div
@@ -66,11 +72,11 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
         </div>
         <div
           className={`w-3 h-3 rounded-full shadow-md ${
-            allMachineBookings[machine._id].status === "Available"
+            allMachineStatus[machine._id].status === "Available"
               ? availabilityBgColors.Available
-              : allMachineBookings[machine._id].status === "Booked"
+              : allMachineStatus[machine._id].status === "Booked"
               ? availabilityBgColors.Booked
-              : allMachineBookings[machine._id].status === "InUse"
+              : allMachineStatus[machine._id].status === "InUse"
               ? availabilityBgColors.InUse
               : availabilityBgColors.Maintenance
           }`}

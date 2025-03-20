@@ -1,49 +1,7 @@
-/**
- * PC Component - Represents a machine (PC) in the game lounge layout.
- *
- * This component visually displays a PC setup and handles user interaction for selection.
- * It allows both single and multiple machine selections based on the booking status.
- *
- * ## **Redux State & Usage**
- * - **selectedMachine** (`Machine | null`): Stores the currently selected machine.
- * - **allMachineBookings** (`Record<string, { status: string }>`): Stores the booking status of all machines.
- * - **isMoreMachineClicked** (`boolean`): Determines if multiple machines can be selected at once.
- * - **formData** (`{ machines: { machineID: string; userCount: number }[] }`):
- *   - Stores the currently selected machines for booking.
- *   - Used to add or remove machines when booking.
- * - **dispatch** (`Dispatch`): Handles updates to Redux state.
- *
- * ## **Component Props**
- * - **machine (`Machine`)**: Represents the machine's details such as serial number and booking status.
- * - **rotate (`number`)**: Determines the rotation of the PC layout in the UI.
- *
- * ## **Component Features**
- * - **Machine Selection (`handleMachineSelect`)**
- *   - Allows selection only if `isMoreMachineClicked` is enabled and the machine is "Available".
- *   - Toggles selection in the booking form.
- *   - Updates the selected machine in the Redux state.
- *
- * - **Dynamic Styling**
- *   - Highlights selected machines.
- *   - Grays out unavailable machines (`opacity-50` and `cursor-not-allowed`).
- *   - Shows machine availability status using colored dots.
- *   - Rotates the PC layout based on the `rotate` prop.
- *
- * ## **Rendered Components**
- * - **Machine Status Indicator**
- *   - Displays machine serial number.
- *   - Shows a colored status indicator based on availability.
- *
- * - **PC Layout**
- *   - Monitor and CPU represented visually.
- *   - A seat positioned beside the machine.
- *   - Uses Tailwind CSS for styling.
- */
-
 import { selectSelectedMachine } from "@/store/selectors/machineSelector";
 import {
-  selectAllMachineBookings,
   selectFormData,
+  selectMachineStatus,
   updateBookingForm,
 } from "@/store/slices/bookingSlice";
 import { selectMachine } from "@/store/slices/machineSlice";
@@ -60,13 +18,19 @@ interface PCProps {
 const PC: React.FC<PCProps> = ({ machine, rotate }) => {
   const dispatch = useDispatch();
   const selectedMachine = useSelector(selectSelectedMachine);
-  const allMachineBookings = useSelector(selectAllMachineBookings);
+  const allMachineStatus = useSelector(selectMachineStatus);
   const isMoreMachineClicked = useSelector(selectIsMoreMachineClicked);
   const formData = useSelector(selectFormData);
 
+  if (!allMachineStatus[machine._id]) {
+    return (
+      <div className="w-20 h-20 border border-gray-300 rounded-md bg-gray-300 animate-pulse" />
+    );
+  }
+
   const handleMachineSelect = () => {
     if (isMoreMachineClicked) {
-      if (allMachineBookings[machine._id].status !== "Available") {
+      if (allMachineStatus[machine._id].status !== "Available") {
         return; // Only allow selection of machines with status "Available"
       }
 
@@ -85,7 +49,7 @@ const PC: React.FC<PCProps> = ({ machine, rotate }) => {
   };
 
   const isSelected = formData.machines.some((m) => m.machineID === machine._id);
-  const isAvailable = allMachineBookings[machine._id].status === "Available";
+  const isAvailable = allMachineStatus[machine._id].status === "Available";
 
   return (
     <div
@@ -107,11 +71,11 @@ const PC: React.FC<PCProps> = ({ machine, rotate }) => {
         </div>
         <div
           className={`w-2 h-2 rounded-full ${
-            allMachineBookings[machine._id].status === "Available"
+            allMachineStatus[machine._id].status === "Available"
               ? availabilityBgColors.Available
-              : allMachineBookings[machine._id].status === "Booked"
+              : allMachineStatus[machine._id].status === "Booked"
               ? availabilityBgColors.Booked
-              : allMachineBookings[machine._id].status === "InUse"
+              : allMachineStatus[machine._id].status === "InUse"
               ? availabilityBgColors.InUse
               : availabilityBgColors.Maintenance
           }`}

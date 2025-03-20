@@ -1,17 +1,17 @@
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { 
-  FiMenu, 
-  FiHome, 
-  FiCalendar, 
-  FiShoppingBag, 
-  FiGift, 
-  FiStar, 
-  FiTarget, 
+import {
+  FiMenu,
+  FiHome,
+  FiCalendar,
+  FiShoppingBag,
+  FiGift,
+  FiStar,
+  FiTarget,
   FiSettings,
   FiMonitor,
   FiSun,
-  FiMoon
+  FiMoon,
 } from "react-icons/fi";
 import { applyTheme, getInitialTheme } from "@/utils/themeChange.util";
 
@@ -34,7 +34,7 @@ const Sidebar = ({ user }: { user: User }) => {
   }, [theme]);
 
   const toggleTheme = () => {
-    const newTheme = theme === 'light' ? 'dark' : 'light';
+    const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
   };
 
@@ -49,11 +49,15 @@ const Sidebar = ({ user }: { user: User }) => {
         }`
       }
     >
-      <span className="flex items-center justify-center w-6 h-6 mr-3">{icon}</span>
-      {isExpanded && <span className="transition-opacity duration-200">{label}</span>}
+      <span className="flex items-center justify-center w-6 h-6 mr-3">
+        {icon}
+      </span>
+      {isExpanded && (
+        <span className="transition-opacity duration-200">{label}</span>
+      )}
     </NavLink>
   );
-  
+
   return (
     <aside
       className={`${
@@ -62,7 +66,11 @@ const Sidebar = ({ user }: { user: User }) => {
     >
       <div>
         {/* Header and Brand */}
-        <div className={`flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700 ${isExpanded ? 'justify-between' : 'justify-center'}`}>
+        <div
+          className={`flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700 ${
+            isExpanded ? "justify-between" : "justify-center"
+          }`}
+        >
           {isExpanded ? (
             <h1 className="text-lg font-semibold text-primary dark:text-primary-light font-press">
               SaloGame
@@ -72,7 +80,9 @@ const Sidebar = ({ user }: { user: User }) => {
           )}
           <button
             className={`text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary-light rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
-              isExpanded ? 'p-1.5' : 'p-1.5 flex items-center justify-center w-6 h-6'
+              isExpanded
+                ? "p-1.5"
+                : "p-1.5 flex items-center justify-center w-6 h-6"
             }`}
             onClick={toggleSidebar}
             aria-label={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
@@ -82,42 +92,76 @@ const Sidebar = ({ user }: { user: User }) => {
         </div>
 
         {/* Navigation Links */}
-        <nav className={`p-3 space-y-1 ${!isExpanded && 'px-0 flex flex-col items-center'}`}>
-          <div className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 ${!isExpanded && 'sr-only'}`}>
+        <nav
+          className={`p-3 space-y-1 ${
+            !isExpanded && "px-0 flex flex-col items-center"
+          }`}
+        >
+          <div
+            className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 ${
+              !isExpanded && "sr-only"
+            }`}
+          >
             DASHBOARD
           </div>
           {renderNavLink("/admin/overview", "Overview", <FiHome size={18} />)}
-          
-          <div className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 mt-4 ${!isExpanded && 'sr-only'}`}>
+
+          <div
+            className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 mt-4 ${
+              !isExpanded && "sr-only"
+            }`}
+          >
             MANAGEMENT
           </div>
-          {renderNavLink("/admin/booking", "Bookings", <FiCalendar size={18} />)}
+          {renderNavLink(
+            "/admin/booking",
+            "Bookings",
+            <FiCalendar size={18} />
+          )}
           {renderNavLink("/admin/games", "Games", <FiMonitor size={18} />)}
-          {renderNavLink("/admin/packages", "Packages", <FiShoppingBag size={18} />)}
+          {renderNavLink(
+            "/admin/packages",
+            "Packages",
+            <FiShoppingBag size={18} />
+          )}
           {renderNavLink("/admin/offers", "Offers", <FiGift size={18} />)}
-          {renderNavLink("/admin/memberships", "Memberships", <FiStar size={18} />)}
+          {renderNavLink(
+            "/admin/memberships",
+            "Memberships",
+            <FiStar size={18} />
+          )}
           {renderNavLink("/admin/events", "Events", <FiTarget size={18} />)}
 
           {user?.role === "owner" && (
             <>
-              <div className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 mt-4 ${!isExpanded && 'sr-only'}`}>
+              <div
+                className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 mt-4 ${
+                  !isExpanded && "sr-only"
+                }`}
+              >
                 ADMIN
               </div>
-              {renderNavLink("/admin/settings", "Settings", <FiSettings size={18} />)}
+              {renderNavLink(
+                "/admin/settings",
+                "Settings",
+                <FiSettings size={18} />
+              )}
             </>
           )}
         </nav>
       </div>
-      
+
       {/* Theme Toggle - Single Button with dynamic icon */}
       <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
         <div className="flex items-center justify-center">
           <button
             onClick={toggleTheme}
             className="p-2 rounded-lg transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
-            aria-label={`Switch to ${theme === 'light' ? 'dark' : 'light'} mode`}
+            aria-label={`Switch to ${
+              theme === "light" ? "dark" : "light"
+            } mode`}
           >
-            {theme === 'light' ? <FiMoon size={18} /> : <FiSun size={18} />}
+            {theme === "light" ? <FiMoon size={18} /> : <FiSun size={18} />}
           </button>
         </div>
       </div>

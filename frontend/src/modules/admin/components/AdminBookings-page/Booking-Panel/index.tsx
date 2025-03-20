@@ -1,7 +1,7 @@
 import React from "react";
 import {
-  selectAllMachineBookings,
   selectBookingStatus,
+  selectMachineBooking,
 } from "@/store/slices/bookingSlice";
 import { useSelector } from "react-redux";
 import { selectSelectedMachine } from "@/store/selectors/machineSelector";
@@ -12,14 +12,14 @@ import UpcomingBooking from "./UpcomingBooking";
 
 const BookingPanel: React.FC = () => {
   const selectedMachine = useSelector(selectSelectedMachine);
-  const allMachineBookings = useSelector(selectAllMachineBookings);
+  const selectedMachineBookings = useSelector(selectMachineBooking);
   const { showBookingForm } = useSelector(selectBookingStatus);
   var currentBooking = null;
   var nextBooking = null;
 
   if (selectedMachine) {
-    currentBooking = allMachineBookings?.[selectedMachine._id].firstBooking;
-    nextBooking = allMachineBookings?.[selectedMachine._id].nextBooking;
+    currentBooking = selectedMachineBookings?.firstBooking;
+    nextBooking = selectedMachineBookings?.nextBooking;
   }
 
   return (
