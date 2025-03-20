@@ -16,16 +16,6 @@ import {
   setDateFilter,
 } from "../../../store/slices/transactionSlice";
 
-// Remove sample data as we'll use real data from API
-// const sampleRevenueData = [
-//   { date: 'Jan', revenue: 4000 },
-//   { date: 'Feb', revenue: 3000 },
-//   { date: 'Mar', revenue: 5000 },
-//   { date: 'Apr', revenue: 4500 },
-//   { date: 'May', revenue: 6000 },
-//   { date: 'Jun', revenue: 5500 },
-// ];
-
 const OverviewPage: React.FC = () => {
   const dispatch = useDispatch();
   const {
