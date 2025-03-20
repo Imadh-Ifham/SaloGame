@@ -10,14 +10,19 @@ import { useAuth } from "../../../hooks/useAuth"; // import useAuth hook
 const ProfilePage: React.FC = () => {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
-  
+
   // remove hard-coded initial values
   const [isEditing, setIsEditing] = useState(false);
   const [editedName, setEditedName] = useState("");
   const [editedEmail, setEditedEmail] = useState("");
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const [bookedEvents] = useState([
-    { id: "1", title: "CS:GO Tournament", date: "2023-12-15", machine: "PC #12" },
+    {
+      id: "1",
+      title: "CS:GO Tournament",
+      date: "2023-12-15",
+      machine: "PC #12",
+    },
     { id: "2", title: "Valorant Night", date: "2023-12-20", machine: "PC #05" },
   ]);
   const [memberships, setMemberships] = useState<any[]>([]);
@@ -72,14 +77,18 @@ const ProfilePage: React.FC = () => {
           transition={{ duration: 0.5 }}
           className="max-w-4xl mx-auto"
         >
-         <div className="bg-transparent backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-emerald-500/30 hover:border-emerald-500/50 transition-all duration-300 relative overflow-hidden">
+          <div className="bg-transparent backdrop-blur-xl rounded-3xl shadow-2xl p-8 border border-emerald-500/30 hover:border-emerald-500/50 transition-all duration-300 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/10 to-cyan-500/10 opacity-30" />
             {/* Profile Header */}
             <div className="flex flex-col items-center mb-8 relative z-10">
               <div className="relative group">
                 <div className="w-32 h-32 rounded-full bg-gray-800 border-4 border-emerald-500/30 overflow-hidden shadow-lg hover:border-emerald-500/50 transition-colors">
                   {previewImage ? (
-                    <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                    <img
+                      src={previewImage}
+                      alt="Profile"
+                      className="w-full h-full object-cover"
+                    />
                   ) : (
                     <div className="w-full h-full bg-emerald-500/10 flex items-center justify-center">
                       <span className="text-4xl font-bold text-emerald-400 font-orbitron">
@@ -90,7 +99,12 @@ const ProfilePage: React.FC = () => {
                 </div>
                 {isEditing && (
                   <label className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center cursor-pointer opacity-0 group-hover:opacity-100 transition-opacity">
-                    <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      className="hidden"
+                    />
                     <FiEdit className="text-emerald-400 w-6 h-6" />
                   </label>
                 )}
@@ -113,7 +127,9 @@ const ProfilePage: React.FC = () => {
                   </>
                 ) : (
                   <>
-                    <h2 className="text-2xl font-bold text-emerald-400 font-orbitron drop-shadow-glow">{editedName}</h2>
+                    <h2 className="text-2xl font-bold text-emerald-400 font-orbitron drop-shadow-glow">
+                      {editedName}
+                    </h2>
                     <p className="text-lg text-gray-300">{editedEmail}</p>
                   </>
                 )}

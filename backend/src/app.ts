@@ -1,5 +1,6 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
+import { AutoRenewalService } from "./services/autoRenewalService";
 
 import packageroute from "./routes/package.routes";
 import gameRoutes from "./routes/game.routes";
@@ -13,8 +14,13 @@ import currencyRoutes from "./routes/currency.routes";
 import machineGameRoutes from "./routes/machineGame.routes";
 import eventRoutes from "./routes/event.routes/event.routes";
 import teamRoutes from "./routes/event.routes/team.routes";
+import transactionRoutes from "./routes/transaction.routes";
 
 const app: Express = express();
+
+// Auto renewal service
+const autoRenewalService = new AutoRenewalService();
+autoRenewalService.start();
 
 // Middleware
 app.use(cors());
@@ -35,6 +41,7 @@ app.use("/api/currency", currencyRoutes);
 app.use("/api/machinegames", machineGameRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/teams", teamRoutes);
+app.use("/api/transactions", transactionRoutes);
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

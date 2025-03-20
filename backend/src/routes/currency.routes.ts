@@ -10,10 +10,11 @@ const router = express.Router();
 
 router.use(authMiddleware);
 router.get("/balance", getXPBalance);
+router.post("/deduct", deductXP);
 
 router.use(managerOrOwner);
 
 router.post("/add", addXP);
-router.post("/deduct", deductXP);
+
 
 export default router;

@@ -5,6 +5,7 @@ import {
   Route,
   Navigate,
 } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import HomePage from "./modules/users/pages/HomePage";
 import AboutPage from "./modules/users/pages/AboutPage";
 import NotFoundPage from "./components/NotFoundPage";
@@ -45,6 +46,7 @@ const App: React.FC = () => {
   return (
     <Router>
       <ScrollToTop /> {/* utillity to always scroll to top on URL change */}
+      <Toaster position="top-right" />
       <Routes>
         {/* User Routes */}
         <Route path="/auth" element={<AuthPage />} />
