@@ -3,14 +3,14 @@ import React, { useState, useEffect } from "react";
 import axiosInstance from "../../../axios.config";
 import { Bar, Pie, Line } from "react-chartjs-2";
 import "chart.js/auto";
-import { 
+import {
   CurrencyDollarIcon,
   TicketIcon,
   UserGroupIcon,
   CubeIcon,
   UserCircleIcon,
   ChartBarIcon,
-  ComputerDesktopIcon
+  ComputerDesktopIcon,
 } from "@heroicons/react/24/outline";
 
 interface Booking {
@@ -52,19 +52,14 @@ const OverviewPage: React.FC = () => {
   useEffect(() => {
     const fetchOverviewData = async () => {
       try {
-        const [
-          offersRes,
-          bookingsRes,
-          gamesRes,
-          membershipsRes,
-          packagesRes,
-        ] = await Promise.all([
-          axiosInstance.get("/offers"),
-          axiosInstance.get("/bookings"),
-          axiosInstance.get("/games"),
-          axiosInstance.get("/memberships"),
-          axiosInstance.get("/packages"),
-        ]);
+        const [offersRes, bookingsRes, gamesRes, membershipsRes, packagesRes] =
+          await Promise.all([
+            axiosInstance.get("/offers"),
+            axiosInstance.get("/bookings"),
+            axiosInstance.get("/games"),
+            axiosInstance.get("/memberships"),
+            axiosInstance.get("/packages"),
+          ]);
 
         setOffers(offersRes.data.data || offersRes.data);
         setBookings(bookingsRes.data.data || bookingsRes.data);
@@ -84,7 +79,10 @@ const OverviewPage: React.FC = () => {
     return Array.from({ length: 7 }, (_, i) => {
       const date = new Date();
       date.setDate(date.getDate() - 6 + i);
-      return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+      return date.toLocaleDateString("en-US", {
+        month: "short",
+        day: "numeric",
+      });
     });
   };
 
@@ -92,10 +90,13 @@ const OverviewPage: React.FC = () => {
   const calculateRevenueTrend = () => {
     return generateDateLabels().map((date) => {
       return bookings.reduce((acc, booking) => {
-        const bookingDate = new Date(booking.createdAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        });
+        const bookingDate = new Date(booking.createdAt).toLocaleDateString(
+          "en-US",
+          {
+            month: "short",
+            day: "numeric",
+          }
+        );
         return bookingDate === date ? acc + booking.totalPrice : acc;
       }, 0);
     });
@@ -139,7 +140,8 @@ const OverviewPage: React.FC = () => {
       {
         label: "Bookings",
         data: packages.map(
-          (pkg) => bookings.filter((booking) => booking.packageId === pkg.id).length
+          (pkg) =>
+            bookings.filter((booking) => booking.packageId === pkg.id).length
         ),
         backgroundColor: "#6366F1",
         borderColor: "#4F46E5",
@@ -168,9 +170,15 @@ const OverviewPage: React.FC = () => {
         </div>
         <div>
           <h3 className="text-sm font-medium text-gray-500">{title}</h3>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{value}</p>
+          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">
+            {value}
+          </p>
           {trend !== undefined && (
-            <span className={`text-sm ${trend >= 0 ? "text-green-600" : "text-red-600"}`}>
+            <span
+              className={`text-sm ${
+                trend >= 0 ? "text-green-600" : "text-red-600"
+              }`}
+            >
               {trend >= 0 ? "↑" : "↓"} {Math.abs(trend)}% vs last week
             </span>
           )}
@@ -181,7 +189,9 @@ const OverviewPage: React.FC = () => {
 
   return (
     <div className="p-8 bg-gray-50 dark:bg-background-dark min-h-screen">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">Dashboard Overview</h1>
+      <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 mb-8">
+        Dashboard Overview
+      </h1>
 
       {/* Metric Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -200,7 +210,9 @@ const OverviewPage: React.FC = () => {
         <MetricCard
           icon={CurrencyDollarIcon}
           title="Total Revenue"
-          value={`$${bookings.reduce((sum, b) => sum + b.totalPrice, 0).toLocaleString()}`}
+          value={`$${bookings
+            .reduce((sum, b) => sum + b.totalPrice, 0)
+            .toLocaleString()}`}
           trend={4.8}
         />
         <MetricCard
@@ -215,7 +227,9 @@ const OverviewPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
         {/* Revenue Trend */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Revenue Trend (Last 7 Days)</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+            Revenue Trend (Last 7 Days)
+          </h3>
           <Line
             data={revenueTrendData}
             options={{
@@ -234,7 +248,9 @@ const OverviewPage: React.FC = () => {
 
         {/* Package Popularity */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Package Popularity</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+            Package Popularity
+          </h3>
           <Bar
             data={packagePopularityData}
             options={{
@@ -252,7 +268,9 @@ const OverviewPage: React.FC = () => {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Offer Distribution */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Offer Distribution</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+            Offer Distribution
+          </h3>
           <div className="relative h-80">
             <Pie
               data={offerChartData}
@@ -263,7 +281,8 @@ const OverviewPage: React.FC = () => {
                   legend: { position: "right" },
                   tooltip: {
                     callbacks: {
-                      label: (context) => ` ${context.label}: ${context.raw} uses`,
+                      label: (context) =>
+                        ` ${context.label}: ${context.raw} uses`,
                     },
                   },
                 },
@@ -274,7 +293,9 @@ const OverviewPage: React.FC = () => {
 
         {/* Recent Bookings */}
         <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm">
-          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">Recent Bookings</h3>
+          <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100">
+            Recent Bookings
+          </h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -287,7 +308,10 @@ const OverviewPage: React.FC = () => {
               </thead>
               <tbody>
                 {bookings.slice(0, 5).map((booking) => (
-                  <tr key={booking.id} className="hover:bg-gray-50 dark:hover:bg-gray-700">
+                  <tr
+                    key={booking.id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
                     <td className="py-3">
                       <div className="flex items-center gap-2">
                         <UserCircleIcon className="w-5 h-5 text-gray-400" />
@@ -295,7 +319,8 @@ const OverviewPage: React.FC = () => {
                       </div>
                     </td>
                     <td className="py-3">
-                      {packages.find((p) => p.id === booking.packageId)?.name || "N/A"}
+                      {packages.find((p) => p.id === booking.packageId)?.name ||
+                        "N/A"}
                     </td>
                     <td className="py-3">
                       {new Date(booking.createdAt).toLocaleDateString()}

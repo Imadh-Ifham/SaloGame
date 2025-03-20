@@ -3,8 +3,7 @@ import {
   createSubscription,
   getUserSubscriptions,
   assignMembership,
-  getExpiringSubscriptions,
-  renewMultipleSubscriptions,
+  getUserExpiringNotifications,
 } from "../controllers/subscription.controller";
 import { authMiddleware, managerOrOwner } from "../middleware/authMiddleware";
 
@@ -15,8 +14,5 @@ router.use(authMiddleware); // Protect all subscription routes
 router.post("/", createSubscription);
 router.get("/user", getUserSubscriptions);
 router.post("/assign", assignMembership);
-
-router.get("/expiring", managerOrOwner, getExpiringSubscriptions);
-router.post("/renew-multiple", managerOrOwner, renewMultipleSubscriptions);
-
+router.get("/my-expiring", getUserExpiringNotifications);
 export default router;

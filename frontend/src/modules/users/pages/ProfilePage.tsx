@@ -17,7 +17,7 @@ interface UserProfile {
     price: number;
     benefits: string[];
   };
-  profileImage?: string; 
+  profileImage?: string;
 }
 
 const ProfilePage: React.FC = () => {
@@ -28,7 +28,6 @@ const ProfilePage: React.FC = () => {
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const navigate = useNavigate();
 
-
   //profile fetching
   useEffect(() => {
     const fetchProfile = async () => {
@@ -38,7 +37,9 @@ const ProfilePage: React.FC = () => {
         if (!token) {
           throw new Error("No authentication token found");
         }
-        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        axiosInstance.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${token}`;
         const response = await axiosInstance.get("/users/profile");
         const userProfile = response.data as UserProfile;
         setProfile(userProfile);
@@ -47,7 +48,9 @@ const ProfilePage: React.FC = () => {
           setPreviewImage(userProfile.profileImage);
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Failed to fetch profile");
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch profile"
+        );
         console.error("Profile fetch error:", err);
       } finally {
         setLoading(false);
@@ -57,9 +60,8 @@ const ProfilePage: React.FC = () => {
     fetchProfile();
   }, []);
 
-
   //lgout handling
-    const handleLogout = async () => {
+  const handleLogout = async () => {
     try {
       await signOut(auth);
       localStorage.removeItem("token");
@@ -76,7 +78,6 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-
   //image uploading
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -88,16 +89,18 @@ const ProfilePage: React.FC = () => {
       };
       reader.readAsDataURL(file);
 
-
-      
       // Create a form data to upload image
       const formData = new FormData();
       formData.append("profileImage", file);
       try {
-        const response = await axiosInstance.post("/users/profile/upload-image", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        
+        const response = await axiosInstance.post(
+          "/users/profile/upload-image",
+          formData,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
+        );
+
         if (profile) {
           setProfile({ ...profile, profileImage: response.data.imageUrl });
         }
@@ -107,11 +110,10 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-
   //delete image
   const handleDeleteImage = async () => {
     if (!window.confirm("Do you want to delete the image?")) return;
-    
+
     try {
       await axiosInstance.delete("/users/profile/delete-image");
       setPreviewImage(null);
@@ -147,8 +149,7 @@ const ProfilePage: React.FC = () => {
 
   return (
     <HomeLayout>
-
-<div className="py-12 px-4 sm:px-6 lg:px-8 min-h-screen font-poppins">
+      <div className="py-12 px-4 sm:px-6 lg:px-8 min-h-screen font-poppins">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -158,7 +159,7 @@ const ProfilePage: React.FC = () => {
           {/* Header Section */}
           <div className="flex items-center justify-between">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">
-              Profile 
+              Profile
             </h1>
             <motion.button
               whileHover={{ scale: 1.05 }}
@@ -181,7 +182,11 @@ const ProfilePage: React.FC = () => {
                 <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 p-1.5">
                   <div className="w-full h-full rounded-xl bg-gray-900 flex items-center justify-center overflow-hidden">
                     {previewImage ? (
-                      <img src={previewImage} alt="Profile" className="w-full h-full object-cover" />
+                      <img
+                        src={previewImage}
+                        alt="Profile"
+                        className="w-full h-full object-cover"
+                      />
                     ) : (
                       <span className="text-5xl font-bold text-emerald-400">
                         {profile?.email.charAt(0).toUpperCase()}
@@ -191,7 +196,12 @@ const ProfilePage: React.FC = () => {
                 </div>
                 {/* Upload Label */}
                 <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
                   <span className="text-sm text-white">Upload Image</span>
                 </label>
               </div>
@@ -219,8 +229,10 @@ const ProfilePage: React.FC = () => {
                 <div className="inline-flex items-center gap-2 px-4 py-1.5 bg-gray-900 rounded-full">
                   <span className="w-2 h-2 bg-emerald-400 rounded-full animate-pulse" />
                   <span className="text-sm font-medium text-emerald-400">
-                    {profile?.role 
-                      ? (profile.role === "user" ? "USER" : `${profile.role.toUpperCase()} USER`)
+                    {profile?.role
+                      ? profile.role === "user"
+                        ? "USER"
+                        : `${profile.role.toUpperCase()} USER`
                       : "PREMIUM USER"}
                   </span>
                 </div>
@@ -231,13 +243,17 @@ const ProfilePage: React.FC = () => {
           {/* Membership Card */}
           <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-8 border border-gray-700/50 shadow-2xl space-y-6">
             <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-gray-100">Membership Details</h3>
+              <h3 className="text-xl font-semibold text-gray-100">
+                Membership Details
+              </h3>
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 onClick={() => navigate("/memberships")}
                 className="px-4 py-2 bg-emerald-500/20 rounded-lg text-emerald-400 text-sm hover:bg-emerald-500/30 transition-colors"
               >
-                {profile?.defaultMembershipId ? "Change Plan" : "Get Membership"}
+                {profile?.defaultMembershipId
+                  ? "Change Plan"
+                  : "Get Membership"}
               </motion.button>
             </div>
 
@@ -258,17 +274,21 @@ const ProfilePage: React.FC = () => {
                 <div className="md:col-span-2 space-y-4">
                   <p className="text-sm text-gray-400">Benefits</p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {profile.defaultMembershipId.benefits.map((benefit, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg"
-                      >
-                        <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                          <span className="text-emerald-400">✓</span>
+                    {profile.defaultMembershipId.benefits.map(
+                      (benefit, index) => (
+                        <div
+                          key={index}
+                          className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg"
+                        >
+                          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                            <span className="text-emerald-400">✓</span>
+                          </div>
+                          <span className="text-sm text-gray-300">
+                            {benefit}
+                          </span>
                         </div>
-                        <span className="text-sm text-gray-300">{benefit}</span>
-                      </div>
-                    ))}
+                      )
+                    )}
                   </div>
                 </div>
               </div>

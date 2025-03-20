@@ -1,4 +1,3 @@
-// src/modules/admin/components/AdminMembership-page/RenewMembershipModal.tsx
 import React, { useState, useEffect } from "react";
 import { XMarkIcon } from "@heroicons/react/24/outline";
 import Modal from "@/components/Modal";
@@ -7,7 +6,7 @@ import { toast } from "react-hot-toast";
 
 interface ExpiringMember {
   _id: string;
-  name: string;
+  //name: string;
   email: string;
   defaultMembershipId: {
     name: string;
@@ -126,7 +125,7 @@ const RenewMembershipModal: React.FC<RenewMembershipModalProps> = ({
                         htmlFor={`member-${member._id}`}
                         className="flex flex-col flex-1 cursor-pointer"
                       >
-                        <span className="font-medium">{member.name}</span>
+                        {/*<span className="font-medium">{member.name}</span>*/}
                         <span className="text-sm text-gray-500">
                           {member.email} | {member.defaultMembershipId.name} |
                           Expires:{" "}

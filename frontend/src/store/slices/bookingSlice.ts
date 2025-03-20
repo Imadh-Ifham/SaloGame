@@ -5,12 +5,12 @@
  * Uses async thunks for API calls and stores customer booking details.
  */
 
-import { createSlice, PayloadAction } from "@reduxjs/toolkit";
+import { createSelector, createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { RootState } from "../store";
-import { dummyData } from "@/types/machine";
 import {
   createBooking,
-  fetchFirstAndNextBookings,
+  fetchFirstAndNextBooking,
+  fetchMachineStatus,
 } from "../thunks/bookingThunk";
 import { calculateEndTime, toUTC } from "@/utils/date.util";
 
@@ -20,6 +20,7 @@ interface IMachineBooking {
 }
 
 export type CustomerBooking = {
+  _id?: string;
   customerName: string;
   phoneNumber?: string | null;
   notes?: string | null;
@@ -28,23 +29,36 @@ export type CustomerBooking = {
   duration: number; // Booking duration in minutes
   machines: IMachineBooking[]; // List of machines booked
   totalPrice?: number;
-  status: "Booked" | "InUse" | "Completed" | "Cancelled" | "Available";
+  status: bookingStatusString;
 };
 
 export interface MachineBooking {
   firstBooking: CustomerBooking | null; // Current booking
-  status: "Booked" | "InUse" | "Maintenance" | "Available";
+  status: bookingStatusString; // Machine status
   nextBooking: CustomerBooking | null; // Upcoming booking
 }
 
-export interface AllMachineBookings {
-  [machineId: string]: MachineBooking;
+export interface MachineStatus {
+  [machineID: string]: {
+    status: bookingStatusString;
+  };
 }
+
+type bookingModalString = "cancel" | "extend" | "end" | "start";
+export type bookingStatusString =
+  | "Booked"
+  | "InUse"
+  | "Completed"
+  | "Cancelled"
+  | "Available";
 
 interface BookingState {
   formData: CustomerBooking;
-  allMachineBookings: AllMachineBookings;
+  machineBooking: MachineBooking | null;
+  machineStatus: MachineStatus;
   showBookingForm: boolean;
+  bookingModel: bookingModalString | null;
+  activeNav: "Now" | "Later";
   error: string | null;
   loading: boolean;
 }
@@ -57,10 +71,13 @@ const initialState: BookingState = {
     endTime: calculateEndTime(toUTC(new Date().toISOString()), 60), // Auto-calculate based on duration
     duration: 60,
     machines: [], // Machines will be added when selected
-    status: "Booked",
+    status: "InUse",
   },
-  allMachineBookings: dummyData, // Dummy data for testing
+  machineBooking: null,
+  machineStatus: {},
   showBookingForm: false, // Booking form starts hidden
+  bookingModel: null,
+  activeNav: "Now",
   error: null,
   loading: false,
 };
@@ -99,26 +116,41 @@ const bookingSlice = createSlice({
     setInitialMachines(state, action: PayloadAction<string>) {
       state.formData.machines = [{ machineID: action.payload, userCount: 1 }];
     },
+
+    // Set booking modal type
+    setBookingModal(state, action: PayloadAction<bookingModalString>) {
+      state.bookingModel = action.payload;
+    },
+
+    // Reset booking modal state
+    resetBookingModal(state) {
+      state.bookingModel = null;
+    },
+
+    // Set active navigation tab
+    setActiveNav(state, action: PayloadAction<"Now" | "Later">) {
+      state.activeNav = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
       // Fetch bookings - Start loading, hide form
-      .addCase(fetchFirstAndNextBookings.pending, (state) => {
+      .addCase(fetchFirstAndNextBooking.pending, (state) => {
         state.showBookingForm = false;
         state.loading = true;
         state.error = null;
       })
       // Fetch bookings - Store results and show form
       .addCase(
-        fetchFirstAndNextBookings.fulfilled,
-        (state, action: PayloadAction<AllMachineBookings>) => {
+        fetchFirstAndNextBooking.fulfilled,
+        (state, action: PayloadAction<MachineBooking>) => {
           state.showBookingForm = true;
           state.loading = false;
-          state.allMachineBookings = action.payload;
+          state.machineBooking = action.payload;
         }
       )
       // Fetch failed - Store error, hide form
-      .addCase(fetchFirstAndNextBookings.rejected, (state, action) => {
+      .addCase(fetchFirstAndNextBooking.rejected, (state, action) => {
         state.loading = false;
         state.showBookingForm = false;
         state.error = action.payload as string;
@@ -132,10 +164,39 @@ const bookingSlice = createSlice({
       // Booking successful - Reset form
       .addCase(createBooking.fulfilled, (state) => {
         state.loading = false;
-        state.formData = initialState.formData;
+        state.formData = {
+          ...initialState.formData,
+          startTime: state.formData.startTime,
+          endTime: state.formData.endTime,
+          duration: state.formData.duration,
+        };
       })
       // Booking failed - Store error
       .addCase(createBooking.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
+      })
+
+      // fecthMachineStatus - Start loading
+      .addCase(fetchMachineStatus.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      // Fetch machine statuses - Store results
+      .addCase(
+        fetchMachineStatus.fulfilled,
+        (
+          state,
+          action: PayloadAction<{
+            [machineID: string]: { status: bookingStatusString };
+          }>
+        ) => {
+          state.machineStatus = action.payload;
+          state.loading = false;
+        }
+      )
+      // Fetch failed - Store error
+      .addCase(fetchMachineStatus.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload as string;
       });
@@ -148,6 +209,9 @@ export const {
   updateBookingForm,
   setShowBookingForm,
   setInitialMachines,
+  setBookingModal,
+  resetBookingModal,
+  setActiveNav,
 } = bookingSlice.actions;
 
 // Reducer export
@@ -155,10 +219,20 @@ export default bookingSlice.reducer;
 
 // Selectors for retrieving specific parts of the state
 export const selectFormData = (state: RootState) => state.booking.formData;
-export const selectAllMachineBookings = (state: RootState) =>
-  state.booking.allMachineBookings;
-export const selectBookingStatus = (state: RootState) => ({
-  loading: state.booking.loading,
-  error: state.booking.error,
-  showBookingForm: state.booking.showBookingForm,
-});
+export const selectMachineBooking = (state: RootState) =>
+  state.booking.machineBooking;
+export const selectBookingModal = (state: RootState) =>
+  state.booking.bookingModel;
+export const selectActiveNav = (state: RootState) => state.booking.activeNav;
+export const selectMachineStatus = (state: RootState) =>
+  state.booking.machineStatus;
+
+const selectBookingState = (state: RootState) => state.booking;
+export const selectBookingStatus = createSelector(
+  [selectBookingState],
+  (bookingState) => ({
+    loading: bookingState.loading,
+    error: bookingState.error,
+    showBookingForm: bookingState.showBookingForm,
+  })
+);

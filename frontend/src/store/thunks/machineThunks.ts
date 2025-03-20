@@ -7,7 +7,6 @@ export const fetchMachines = createAsyncThunk<Machine[]>(
   async (_, { rejectWithValue }) => {
     try {
       const response = await axiosInstance.get("/machine/get-all");
-      console.log(response.data.data[0]);
       return response.data.data;
     } catch (error: any) {
       return rejectWithValue(

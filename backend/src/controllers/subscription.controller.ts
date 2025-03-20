@@ -23,6 +23,16 @@ export const createSubscription = async (
       return;
     }
 
+    // Check if user has role "user"
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== "user") {
+      res.status(403).json({
+        success: false,
+        message: "Only users can create subscriptions"
+      });
+      return;
+    }
+
     const { membershipId, duration, totalAmount, startDate, endDate } =
       req.body;
 
@@ -73,7 +83,7 @@ export const createSubscription = async (
       {
         $set: {
           defaultMembershipId: membershipId,
-          subscription: subscription._id, // Update the subscription reference
+          subscription: subscription._id,
         },
       },
       { session }
@@ -130,6 +140,16 @@ export const getUserSubscriptions = async (
       return;
     }
 
+    // Check if user has role "user"
+    const user = await User.findById(req.user.id);
+    if (!user || user.role !== "user") {
+      res.status(403).json({
+        success: false,
+        message: "Only users can view their subscriptions"
+      });
+      return;
+    }
+
     const subscriptions = await Subscription.find({ userId: req.user.id })
       .populate("membershipId")
       .sort({ createdAt: -1 });
@@ -164,6 +184,16 @@ export const assignMembership = async (
       res.status(400).json({
         success: false,
         message: "Please provide both userId and membershipId",
+      });
+      return;
+    }
+
+    // Check if target user has role "user"
+    const targetUser = await User.findById(userId);
+    if (!targetUser || targetUser.role !== "user") {
+      res.status(403).json({
+        success: false,
+        message: "Membership can only be assigned to users"
       });
       return;
     }
@@ -223,187 +253,87 @@ export const assignMembership = async (
 };
 
 /**
- * Get memberships that are expiring soon (within 7 days by default)
+ * Get current user's expiring subscription notifications
  */
-export const getExpiringSubscriptions = async (
+export const getUserExpiringNotifications = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
-    const daysThreshold = 7; // Configurable threshold
-    const thresholdDate = new Date();
-    thresholdDate.setDate(thresholdDate.getDate() + daysThreshold);
-
-    const expiringSubscriptions = await Subscription.find({
-      status: "active",
-      endDate: {
-        $gte: new Date(),
-        $lte: thresholdDate,
-      },
-    }).populate([
-      {
-        path: "userId",
-        select: "name email",
-      },
-      {
-        path: "membershipId",
-        select: "name",
-      },
-    ]);
-
-    res.status(200).json({
-      success: true,
-      data: expiringSubscriptions,
-    });
-  } catch (error) {
-    console.error("Error fetching expiring subscriptions:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to fetch expiring subscriptions",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-  }
-};
-
-/**
- * Renew multiple subscriptions
- */
-export const renewMultipleSubscriptions = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const { memberIds } = req.body;
-
-    if (!Array.isArray(memberIds) || memberIds.length === 0) {
-      res.status(400).json({
-        success: false,
-        message: "Please provide an array of member IDs",
-      });
+    if (!req.user) {
+      res
+        .status(401)
+        .json({ success: false, message: "User not authenticated" });
       return;
     }
 
-    const renewedSubscriptions = [];
+    // Get user's active subscription
+    const subscription = await Subscription.findOne({
+      userId: req.user.id,
+      status: "active",
+    }).populate("membershipId");
 
-    for (const userId of memberIds) {
-      // Find current subscription
-      const currentSubscription = await Subscription.findOne({
-        userId,
-        status: "active",
-      }).session(session);
-
-      if (!currentSubscription) continue;
-
-      // Create new subscription dates
-      const newStartDate = new Date();
-      const newEndDate = new Date();
-      newEndDate.setMonth(newEndDate.getMonth() + 1);
-
-      // Update existing subscription
-      const updatedSubscription = await Subscription.findByIdAndUpdate(
-        currentSubscription._id,
-        {
-          startDate: newStartDate,
-          endDate: newEndDate,
-          status: "active",
-        },
-        { new: true, session }
-      );
-
-      if (updatedSubscription) {
-        renewedSubscriptions.push(updatedSubscription);
-      }
+    if (!subscription) {
+      res.status(200).json({ success: true, data: [] });
+      return;
     }
 
-    await session.commitTransaction();
-
-    res.status(200).json({
-      success: true,
-      message: `Successfully renewed ${renewedSubscriptions.length} subscriptions`,
-      data: renewedSubscriptions,
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    console.error("Error renewing subscriptions:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to renew subscriptions",
-      error: error instanceof Error ? error.message : "Unknown error",
-    });
-  } finally {
-    session.endSession();
-  }
-};
-
-//FOR RESETTING
-/* Reset and recalculate subscriber counts
-export const resetSubscriberCounts = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    // 1. First reset all subscriber counts to 0
-    await MembershipType.updateMany({}, { subscriberCount: 0 }, { session });
-
-    // 2. Get all active subscriptions grouped by membershipId
-    const subscriberCounts = await User.aggregate([
-      {
-        $lookup: {
-          from: "subscriptions",
-          localField: "subscription",
-          foreignField: "_id",
-          as: "subscriptionData",
-        },
-      },
-      {
-        $unwind: "$subscriptionData",
-      },
-      {
-        $match: {
-          "subscriptionData.status": "active",
-        },
-      },
-      {
-        $group: {
-          _id: "$subscriptionData.membershipId",
-          count: { $sum: 1 },
-        },
-      },
-    ]).session(session);
-
-    // 3. Update each membership type with the correct count
-    const updatePromises = subscriberCounts.map(({ _id, count }) =>
-      MembershipType.findByIdAndUpdate(
-        _id,
-        { subscriberCount: count },
-        { session }
-      )
+    // Calculate days until expiration
+    const endDate = new Date(subscription.endDate);
+    const currentDate = new Date();
+    const daysRemaining = Math.ceil(
+      (endDate.getTime() - currentDate.getTime()) / (1000 * 3600 * 24)
     );
+    console.log(daysRemaining);
 
-    await Promise.all(updatePromises);
-    await session.commitTransaction();
+    // Generate notifications based on days remaining
+    const notifications = [];
 
-    res.status(200).json({
-      success: true,
-      message: "Subscriber counts reset successfully",
-      data: subscriberCounts,
-    });
+    if (daysRemaining <= 70 && daysRemaining > 7) {
+      notifications.push({
+        id: `renewal-14-${subscription._id}`,
+        type: "renewal",
+        severity: "low",
+        title: "Membership Expiring Soon",
+        message: `Your ${
+          (subscription.membershipId as any).name
+        } membership will expire in ${daysRemaining} days.`,
+        expiresIn: daysRemaining,
+        subscriptionId: subscription._id,
+      });
+    } else if (daysRemaining <= 7 && daysRemaining > 3) {
+      notifications.push({
+        id: `renewal-7-${subscription._id}`,
+        type: "renewal",
+        severity: "medium",
+        title: "Membership Expiring Soon",
+        message: `Your ${
+          (subscription.membershipId as any).name
+        } membership will expire in ${daysRemaining} days.`,
+        expiresIn: daysRemaining,
+        subscriptionId: subscription._id,
+      });
+    } else if (daysRemaining <= 3 && daysRemaining > 0) {
+      notifications.push({
+        id: `renewal-3-${subscription._id}`,
+        type: "renewal",
+        severity: "high",
+        title: "Membership Expiring Very Soon!",
+        message: `Your ${
+          (subscription.membershipId as any).name
+        } membership will expire in ${daysRemaining} days.`,
+        expiresIn: daysRemaining,
+        subscriptionId: subscription._id,
+      });
+    }
+
+    res.status(200).json({ success: true, data: notifications });
   } catch (error) {
-    await session.abortTransaction();
-    console.error("Error resetting subscriber counts:", error);
+    console.error("Error fetching user expiring notifications:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to reset subscriber counts",
+      message: "Failed to fetch notifications",
       error: error instanceof Error ? error.message : "Unknown error",
     });
-  } finally {
-    session.endSession();
   }
 };
-*/
