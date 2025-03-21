@@ -137,7 +137,6 @@ export default function AdminMembershipPage() {
 
         {/* Subscription Growth Chart */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          {/* Subscription Growth Chart */}
           <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
             <h2 className="text-xl font-bold mb-4 text-gray-100">
               Subscription Growth (Last 6 Months)

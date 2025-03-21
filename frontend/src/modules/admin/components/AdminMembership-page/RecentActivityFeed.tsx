@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { FaUser, FaSyncAlt, FaExclamationCircle } from "react-icons/fa";
 
 interface Activity {
@@ -17,6 +17,13 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
 }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const rowsPerPage = 4;
+
+  // Sort activities by date (newest first)
+  const sortedActivities = useMemo(() => {
+    return [...activities].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+  }, [activities]);
 
   const totalPages = Math.ceil(activities.length / rowsPerPage);
   const paginatedActivities = activities.slice(

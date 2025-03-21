@@ -73,6 +73,8 @@ export const createSubscription = async (
       endDate: parsedEndDate,
       status: "active",
       paymentStatus: "completed",
+      autoRenew: req.body.autoRenew,
+      paymentDetails: req.body.paymentDetails,
     });
 
     await subscription.save({ session });

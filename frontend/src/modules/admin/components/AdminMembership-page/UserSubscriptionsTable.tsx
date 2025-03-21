@@ -45,7 +45,6 @@ const UserSubscriptionsTable: React.FC = () => {
   }, [dispatch]);
 
   // Filter and search logic
-  // Filter and search logic
   const filteredSubscriptions = useMemo(() => {
     let filtered = members.filter((member) => member.subscription) as Member[]; // Ensure only users with subscriptions are included
 
@@ -54,9 +53,12 @@ const UserSubscriptionsTable: React.FC = () => {
         (member) => member.subscription?.status === "active"
       );
     } else if (filter === "expired") {
-      filtered = filtered.filter(
+      console.log("Looking for expired subscriptions");
+      const expiredMembers = filtered.filter(
         (member) => member.subscription?.status === "expired"
       );
+      console.log("Found expired members:", expiredMembers.length);
+      filtered = expiredMembers;
     } else if (filter === "autoRenew") {
       filtered = filtered.filter((member) => {
         const subscription = member.subscription;
