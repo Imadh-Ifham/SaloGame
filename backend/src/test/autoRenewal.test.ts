@@ -2,7 +2,8 @@ import mongoose from "mongoose";
 import { MongoMemoryServer } from "mongodb-memory-server";
 import { AutoRenewalService } from "../services/autoRenewalService";
 import Subscription from "../models/subscription.model";
-import User from "../models/user.model";
+import "../models/membershipType.model";
+import "../models/user.model";
 
 // Define ISubscription interface
 interface ISubscription {
@@ -30,23 +31,54 @@ const testMembershipId = new mongoose.Types.ObjectId(
 let mongoServer: MongoMemoryServer;
 
 beforeAll(async () => {
+  // Close any existing connection first
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
+
+  // Create new memory server and connect
   mongoServer = await MongoMemoryServer.create();
   const uri = mongoServer.getUri();
   await mongoose.connect(uri);
   console.log("Connected to in-memory MongoDB");
-});
+
+  // Clear any existing data
+  if (mongoose.connection.db) {
+    await mongoose.connection.db.dropDatabase();
+  }
+}, 10000); // Increase timeout for connection setup
 
 afterAll(async () => {
-  if (mongoose.connection.readyState !== 0) {
-    await mongoose.connection.close();
+  // Increase timeout for cleanup
+  jest.setTimeout(10000);
+
+  try {
+    // Clean up database
+    if (mongoose.connection.readyState !== 0) {
+      await mongoose.connection.dropDatabase();
+      await mongoose.connection.close();
+      console.log("Closed mongoose connection");
+    }
+
+    // Stop memory server
+    if (mongoServer) {
+      await mongoServer.stop();
+      console.log("Stopped MongoDB memory server");
+    }
+  } catch (error) {
+    console.error("Error during test cleanup:", error);
   }
-  if (mongoServer) {
-    await mongoServer.stop();
-  }
-  console.log("Disconnected from in-memory MongoDB");
-});
+}, 10000); // Increase timeout for cleanup
 
 describe("Auto Renewal Service Tests", () => {
+  // Clear collections before each test
+  beforeEach(async () => {
+    const collections = mongoose.connection.collections;
+    for (const key in collections) {
+      await collections[key].deleteMany({});
+    }
+  });
+
   test("Should auto-renew an expiring subscription", async () => {
     // Create a subscription that expires soon
     const tomorrow = new Date();
@@ -77,35 +109,37 @@ describe("Auto Renewal Service Tests", () => {
     const originalRandom = Math.random;
     Math.random = jest.fn().mockReturnValue(0.5);
 
-    // Run the check
-    await renewalService.checkExpiringSubscriptions();
+    try {
+      // Run the check
+      await renewalService.checkExpiringSubscriptions();
 
-    // Restore Math.random
-    Math.random = originalRandom;
+      // Check if a new subscription was created
+      const newSubscription = await Subscription.findOne({
+        userId: testUserId,
+        status: "active",
+        _id: { $ne: testSubscription._id },
+      }).sort({ createdAt: -1 });
 
-    // Check if a new subscription was created
-    const newSubscription = await Subscription.findOne({
-      userId: testUserId,
-      status: "active",
-      _id: { $ne: testSubscription._id },
-    }).sort({ createdAt: -1 });
+      console.log("New subscription after renewal:", newSubscription);
 
-    console.log("New subscription after renewal:", newSubscription);
+      // Verify results
+      expect(newSubscription).toBeTruthy();
+      if (newSubscription) {
+        expect(newSubscription.userId.toString()).toBe(testUserId.toString());
+        expect(newSubscription.membershipId.toString()).toBe(
+          testMembershipId.toString()
+        );
+        expect((newSubscription as unknown as ISubscription).autoRenew).toBe(
+          true
+        );
+      }
 
-    // Verify results
-    expect(newSubscription).toBeTruthy();
-    if (newSubscription) {
-      expect(newSubscription.userId.toString()).toBe(testUserId.toString());
-      expect(newSubscription.membershipId.toString()).toBe(
-        testMembershipId.toString()
-      );
-      expect((newSubscription as unknown as ISubscription).autoRenew).toBe(
-        true
-      );
+      // Verify old subscription status
+      const oldSubscription = await Subscription.findById(testSubscription._id);
+      expect(oldSubscription?.status).toBe("expired");
+    } finally {
+      // Restore Math.random
+      Math.random = originalRandom;
     }
-
-    // Verify old subscription status
-    const oldSubscription = await Subscription.findById(testSubscription._id);
-    expect(oldSubscription?.status).toBe("expired");
-  });
+  }, 10000); // Increase test timeout
 });

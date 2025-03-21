@@ -43,6 +43,27 @@ export class AutoRenewalService {
       for (const subscription of expiringSubscriptions) {
         await this.processRenewal(subscription);
       }
+
+      const now = new Date();
+      const expiredSubscriptions = await Subscription.find({
+        status: "active",
+        endDate: { $lt: now },
+        // Either no auto-renewal or auto-renewal failed
+        $or: [
+          { autoRenew: false },
+          { autoRenew: true, paymentDetails: { $exists: false } },
+        ],
+      });
+
+      console.log(
+        `Found ${expiredSubscriptions.length} subscriptions to mark as expired`
+      );
+
+      for (const subscription of expiredSubscriptions) {
+        subscription.status = "expired";
+        await subscription.save();
+        console.log(`Marked subscription ${subscription._id} as expired`);
+      }
     } catch (error) {
       console.error("Error in auto renewal check:", error);
     }
@@ -56,6 +77,10 @@ export class AutoRenewalService {
       console.log(
         `Processing auto-renewal for subscription ${subscription._id}`
       );
+
+      // Get the membership ID properly - ensure it's an ObjectId
+      const membershipId =
+        subscription.membershipId._id || subscription.membershipId;
 
       // Simulate payment process (80% success rate as in the frontend)
       const paymentSuccessful = Math.random() <= 0.8;
