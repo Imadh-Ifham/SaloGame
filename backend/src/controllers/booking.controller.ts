@@ -245,26 +245,33 @@ export const createBooking = async (
           transactionType: transactionType, // set the transaction type based on mode
         },
       };
+      
+      // Create a proper mock response that captures the transaction data
+      let capturedTransactionData: any = null;
       const transactionRes = {
         status: (code: number) => ({
           json: (data: any) => {
             if (code !== 201) {
               throw new Error(data.message || "Transaction creation failed");
             }
+            capturedTransactionData = data;
             return data;
           },
         }),
       } as Response;
+      
       console.log("transactionReq", transactionReq);
-      const transactionData = await createTransaction(
+      await createTransaction(
         transactionReq as AuthRequest,
         transactionRes as Response
       );
-      console.log("transactionRes", transactionData);
+      console.log("transactionRes", capturedTransactionData);
 
       // Update booking with transaction ID
-      //newBooking.transactionID = transactionData.transaction._id;
-      //await newBooking.save({ session });
+      if (capturedTransactionData && capturedTransactionData.transaction && capturedTransactionData.transaction._id) {
+        newBooking.transactionID = capturedTransactionData.transaction._id;
+        await newBooking.save({ session });
+      }
 
       await session.commitTransaction();
       session.endSession();
