@@ -4,12 +4,14 @@ import OfferManagement from "../components/AdminOffer-page/OfferManagement/Offer
 
 const AdminOfferPage = () => {
   return (
-    <div className="h-screen overflow-y-auto bg-gray-100 p-8">
-      <h1 className="text-3xl font-bold mb-8">Offer Management Admin Panel</h1>
-      <DashboardSummary />
-      <QuickActions />
-      <div className="mt-8">
-        <OfferManagement />
+    <div className="flex-1 h-screen overflow-y-auto bg-white dark:bg-background-dark">
+      <div className="p-8">
+        <h1 className="text-3xl font-bold mb-8 text-gray-900 dark:text-white">Offer Management Admin Panel</h1>
+        <DashboardSummary />
+        <QuickActions />
+        <div className="mt-8">
+          <OfferManagement />
+        </div>
       </div>
     </div>
   );

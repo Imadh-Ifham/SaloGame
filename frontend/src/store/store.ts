@@ -7,6 +7,8 @@ import bookingReducer from "./slices/bookingSlice";
 import notificationReducer from "./slices/notificationSlice";
 import xpReducer from "./slices/XPslice";
 import layoutReducer from "./slices/layoutSlice";
+import revenueReducer from "./slices/revenueSlice";
+import { setupRevenueWebSocketListeners } from "./slices/revenueSlice";
 
 const store = configureStore({
   reducer: {
@@ -17,8 +19,12 @@ const store = configureStore({
     notification: notificationReducer,
     xp: xpReducer,
     layout: layoutReducer,
+    revenue: revenueReducer,
   },
 });
+
+// Set up WebSocket listeners
+setupRevenueWebSocketListeners(store.dispatch);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;

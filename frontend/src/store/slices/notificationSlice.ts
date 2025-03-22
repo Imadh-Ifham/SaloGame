@@ -77,7 +77,7 @@ const notificationSlice = createSlice({
         state.error = action.error.message || "Failed to fetch notifications";
       })
       .addCase(renewFromNotification.fulfilled, (state, action) => {
-        // After successful renewal, remove the renewal notification
+        // Remove the renewal notification after successful renewal
         state.items = state.items.filter(
           (item) =>
             item.type !== "renewal" || item.subscriptionId !== action.meta.arg

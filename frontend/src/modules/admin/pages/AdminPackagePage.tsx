@@ -101,8 +101,8 @@ const AdminPackagePage: React.FC = () => {
   };
 
   return (
-    <section>
-      <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-transparent">
+    <div className="flex-1 h-screen overflow-y-auto bg-white dark:bg-background-dark">
+      <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -189,7 +189,7 @@ const AdminPackagePage: React.FC = () => {
           />
         </Modal>
       </div>
-    </section>
+    </div>
   );
 };
 

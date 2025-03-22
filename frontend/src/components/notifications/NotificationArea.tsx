@@ -39,7 +39,9 @@ const NotificationArea: React.FC = () => {
   if (renewalNotifications.length === 0) {
     return (
       <div className="mb-6 p-4 bg-gray-800/30 dark:bg-gray-800/50 rounded-lg border border-emerald-500/20 backdrop-blur-sm">
-        <p className="text-sm text-gray-400 dark:text-gray-400">No active notifications</p>
+        <p className="text-sm text-gray-400 dark:text-gray-400">
+          No active notifications
+        </p>
       </div>
     );
   }

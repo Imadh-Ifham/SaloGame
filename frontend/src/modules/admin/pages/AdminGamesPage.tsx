@@ -37,8 +37,10 @@ const AdminGamesPage: React.FC = () => {
 
   // Handle scroll behavior
   useEffect(() => {
+    const mainContentDiv = document.getElementById('games-page-content');
+    
     const handleScroll = () => {
-      const currentScrollY = window.scrollY;
+      const currentScrollY = mainContentDiv ? mainContentDiv.scrollTop : window.scrollY;
       const scrollingDown = currentScrollY > lastScrollY;
       const scrollThreshold = 10;
 
@@ -48,8 +50,13 @@ const AdminGamesPage: React.FC = () => {
       }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+    // Add event listener to the div if it exists, otherwise use window
+    const scrollElement = mainContentDiv || window;
+    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      scrollElement.removeEventListener('scroll', handleScroll);
+    };
   }, [lastScrollY]);
 
   const fetchGames = async (page: number) => {
@@ -193,8 +200,11 @@ const AdminGamesPage: React.FC = () => {
   };
 
   return (
-    <section>
-      <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8 bg-transparent">
+    <div 
+      id="games-page-content"
+      className="flex-1 h-screen overflow-y-auto scrollbar-hide bg-white dark:bg-background-dark"
+    >
+      <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
         {/* Smart Scroll Header Section */}
         <motion.div
           initial={{ y: 0, opacity: 1 }}
@@ -347,7 +357,7 @@ const AdminGamesPage: React.FC = () => {
           />
         </Modal>
       </div>
-    </section>
+    </div>
   );
 };
 

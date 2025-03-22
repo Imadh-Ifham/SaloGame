@@ -1,34 +1,33 @@
 import {
   CustomerBooking,
+  selectActiveNav,
   selectBookingStatus,
   selectFormData,
+  setActiveNav,
   updateBookingForm,
 } from "@/store/slices/bookingSlice";
 import { AppDispatch } from "@/store/store";
-import { fetchFirstAndNextBookings } from "@/store/thunks/bookingThunk";
 import { Button } from "antd";
-import React, { useState } from "react";
+import React, { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import DurationSelector from "./DurationSelector";
 import DateSelector from "./DateSelector";
 import { getCurrentUTC, toUTC } from "@/utils/date.util";
+import "react-datepicker/dist/react-datepicker.css"; // Ensure CSS is imported
+import { selectSelectedMachine } from "@/store/selectors/machineSelector";
+import {
+  fetchFirstAndNextBooking,
+  fetchMachineStatus,
+} from "@/store/thunks/bookingThunk";
 
 const CheckAvailability: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const formData = useSelector(selectFormData);
   const { loading } = useSelector(selectBookingStatus);
-  const [activeNav, setActiveNav] = useState<"Now" | "Later">("Now");
+  const activeNav = useSelector(selectActiveNav);
+  const selectedMachine = useSelector(selectSelectedMachine);
 
   const handleCheckAvailability = () => {
-    dispatch(
-      fetchFirstAndNextBookings({
-        startTime: formData.startTime
-          ? toUTC(formData.startTime)
-          : getCurrentUTC(),
-        duration: formData.duration,
-      })
-    );
-
     if (activeNav === "Now") {
       dispatch(
         updateBookingForm({
@@ -36,14 +35,43 @@ const CheckAvailability: React.FC = () => {
         } as Partial<CustomerBooking>)
       );
     }
+    dispatch(
+      fetchMachineStatus({
+        startTime: formData.startTime
+          ? toUTC(formData.startTime)
+          : getCurrentUTC(),
+        duration: formData.duration,
+      })
+    );
   };
 
+  useEffect(() => {
+    if (selectedMachine) {
+      dispatch(
+        fetchFirstAndNextBooking({
+          startTime: formData.startTime
+            ? toUTC(formData.startTime)
+            : getCurrentUTC(),
+          duration: formData.duration,
+          machineID: selectedMachine._id,
+        })
+      );
+    }
+  }, [selectedMachine, formData.startTime, formData.duration]);
+
   const handleBookingNavChange = (nav: "Now" | "Later") => {
-    setActiveNav(nav);
+    dispatch(setActiveNav(nav));
     if (nav === "Now") {
       dispatch(
         updateBookingForm({
           startTime: getCurrentUTC(),
+          status: "InUse",
+        } as Partial<CustomerBooking>)
+      );
+    } else {
+      dispatch(
+        updateBookingForm({
+          status: "Booked",
         } as Partial<CustomerBooking>)
       );
     }
