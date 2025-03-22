@@ -56,7 +56,11 @@ export const createBooking = createAsyncThunk(
   "booking/createBooking",
   async (formData: CustomerBooking, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post("/bookings/", formData);
+      const mode = "admin";
+      const response = await axiosInstance.post(
+        `/bookings/?mode=${mode}`,
+        formData
+      );
       return response.data;
     } catch (error: any) {
       if (error.response) {

@@ -42,7 +42,9 @@ const LayoutSection: React.FC = () => {
     <div className="box-border flex flex-col justify-between h-full">
       {/* Title */}
       <div className=""></div>
-      <div className="text-lg font-bold mx-auto">2D Lodge Layout</div>
+      <div className="text-base font-poppins font-semibold ml-8 mt-1">
+        Louge Layout
+      </div>
 
       {/* Outer container for the layout */}
       <div id="frame" className="w-full py-7 overflow-auto">
