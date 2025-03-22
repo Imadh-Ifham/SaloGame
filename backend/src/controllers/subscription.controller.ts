@@ -170,91 +170,6 @@ export const getUserSubscriptions = async (
 };
 
 /**
- * Assign MembershipType to a user
- */
-export const assignMembership = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const { userId, membershipId } = req.body;
-
-    if (!userId || !membershipId) {
-      res.status(400).json({
-        success: false,
-        message: "Please provide both userId and membershipId",
-      });
-      return;
-    }
-
-    // Check if target user has role "user"
-    const targetUser = await User.findById(userId);
-    if (!targetUser || targetUser.role !== "user") {
-      res.status(403).json({
-        success: false,
-        message: "Membership can only be assigned to users",
-      });
-      return;
-    }
-
-    // Calculate dates
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + 1); // Default 1 month
-
-    // Create new subscription
-    const subscription = new Subscription({
-      userId,
-      membershipId,
-      startDate,
-      endDate,
-      duration: 1,
-      totalAmount: 0, // You might want to add price calculation logic
-      status: "active",
-      paymentStatus: "completed",
-    });
-
-    await subscription.save({ session });
-
-    // Update user's membership
-    await User.findByIdAndUpdate(
-      userId,
-      {
-        defaultMembershipId: membershipId,
-        subscription: subscription._id,
-      },
-      { session }
-    );
-
-    // Update membership subscriber count
-    await MembershipType.findByIdAndUpdate(
-      membershipId,
-      { $inc: { subscriberCount: 1 } },
-      { session }
-    );
-
-    await session.commitTransaction();
-
-    res.status(200).json({
-      success: true,
-      message: "Membership assigned successfully",
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    console.error("Error assigning membership:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to assign membership",
-    });
-  } finally {
-    session.endSession();
-  }
-};
-
-/**
  * Get current user's expiring subscription notifications
  */
 export const getUserExpiringNotifications = async (
@@ -340,6 +255,9 @@ export const getUserExpiringNotifications = async (
   }
 };
 
+/**
+ * Get Membership Statistics
+ */
 export const getMembershipStats = async (
   req: Request,
   res: Response
@@ -370,6 +288,9 @@ export const getMembershipStats = async (
   }
 };
 
+/**
+ * Get Subscription Growth
+ */
 export const getSubscriptionGrowth = async (req: Request, res: Response) => {
   try {
     const lastSixMonths = new Date();
@@ -404,6 +325,9 @@ export const getSubscriptionGrowth = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Get Recent Activities
+ */
 export const getRecentActivities = async (req: Request, res: Response) => {
   try {
     const recentSubscriptions = await Subscription.find()
@@ -468,5 +392,67 @@ export const getRecentActivities = async (req: Request, res: Response) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to fetch recent activities" });
+  }
+};
+
+/**
+ * Get failed auto-renewals
+ */
+export const getFailedRenewals = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const failedRenewals = await Subscription.find({
+      renewalAttempted: true,
+      renewalSuccessful: false,
+      autoRenew: true,
+    })
+      .populate("userId", "email name")
+      .populate("membershipId", "name duration price")
+      .sort({ lastRenewalAttempt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: failedRenewals.length,
+      data: failedRenewals,
+    });
+  } catch (error) {
+    console.error("Error fetching failed renewals:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch failed auto-renewals",
+    });
+  }
+};
+
+/**
+ * Get successful auto-renewals
+ */
+export const getSuccessfulRenewals = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const successfulRenewals = await Subscription.find({
+      renewalSuccessful: true,
+      renewalCompleted: true,
+    })
+      .populate("userId", "email name")
+      .populate("membershipId", "name duration price")
+      .sort({ renewalCompletedAt: -1 })
+      .limit(50); // Limit to recent ones
+
+    res.status(200).json({
+      success: true,
+      count: successfulRenewals.length,
+      data: successfulRenewals,
+    });
+  } catch (error) {
+    console.error("Error fetching successful renewals:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch successful auto-renewals",
+    });
   }
 };
