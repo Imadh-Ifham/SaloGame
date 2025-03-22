@@ -276,11 +276,19 @@ export const getMembershipStats = async (
       autoRenew: true,
     });
 
+    const failedPayments = await Subscription.countDocuments({
+      renewalAttempted: true,
+      renewalSuccessful: false,
+      status: "active", // Still active but failed to renew
+      autoRenew: true,
+    });
+
     // Return the stats
     res.status(200).json({
       totalActiveMembers,
       totalRevenue: totalRevenue[0]?.total || 0,
       autoRenewalUsers,
+      failedPayments,
     });
   } catch (error) {
     console.error("Error fetching membership stats:", error);
@@ -404,9 +412,12 @@ export const getFailedRenewals = async (
 ): Promise<void> => {
   try {
     const failedRenewals = await Subscription.find({
+      status: "active",
+      autoRenew: true,
       renewalAttempted: true,
       renewalSuccessful: false,
-      autoRenew: true,
+      // Typically subscriptions with past end dates
+      endDate: { $lt: new Date() },
     })
       .populate("userId", "email name")
       .populate("membershipId", "name duration price")
@@ -427,32 +438,100 @@ export const getFailedRenewals = async (
 };
 
 /**
- * Get successful auto-renewals
+ * Manually renew a subscription
  */
-export const getSuccessfulRenewals = async (
-  req: Request,
+export const manuallyRenewSubscription = async (
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const successfulRenewals = await Subscription.find({
-      renewalSuccessful: true,
+    const { subscriptionId } = req.body;
+
+    if (!subscriptionId) {
+      res
+        .status(400)
+        .json({ success: false, message: "Subscription ID is required" });
+      return;
+    }
+
+    // Find the subscription
+    const subscription = await Subscription.findById(subscriptionId)
+      .populate("membershipId")
+      .populate("userId");
+
+    if (!subscription) {
+      res
+        .status(404)
+        .json({ success: false, message: "Subscription not found" });
+      return;
+    }
+
+    // Calculate new dates
+    const startDate = new Date(); // Start from today for manual renewal
+    const endDate = new Date(startDate);
+    const duration = subscription.duration || 1;
+    endDate.setMonth(endDate.getMonth() + duration);
+
+    // Create new subscription record
+    const newSubscription = new Subscription({
+      userId: subscription.userId,
+      membershipId: subscription.membershipId,
+      startDate,
+      endDate,
+      duration,
+      totalAmount: subscription.totalAmount,
+      status: "active",
+      paymentStatus: "completed",
+      autoRenew: subscription.autoRenew,
+      ...(subscription.paymentDetails
+        ? { paymentDetails: subscription.paymentDetails }
+        : {}),
+      renewedFromSubscription: subscription._id,
       renewalCompleted: true,
-    })
-      .populate("userId", "email name")
-      .populate("membershipId", "name duration price")
-      .sort({ renewalCompletedAt: -1 })
-      .limit(50); // Limit to recent ones
+      renewalCompletedAt: new Date(),
+      manuallyRenewed: true, // Add this flag for tracking manual renewalsl
+    });
+
+    await newSubscription.save({ session });
+
+    // Update user's active subscription
+    await User.findByIdAndUpdate(
+      subscription.userId,
+      { subscription: newSubscription._id },
+      { session }
+    );
+
+    // Mark old subscription as expired
+    await Subscription.findByIdAndUpdate(
+      subscriptionId,
+      {
+        status: "expired",
+        renewalSuccessful: true,
+        renewalCompletedAt: new Date(),
+        manuallyRenewed: true,
+      },
+      { session }
+    );
+
+    await session.commitTransaction();
 
     res.status(200).json({
       success: true,
-      count: successfulRenewals.length,
-      data: successfulRenewals,
+      message: "Subscription manually renewed successfully",
+      newSubscriptionId: newSubscription._id,
     });
   } catch (error) {
-    console.error("Error fetching successful renewals:", error);
+    await session.abortTransaction();
+    console.error("Error manually renewing subscription:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to fetch successful auto-renewals",
+      message: "Failed to manually renew subscription",
+      error: error instanceof Error ? error.message : "Unknown error",
     });
+  } finally {
+    session.endSession();
   }
 };

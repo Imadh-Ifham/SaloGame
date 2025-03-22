@@ -8,10 +8,22 @@ export interface ISubscription extends Document {
   duration: number;
   totalAmount: number;
   status: "active" | "expired" | "cancelled";
-  autoRenew: { type: Boolean; default: false };
   paymentStatus: "pending" | "completed" | "failed";
+  autoRenew: boolean;
+  paymentDetails?: {
+    cardNumber?: string;
+    expiryDate?: string;
+  };
+  renewalAttempted?: boolean;
+  renewalSuccessful?: boolean;
+  renewedFromSubscription?: mongoose.Types.ObjectId;
+  renewalCompleted?: boolean;
+  renewalCompletedAt?: Date;
+  manuallyRenewed?: boolean;
+  manuallyRenewedBy?: mongoose.Types.ObjectId;
+  lastRenewalAttempt?: Date;
+  renewalFailureReason?: string;
 }
-
 const SubscriptionSchema: Schema = new Schema(
   {
     userId: {

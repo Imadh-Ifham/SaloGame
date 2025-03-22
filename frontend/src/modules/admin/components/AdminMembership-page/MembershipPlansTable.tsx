@@ -8,14 +8,16 @@ import {
   createMembership,
 } from "@/store/slices/membershipSlice";
 import EditMembershipTypeModal from "./EditMembershipTypeModal";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import { FiEdit, FiTrash, FiPlus } from "react-icons/fi";
 import { toast } from "react-hot-toast";
+import axiosInstance from "@/axios.config";
 
 interface MembershipPlan {
   _id: string;
   name: string;
   price: number;
   xpRate: number;
+  benefits: string[];
   subscriberCount: number;
 }
 
@@ -53,13 +55,21 @@ const MembershipPlansTable: React.FC = () => {
     }
   };
 
-  const handleEdit = (plan: MembershipPlan) => {
-    setEditingPlan(plan);
-    setIsModalOpen(true);
+  const handleEdit = async (plan: MembershipPlan) => {
+    try {
+      // Fetch complete membership data
+      const response = await axiosInstance.get(`/memberships/${plan._id}`);
+      setEditingPlan(response.data);
+      setIsModalOpen(true);
+    } catch (error) {
+      toast.error("Failed to load membership details");
+    }
   };
 
   const handleDelete = async (planId: string) => {
-    if (confirm("Are you sure you want to delete this membership plan?")) {
+    if (
+      window.confirm("Are you sure you want to delete this membership plan?")
+    ) {
       try {
         await dispatch(deleteMembership(planId)).unwrap();
         toast.success("Membership plan deleted successfully.");
@@ -77,86 +87,155 @@ const MembershipPlansTable: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="text-center py-4">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-primary"></div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-red-500 text-center py-4">
+      <div className="p-6 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg">
         Failed to load membership plans: {error}
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-100">Membership Plans</h2>
+    <div className="h-full">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Membership Plans
+        </h2>
         <button
           onClick={handleAddNew}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded shadow"
+          className="inline-flex items-center px-4 py-2 bg-blue-600 dark:bg-blue-500 text-white rounded-lg hover:bg-blue-700 dark:hover:bg-blue-600 transition-colors shadow"
         >
+          <FiPlus className="mr-2" />
           Add New Plan
         </button>
       </div>
-      <table className="w-full text-left text-gray-300">
-        <thead>
-          <tr className="bg-gray-700">
-            <th className="px-4 py-2">Plan Name</th>
-            <th className="px-4 py-2">Price (LKR)</th>
-            <th className="px-4 py-2">XP Rewards</th>
-            <th className="px-4 py-2">Member Count</th>
-            <th className="px-4 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedPlans.map((plan) => (
-            <tr key={plan._id} className="border-b border-gray-700">
-              <td className="px-4 py-2">{plan.name}</td>
-              <td className="px-4 py-2">{plan.price.toFixed(2)}</td>
-              <td className="px-4 py-2">{plan.xpRate}</td>
-              <td className="px-4 py-2">{plan.subscriberCount}</td>
-              <td className="px-4 py-2">
-                <button
-                  onClick={() => handleEdit(plan)}
-                  className="text-blue-400 hover:text-blue-300 mr-2"
-                >
-                  <FaEdit />
-                </button>
-                <button
-                  onClick={() => handleDelete(plan._id)}
-                  className="text-red-400 hover:text-red-300"
-                >
-                  <FaTrash />
-                </button>
-              </td>
+
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Plan Name
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Price (LKR)
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                XP Rate
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Member Count
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Actions
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {/* Pagination Controls */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          onClick={handlePreviousPage}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <span className="text-gray-300">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50"
-        >
-          Next
-        </button>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {paginatedPlans.length > 0 ? (
+              paginatedPlans.map((plan) => (
+                <tr
+                  key={plan._id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {plan.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    {plan.price.toFixed(2)}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    {plan.xpRate}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400">
+                      {plan.subscriberCount}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => handleEdit(plan)}
+                        className="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                        title="Edit Membership"
+                      >
+                        <FiEdit size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(plan._id)}
+                        className="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                        title="Delete Membership"
+                      >
+                        <FiTrash size={16} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                >
+                  No membership plans found.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Pagination Controls */}
+      {paginatedPlans.length > 0 && (
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Showing {Math.min(rowsPerPage, paginatedPlans.length)} of{" "}
+            {memberships.length} plans
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <div className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600">
+              Page {currentPage} of {totalPages}
+            </div>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Edit Membership Modal */}
       {isModalOpen && (
         <EditMembershipTypeModal
@@ -195,7 +274,7 @@ const MembershipPlansTable: React.FC = () => {
                   price: editingPlan.price,
                   xpRate: editingPlan.xpRate,
                   tagline: "", // You should fetch the full membership data instead
-                  benefits: [], // These should come from your API
+                  benefits: editingPlan.benefits, // These should come from your API
                   isActive: true, // This should reflect the actual state
                 }
               : undefined

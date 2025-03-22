@@ -8,6 +8,7 @@ interface MembershipType {
   benefits: string[];
   subscriberCount: number;
   isActive: boolean;
+  xpRate: number;
 }
 
 interface Member {
