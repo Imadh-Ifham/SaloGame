@@ -45,7 +45,7 @@ export class AutoRenewalService {
       }
 
       // Check for failed renewals that have expired and mark them
-      await this.checkFailedRenewals();
+      //await this.checkFailedRenewals();
 
       const now = new Date();
       const expiredSubscriptions = await Subscription.find({
@@ -82,7 +82,7 @@ export class AutoRenewalService {
   }
 
   // Check for failed renewals that have expired and mark them
-  async checkFailedRenewals() {
+  /*async checkFailedRenewals() {
     const now = new Date();
     // Find subscriptions that had renewal attempts, but failed and are now expired
     const failedRenewals = await Subscription.find({
@@ -111,7 +111,7 @@ export class AutoRenewalService {
         `Marked ${updateResult.modifiedCount} failed renewal subscriptions as expired`
       );
     }
-  }
+  }*/
 
   private async processRenewal(subscription: any) {
     const session = await mongoose.startSession();

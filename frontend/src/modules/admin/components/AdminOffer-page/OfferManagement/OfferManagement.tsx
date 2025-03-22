@@ -5,8 +5,7 @@ import OfferForm from "../OfferForm";
 import SuccessDialog from "../SuccessDialog";
 import { SearchBar } from "./SearchBar";
 import { OffersTable } from "./OfferTable.tsx/index";
-import { LoadingSpinner } from "./LoadingSpinner";
-import { ErrorMessage } from "./ErrorMessage";
+import { FiLoader } from "react-icons/fi";
 
 const OfferManagement: React.FC = () => {
   const {
@@ -66,33 +65,24 @@ const OfferManagement: React.FC = () => {
     });
   };
 
-  if (loading) return <LoadingSpinner />;
-  if (error) return <ErrorMessage message={error} />;
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center py-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="p-6 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg">
+        {error}
+      </div>
+    );
+  }
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-xl shadow-md p-6 border border-gray-200 dark:border-gray-700">
-      <div className="flex items-center mb-6">
-        <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center mr-3">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="h-5 w-5 text-purple-600 dark:text-purple-300"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
-            />
-          </svg>
-        </div>
-        <h2 className="text-2xl font-bold text-gray-800 dark:text-white">
-          Gaming Offers & Promotions
-        </h2>
-      </div>
-
+    <div>
       <SearchBar
         searchTerm={searchTerm}
         categoryFilter={categoryFilter}
@@ -113,22 +103,8 @@ const OfferManagement: React.FC = () => {
       {/* Edit Modal */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full shadow-2xl border border-gray-200 dark:border-gray-700">
-            <h3 className="text-xl font-bold mb-4 text-gray-800 dark:text-white flex items-center">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5 mr-2 text-purple-600 dark:text-purple-400"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                />
-              </svg>
+          <div className="bg-white dark:bg-gray-800 rounded-lg p-6 max-w-md w-full shadow-xl border border-gray-200 dark:border-gray-700">
+            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-white flex items-center">
               {selectedOffer ? "Edit Gaming Offer" : "Create New Gaming Offer"}
             </h3>
             <OfferForm
@@ -146,7 +122,7 @@ const OfferManagement: React.FC = () => {
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-6 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg transition-colors shadow-md hover:shadow-lg"
+                className="px-4 py-2 bg-primary text-white rounded hover:bg-primary-dark transition-colors"
               >
                 {selectedOffer ? "Update Offer" : "Create Offer"}
               </button>

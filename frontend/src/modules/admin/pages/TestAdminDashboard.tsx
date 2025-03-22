@@ -53,10 +53,6 @@ export default function AdminMembershipPage() {
     fetchStats();
   }, []);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
-
   // Format currency
   const formatCurrency = (amount: number): string => {
     return `LKR ${amount.toLocaleString(undefined, {
@@ -90,12 +86,6 @@ export default function AdminMembershipPage() {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Membership & Subscription Management
           </h1>
-          <button
-            onClick={toggleDarkMode}
-            className="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
-          >
-            {darkMode ? <FiSun size={18} /> : <FiMoon size={18} />}
-          </button>
         </div>
 
         {/* Stats Cards Row */}

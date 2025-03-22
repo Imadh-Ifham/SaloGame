@@ -412,7 +412,7 @@ export const getFailedRenewals = async (
 ): Promise<void> => {
   try {
     const failedRenewals = await Subscription.find({
-      status: "active",
+      $or: [{ status: "active" }, { status: "expired" }], // bcs auto-renwal marks them as expired
       autoRenew: true,
       renewalAttempted: true,
       renewalSuccessful: false,

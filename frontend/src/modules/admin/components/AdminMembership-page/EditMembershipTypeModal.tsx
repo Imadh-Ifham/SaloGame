@@ -32,6 +32,7 @@ export default function EditMembershipTypeModal({
     benefits: [""],
     isActive: true,
   });
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (membershipType) {
@@ -83,9 +84,41 @@ export default function EditMembershipTypeModal({
     setFormData((prev) => ({ ...prev, benefits: newBenefits }));
   };
 
+  const validateForm = (): boolean => {
+    // Validate name
+    if (!formData.name.trim()) {
+      setError("Name is required");
+      return false;
+    }
+
+    // Validate price
+    if (formData.price <= 0) {
+      setError("Price must be greater than 0");
+      return false;
+    }
+
+    // Validate benefits (no empty benefits)
+    if (formData.benefits.some((benefit) => !benefit.trim())) {
+      setError("All benefits must have content");
+      return false;
+    }
+
+    // Validate tagline length
+    if (formData.tagline.length > 100) {
+      setError("Tagline must be 100 characters or less");
+      return false;
+    }
+
+    return true;
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    if (!validateForm()) return;
+
+    onSave(formData).catch((err) => {
+      setError(err.response?.data?.message || "Failed to save membership");
+    });
   };
 
   if (!isOpen) return null;
@@ -241,6 +274,11 @@ export default function EditMembershipTypeModal({
             </label>
           </div>
 
+          {error && (
+            <div className="p-2 text-sm text-red-800 bg-red-100 border border-red-200 rounded">
+              {error}
+            </div>
+          )}
           {/* Submit Button */}
 
           <button

@@ -1,75 +1,50 @@
+// Create a test script you can run to insert test data
 import mongoose from "mongoose";
+import Subscription from "./models/subscription.model";
 import dotenv from "dotenv";
-import { AutoRenewalService } from "../services/autoRenewalService";
-import Subscription from "../models/subscription.model";
 
-// Load environment variables
 dotenv.config();
 
-async function runManualRenewal() {
+async function createTestFailedRenewal() {
   try {
-    // Connect to database
     await mongoose.connect(process.env.MONGO_URI || "");
     console.log("Connected to database");
 
-    // Create test subscriptions that expire today
-    const today = new Date();
-    const testUserId = new mongoose.Types.ObjectId(); // Or use an existing user ID
-    const testMembershipId = new mongoose.Types.ObjectId(
-      "679b34787e7184a67ae4bbfc"
-    ); // Use a valid membership ID
+    // Find an existing user and membership to use
+    // Alternatively, you can hardcode IDs for testing
 
-    // Create a subscription that will succeed (80% chance)
-    await Subscription.create({
-      userId: testUserId,
-      membershipId: testMembershipId,
-      startDate: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000),
-      endDate: today, // Make it expire today
+    // Create a past end date
+    const pastDate = new Date();
+    pastDate.setDate(pastDate.getDate() - 5); // 5 days ago
+
+    // Create a renewal attempt date
+    const renewalAttemptDate = new Date();
+    renewalAttemptDate.setDate(renewalAttemptDate.getDate() - 6); // 6 days ago
+
+    // Create test failed renewal
+    const testSubscription = await Subscription.create({
+      userId: "USER_ID_HERE", // Replace with an actual user ID
+      membershipId: "MEMBERSHIP_ID_HERE", // Replace with an actual membership ID
+      startDate: new Date(pastDate.getTime() - 30 * 24 * 60 * 60 * 1000), // 30 days before end date
+      endDate: pastDate,
       duration: 1,
       totalAmount: 19.99,
-      status: "active",
+      status: "active", // Still active despite being expired
+      paymentStatus: "failed",
       autoRenew: true,
-      paymentDetails: {
-        cardNumber: "4111111111111111",
-        expiryDate: "12/25",
-      },
-    });
-
-    // Create a subscription that will fail (force failure)
-    const subscriptionThatWillFail = await Subscription.create({
-      userId: testUserId,
-      membershipId: testMembershipId,
-      startDate: new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000),
-      endDate: today, // Make it expire today
-      duration: 1,
-      totalAmount: 19.99,
-      status: "active",
-      autoRenew: true,
-      paymentDetails: {
-        cardNumber: "4111111111111111",
-        expiryDate: "12/25",
-      },
-    });
-
-    // Manually mark one as failed to ensure we have data to display
-    await Subscription.findByIdAndUpdate(subscriptionThatWillFail._id, {
+      paymentDetails: { cardNumber: "4111111111111111", expiryDate: "12/25" },
       renewalAttempted: true,
-      lastRenewalAttempt: new Date(),
       renewalSuccessful: false,
-      renewalFailureReason: "Test failure reason",
+      lastRenewalAttempt: renewalAttemptDate,
+      renewalFailureReason: "Payment processing failed",
     });
 
-    // Run the renewal service manually
-    const renewalService = new AutoRenewalService();
-    await renewalService.checkExpiringSubscriptions();
-
-    console.log("Manual renewal completed");
+    console.log("Test failed renewal created:", testSubscription._id);
   } catch (error) {
-    console.error("Test error:", error);
+    console.error("Error creating test data:", error);
   } finally {
     await mongoose.connection.close();
-    console.log("Database connection closed");
   }
 }
 
-runManualRenewal();
+createTestFailedRenewal();

@@ -1,5 +1,5 @@
 import React from "react";
-import { FaSearch } from "react-icons/fa";
+import { FiSearch } from "react-icons/fi";
 
 interface SearchBarProps {
   searchTerm: string;
@@ -17,22 +17,22 @@ export const SearchBar: React.FC<SearchBarProps> = ({
   setCategoryFilter,
 }) => {
   return (
-    <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
-      <div className="md:col-span-2 relative">
-        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-          <FaSearch className="text-gray-400 dark:text-gray-500" />
+    <div className="flex flex-col sm:flex-row justify-between gap-4 mb-6">
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+          <FiSearch className="text-gray-400 dark:text-gray-500" />
         </div>
         <input
           type="text"
-          className="pl-10 w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
-          placeholder="Search by promotion name or code..."
+          placeholder="Search offers..."
+          className="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 w-full"
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
         />
       </div>
       <div>
         <select
-          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+          className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary bg-white dark:bg-gray-700 border-gray-200 dark:border-gray-600 text-gray-900 dark:text-white"
           value={categoryFilter}
           onChange={(e) => setCategoryFilter(e.target.value)}
         >
