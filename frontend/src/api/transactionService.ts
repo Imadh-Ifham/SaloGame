@@ -9,7 +9,7 @@ export interface ITransaction {
   };
   paymentType: "cash" | "card" | "XP";
   amount: number;
-  transactionType: "online-booking" | "walk-in-booking" | "membership";
+  transactionType: "online-booking" | "walk-in-booking" | "membership" | "refund";
   status: "pending" | "completed" | "failed";
   createdAt: string;
 }
@@ -25,6 +25,26 @@ export interface TransactionResponse {
   transactions: ITransaction[];
   totalCount: number;
   hasMore: boolean;
+}
+
+export interface TransactionReportParams {
+  period: '3mo' | '6mo' | '1yr';
+  startDate?: Date | null;
+  endDate?: Date | null;
+}
+
+export interface TransactionReportData {
+  transactions: ITransaction[];
+  metrics: {
+    totalTransactions: number;
+    completedTransactions: number;
+    totalRevenue: number;
+    averageTransactionValue: number;
+    transactionsByType: Record<string, number>;
+    transactionsByPayment: Record<string, number>;
+  };
+  startDate: Date;
+  endDate: Date;
 }
 
 // Function to fetch transactions with pagination
@@ -111,6 +131,40 @@ export const getUserTransactions = async ({
     };
   } catch (error) {
     console.error("Error fetching user transactions:", error);
+    throw error;
+  }
+};
+
+// Function to fetch transaction report data for a specific period
+export const getTransactionReport = async ({ 
+  period,
+  startDate,
+  endDate
+}: TransactionReportParams): Promise<TransactionReportData> => {
+  try {
+    // Build query parameters
+    const params = new URLSearchParams();
+    params.append('period', period);
+    
+    // Add custom date range if provided
+    if (startDate) {
+      const startOfDay = new Date(startDate);
+      startOfDay.setHours(0, 0, 0, 0);
+      params.append('startDate', startOfDay.toISOString());
+    }
+    
+    if (endDate) {
+      const endOfDay = new Date(endDate);
+      endOfDay.setHours(23, 59, 59, 999);
+      params.append('endDate', endOfDay.toISOString());
+    }
+    
+    console.log('Transaction report params:', Object.fromEntries(params.entries()));
+    
+    const response = await axiosInstance.get(`/transactions/report?${params.toString()}`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching transaction report data:", error);
     throw error;
   }
 }; 

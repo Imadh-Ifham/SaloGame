@@ -20,6 +20,7 @@ interface Member {
   };
   role: string;
   subscription?: {
+    _id: string;
     startDate: string;
     endDate: string;
     status: string;
@@ -107,6 +108,22 @@ export const deleteMembership = createAsyncThunk(
   async (id: string) => {
     await axiosInstance.delete(`/memberships/${id}`);
     return id;
+  }
+);
+
+export const renewSubscription = createAsyncThunk(
+  "membership/renewSubscription",
+  async (subscriptionId: string, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.post(
+        `/subscriptions/${subscriptionId}/renew`
+      );
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data?.message || "Failed to renew subscription"
+      );
+    }
   }
 );
 
@@ -227,6 +244,27 @@ const membershipSlice = createSlice({
       .addCase(fetchMembers.rejected, (state, action) => {
         state.loading = false;
         state.error = action.error.message || "Failed to fetch members";
+      })
+
+      // Renew Subscription
+      .addCase(renewSubscription.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(renewSubscription.fulfilled, (state, action) => {
+        state.loading = false;
+        // Update the subscription in the state if needed
+        const updatedSubscription = action.payload;
+        const memberIndex = state.members.findIndex(
+          (member) => member.subscription?._id === updatedSubscription._id
+        );
+        if (memberIndex !== -1) {
+          state.members[memberIndex].subscription = updatedSubscription;
+        }
+      })
+      .addCase(renewSubscription.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.payload as string;
       });
   },
 });

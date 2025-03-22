@@ -20,6 +20,7 @@ export const initializeSocketIO = (socketIO: SocketIOServer) => {
  * 1. Walk-in-booking: payment type must be cash and user role must be owner or manager
  * 2. Membership: payment can be cash or card, but cash is only acceptable for manager or owner
  * 3. Online-booking: payment must be XP and user role must be user
+ * 4. Refund: only admin/manager can create refunds, payment type must be cash or XP, amounts are automatically stored as negative
  */
 export const createTransaction = async (
   req: AuthRequest,
@@ -84,11 +85,29 @@ export const createTransaction = async (
       }
     }
 
+    // Validation rule 4: For refund
+    if (transactionType === "refund") {
+      if (req.user.role !== "owner" && req.user.role !== "manager") {
+        res.status(403).json({ 
+          error: "Only owners and managers can create refund transactions" 
+        });
+        return;
+      }
+
+      // Ensure refund payment type is cash or XP
+      if (paymentType !== "cash" && paymentType !== "XP") {
+        res.status(400).json({ 
+          error: "Refund payment type must be cash or XP" 
+        });
+        return;
+      }
+    }
+
     // Create transaction object
     const transaction = new Transaction({
       userID: req.user.id,
       paymentType,
-      amount,
+      amount: transactionType === "refund" ? -Math.abs(amount) : amount, // Ensure refund amount is negative
       transactionType,
       status: "pending"
     });
@@ -118,12 +137,24 @@ export const createTransaction = async (
     // Update Last30DaysTransactions collection
     await updateLast30DaysTransactions(transaction);
 
-    // Emit socket event for real-time updates
+    // Emit socket events for real-time updates
     if (io) {
+      // Emit event for revenue updates (used by overview page)
       io.emit('transaction:new', { 
         transactionId: transaction._id,
         amount: transaction.amount,
         transactionType: transaction.transactionType 
+      });
+      
+      // Emit detailed transaction data for TransactionList updates
+      io.emit('transaction:created', {
+        _id: transaction._id,
+        userID: transaction.userID,
+        paymentType: transaction.paymentType,
+        amount: transaction.amount,
+        transactionType: transaction.transactionType,
+        status: transaction.status,
+        createdAt: transaction.createdAt
       });
     }
 
@@ -473,5 +504,202 @@ const refreshLast30DaysTransactions = async () => {
     );
   } catch (error) {
     console.error("Error refreshing Last30DaysTransactions:", error);
+  }
+};
+
+/**
+ * Get the monthly revenue data for the last 6 months
+ */
+export const getMonthlyRevenue = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    // Get the current date
+    const currentDate = new Date();
+    
+    // Calculate the date 6 months ago
+    const sixMonthsAgo = new Date();
+    sixMonthsAgo.setMonth(currentDate.getMonth() - 5); // -5 to include current month
+    sixMonthsAgo.setDate(1); // First day of the month
+    sixMonthsAgo.setHours(0, 0, 0, 0); // Start of the day
+
+    // Aggregate transactions by month
+    const monthlyRevenue = await Transaction.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sixMonthsAgo },
+          status: "completed"
+        }
+      },
+      {
+        $group: {
+          _id: {
+            year: { $year: "$createdAt" },
+            month: { $month: "$createdAt" }
+          },
+          revenue: { $sum: "$amount" }
+        }
+      },
+      {
+        $sort: {
+          "_id.year": 1,
+          "_id.month": 1
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          date: {
+            $concat: [
+              { $toString: "$_id.year" },
+              "-",
+              {
+                $cond: {
+                  if: { $lt: ["$_id.month", 10] },
+                  then: { $concat: ["0", { $toString: "$_id.month" }] },
+                  else: { $toString: "$_id.month" }
+                }
+              }
+            ]
+          },
+          revenue: 1
+        }
+      }
+    ]);
+
+    // Fill in any missing months with zero revenue
+    const result = [];
+    for (let i = 0; i < 6; i++) {
+      const date = new Date(sixMonthsAgo);
+      date.setMonth(sixMonthsAgo.getMonth() + i);
+      
+      const yearMonth = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+      
+      const existingData = monthlyRevenue.find(item => item.date === yearMonth);
+      
+      if (existingData) {
+        result.push(existingData);
+      } else {
+        result.push({ date: yearMonth, revenue: 0 });
+      }
+    }
+
+    // If socket is available, emit the monthly revenue data
+    if (io) {
+      io.emit('revenue:monthly', result);
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error("Error fetching monthly revenue:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/**
+ * Get transactions report data for specified time period
+ */
+export const getTransactionReport = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    const period = req.query.period as '3mo' | '6mo' | '1yr';
+    
+    // Calculate date range based on period
+    let endDate = new Date();
+    let startDate = new Date();
+    
+    switch (period) {
+      case '3mo':
+        startDate.setMonth(endDate.getMonth() - 3);
+        break;
+      case '6mo':
+        startDate.setMonth(endDate.getMonth() - 6);
+        break;
+      case '1yr':
+        startDate.setFullYear(endDate.getFullYear() - 1);
+        break;
+      default:
+        // Default to 3 months if invalid period
+        startDate.setMonth(endDate.getMonth() - 3);
+    }
+    
+    // Use custom date range if provided
+    const customStartDate = req.query.startDate as string;
+    const customEndDate = req.query.endDate as string;
+    
+    if (customStartDate && !isNaN(new Date(customStartDate).getTime())) {
+      startDate = new Date(customStartDate);
+    }
+    
+    if (customEndDate && !isNaN(new Date(customEndDate).getTime())) {
+      endDate = new Date(customEndDate);
+    }
+    
+    // Ensure startDate is beginning of day and endDate is end of day
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(23, 59, 59, 999);
+    
+    console.log('Report date range:', { startDate, endDate });
+    
+    // Build query for date range
+    const query: any = {
+      createdAt: {
+        $gte: startDate,
+        $lte: endDate
+      }
+    };
+    
+    // Fetch all transactions for the period (no pagination for reports)
+    const transactions = await Transaction.find(query)
+      .populate('userID', 'email name')
+      .sort({ createdAt: -1 });
+    
+    // Calculate metrics
+    const totalTransactions = transactions.length;
+    const completedTransactions = transactions.filter(t => t.status === 'completed').length;
+    const totalRevenue = transactions
+      .filter(t => t.status === 'completed')
+      .reduce((sum, t) => sum + t.amount, 0);
+    const averageTransactionValue = totalRevenue / completedTransactions || 0;
+    
+    // Group transactions by type
+    const transactionsByType = transactions.reduce((acc, t) => {
+      const type = t.transactionType;
+      acc[type] = (acc[type] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Group transactions by payment method
+    const transactionsByPayment = transactions.reduce((acc, t) => {
+      const paymentType = t.paymentType;
+      acc[paymentType] = (acc[paymentType] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Return the report data
+    res.status(200).json({
+      transactions,
+      metrics: {
+        totalTransactions,
+        completedTransactions,
+        totalRevenue,
+        averageTransactionValue,
+        transactionsByType,
+        transactionsByPayment,
+      },
+      startDate,
+      endDate,
+    });
+  } catch (error) {
+    console.error("Error generating transaction report:", error);
+    res.status(500).json({ error: "Internal server error" });
   }
 }; 

@@ -15,17 +15,27 @@ interface TransactionData {
   status?: string;
 }
 
+// Define monthly revenue data interface
+export interface MonthlyRevenueData {
+  date: string;
+  revenue: number;
+}
+
 // Define the state interface
 interface RevenueState {
   last30DaysEarnings: number;
+  monthlyRevenue: MonthlyRevenueData[];
   isLoading: boolean;
+  isLoadingMonthly: boolean;
   error: string | null;
 }
 
 // Initial state
 const initialState: RevenueState = {
   last30DaysEarnings: 0,
+  monthlyRevenue: [],
   isLoading: false,
+  isLoadingMonthly: false,
   error: null
 };
 
@@ -38,6 +48,19 @@ export const fetchLast30DaysEarnings = createAsyncThunk(
       return response.data.totalEarnings;
     } catch (error: any) {
       return rejectWithValue(error.response?.data?.error || "Failed to fetch earnings data");
+    }
+  }
+);
+
+// Async thunk to fetch the last 6 months revenue data
+export const fetchLastSixMonthsRevenue = createAsyncThunk(
+  "revenue/fetchLastSixMonthsRevenue",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get("/transactions/monthly-revenue");
+      return response.data;
+    } catch (error: any) {
+      return rejectWithValue(error.response?.data?.error || "Failed to fetch monthly revenue data");
     }
   }
 );
@@ -56,6 +79,10 @@ const revenueSlice = createSlice({
       if (action.payload.status === "completed") {
         state.last30DaysEarnings += action.payload.amount;
       }
+    },
+    // Update monthly revenue data from socket
+    updateMonthlyRevenueData: (state, action) => {
+      state.monthlyRevenue = action.payload;
     }
   },
   extraReducers: (builder) => {
@@ -71,12 +98,24 @@ const revenueSlice = createSlice({
       .addCase(fetchLast30DaysEarnings.rejected, (state, action) => {
         state.isLoading = false;
         state.error = action.payload as string;
+      })
+      .addCase(fetchLastSixMonthsRevenue.pending, (state) => {
+        state.isLoadingMonthly = true;
+        state.error = null;
+      })
+      .addCase(fetchLastSixMonthsRevenue.fulfilled, (state, action) => {
+        state.isLoadingMonthly = false;
+        state.monthlyRevenue = action.payload;
+      })
+      .addCase(fetchLastSixMonthsRevenue.rejected, (state, action) => {
+        state.isLoadingMonthly = false;
+        state.error = action.payload as string;
       });
   }
 });
 
 // Export actions
-export const { updateLast30DaysEarnings, addTransactionAmount } = revenueSlice.actions;
+export const { updateLast30DaysEarnings, addTransactionAmount, updateMonthlyRevenueData } = revenueSlice.actions;
 
 // Listen for WebSocket events to update the revenue data
 export const setupRevenueWebSocketListeners = (dispatch: any) => {
@@ -91,6 +130,11 @@ export const setupRevenueWebSocketListeners = (dispatch: any) => {
       amount: data.amount,
       status: "completed" // Assuming all new transactions are completed
     }));
+  });
+
+  // Listen for monthly revenue updates
+  socket.on("revenue:monthly", (data: MonthlyRevenueData[]) => {
+    dispatch(updateMonthlyRevenueData(data));
   });
 };
 

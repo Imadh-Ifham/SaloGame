@@ -1,6 +1,18 @@
 import { NavLink } from "react-router-dom";
 import { useEffect, useState } from "react";
-import { FaBars } from "react-icons/fa";
+import {
+  FiMenu,
+  FiHome,
+  FiCalendar,
+  FiShoppingBag,
+  FiGift,
+  FiStar,
+  FiTarget,
+  FiSettings,
+  FiMonitor,
+  FiSun,
+  FiMoon,
+} from "react-icons/fi";
 import { applyTheme, getInitialTheme } from "@/utils/themeChange.util";
 
 interface User {
@@ -21,111 +33,137 @@ const Sidebar = ({ user }: { user: User }) => {
     applyTheme(theme);
   }, [theme]);
 
-  const toggleTheme = (theme: string) => {
-    setTheme(theme);
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
   };
 
-  const renderNavLink = (to: string, label: string, icon: string) => (
+  const renderNavLink = (to: string, label: string, icon: React.ReactNode) => (
     <NavLink
       to={to}
       className={({ isActive }) =>
-        `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-150 ${
+        `flex items-center px-4 py-3 my-1 text-sm font-medium rounded-lg transition-all duration-200 ${
           isActive
-            ? "bg-primary text-white"
-            : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+            ? "bg-primary/10 text-primary dark:bg-primary/20 shadow-sm"
+            : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50"
         }`
       }
     >
-      <span className="mr-3">{icon}</span>
-      {isExpanded && <span>{label}</span>}
+      <span className="flex items-center justify-center w-6 h-6 mr-3">
+        {icon}
+      </span>
+      {isExpanded && (
+        <span className="transition-opacity duration-200">{label}</span>
+      )}
     </NavLink>
   );
+
   return (
     <aside
       className={`${
-        isExpanded ? "w-48 " : "w-20"
-      } min-h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 p-4 shadow-lg transition-all duration-300`}
+        isExpanded ? "w-56" : "w-20"
+      } transition-all duration-300 ease-in-out min-h-screen bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 shadow-sm flex flex-col justify-between`}
     >
-      <div className="mb-4 flex justify-end">
-        <button
-          className="text-gray-700 dark:text-gray-200 text-xl focus:outline-none hover:text-primary transition-colors"
-          onClick={toggleSidebar}
+      <div>
+        {/* Header and Brand */}
+        <div
+          className={`flex items-center h-16 px-4 border-b border-gray-200 dark:border-gray-700 ${
+            isExpanded ? "justify-between" : "justify-center"
+          }`}
         >
-          <FaBars />
-        </button>
+          {isExpanded ? (
+            <h1 className="text-lg font-semibold text-primary dark:text-primary-light font-press">
+              SaloGame
+            </h1>
+          ) : (
+            <div></div>
+          )}
+          <button
+            className={`text-gray-500 dark:text-gray-400 hover:text-primary dark:hover:text-primary-light rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors ${
+              isExpanded
+                ? "p-1.5"
+                : "p-1.5 flex items-center justify-center w-6 h-6"
+            }`}
+            onClick={toggleSidebar}
+            aria-label={isExpanded ? "Collapse Sidebar" : "Expand Sidebar"}
+          >
+            <FiMenu size={18} />
+          </button>
+        </div>
+
+        {/* Navigation Links */}
+        <nav
+          className={`p-3 space-y-1 ${
+            !isExpanded && "px-0 flex flex-col items-center"
+          }`}
+        >
+          <div
+            className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 ${
+              !isExpanded && "sr-only"
+            }`}
+          >
+            DASHBOARD
+          </div>
+          {renderNavLink("/admin/overview", "Overview", <FiHome size={18} />)}
+
+          <div
+            className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 mt-4 ${
+              !isExpanded && "sr-only"
+            }`}
+          >
+            MANAGEMENT
+          </div>
+          {renderNavLink(
+            "/admin/booking",
+            "Bookings",
+            <FiCalendar size={18} />
+          )}
+          {renderNavLink("/admin/games", "Games", <FiMonitor size={18} />)}
+          {renderNavLink(
+            "/admin/packages",
+            "Packages",
+            <FiShoppingBag size={18} />
+          )}
+          {renderNavLink("/admin/offers", "Offers", <FiGift size={18} />)}
+          {renderNavLink(
+            "/admin/memberships",
+            "Memberships",
+            <FiStar size={18} />
+          )}
+          {renderNavLink("/admin/events", "Events", <FiTarget size={18} />)}
+
+          {user?.role === "owner" && (
+            <>
+              <div
+                className={`text-xs font-medium text-gray-400 dark:text-gray-500 py-2 px-4 mt-4 ${
+                  !isExpanded && "sr-only"
+                }`}
+              >
+                ADMIN
+              </div>
+              {renderNavLink(
+                "/admin/settings",
+                "Settings",
+                <FiSettings size={18} />
+              )}
+            </>
+          )}
+        </nav>
       </div>
 
-      <div className="flex flex-col space-y-2">
-        {renderNavLink("/admin/overview", "Overview", "📊")}
-        {renderNavLink("/admin/Dashboard", "Users", "👤")}
-        {renderNavLink("/admin/booking", "Bookings", "📝")}
-        {renderNavLink("/admin/games", "Games", "🎮")}
-        {renderNavLink("/admin/packages", "Packages", "📦")}
-        {renderNavLink("/admin/offers", "Offers", "🎁")}
-        {renderNavLink("/admin/memberships", "Memberships", "🌟")}
-        {renderNavLink("/admin/events", "Events", "🎯")}
-
-        {user?.role === "owner" &&
-          renderNavLink("/admin/settings", "Settings", "⚙️")}
-      </div>
-      {/* Dark/Light Theme Toggle */}
-      <div className="flex items-center space-x-2">
-        <button
-          type="button"
-          className={`hs-dark-mode-active:hidden block hs-dark-mode font-medium text-gray-800 rounded-full hover:bg-gray-200 focus:outline-none focus:bg-gray-200 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800`}
-          data-hs-theme-click-value="dark"
-          onClick={() => toggleTheme("dark")}
-          aria-label="Enable Dark Mode"
-        >
-          <span className="group inline-flex shrink-0 justify-center items-center size-9">
-            <svg
-              className="shrink-0 size-4"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
-            </svg>
-          </span>
-        </button>
-        <button
-          type="button"
-          className={`hs-dark-mode-active:block hidden hs-dark-mode font-medium text-gray-800 rounded-full hover:bg-gray-200 focus:outline-none focus:bg-gray-200 dark:text-neutral-200 dark:hover:bg-neutral-800 dark:focus:bg-neutral-800`}
-          data-hs-theme-click-value="light"
-          onClick={() => toggleTheme("light")}
-          aria-label="Enable Light Mode"
-        >
-          <span className="group inline-flex shrink-0 justify-center items-center size-9">
-            <svg
-              className="shrink-0 size-4"
-              xmlns="http://www.w3.org/2000/svg"
-              width="24"
-              height="24"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="4"></circle>
-              <path d="M12 2v2"></path>
-              <path d="M12 20v2"></path>
-              <path d="m4.93 4.93 1.41 1.41"></path>
-              <path d="m17.66 17.66 1.41 1.41"></path>
-              <path d="M2 12h2"></path>
-              <path d="M20 12h2"></path>
-              <path d="m6.34 17.66-1.41 1.41"></path>
-              <path d="m19.07 4.93-1.41 1.41"></path>
-            </svg>
-          </span>
-        </button>
+      {/* Theme Toggle - Single Button with dynamic icon */}
+      <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
+        <div className="flex items-center justify-center">
+          <button
+            onClick={toggleTheme}
+            className="p-2 rounded-lg transition-colors bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+            aria-label={`Switch to ${
+              theme === "light" ? "dark" : "light"
+            } mode`}
+          >
+            {theme === "light" ? <FiMoon size={18} /> : <FiSun size={18} />}
+          </button>
+        </div>
       </div>
     </aside>
   );

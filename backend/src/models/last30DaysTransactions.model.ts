@@ -6,7 +6,7 @@ export interface ILast30DaysTransaction extends Document {
     userID: Schema.Types.ObjectId;
     paymentType: "cash" | "card" | "XP";
     amount: number;
-    transactionType: "online-booking" | "walk-in-booking" | "membership";
+    transactionType: "online-booking" | "walk-in-booking" | "membership" | "refund";
     status: "pending" | "completed" | "failed";
     createdAt: Date;
   }[];
@@ -37,7 +37,7 @@ const last30DaysTransactionsSchema = new Schema<ILast30DaysTransaction>({
     },
     transactionType: {
       type: String,
-      enum: ["online-booking", "walk-in-booking", "membership"],
+      enum: ["online-booking", "walk-in-booking", "membership", "refund"],
       required: true
     },
     status: {

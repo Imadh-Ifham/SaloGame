@@ -37,6 +37,23 @@ interface RevenueChartProps {
 export function RevenueChart({ data, isLoading, error }: RevenueChartProps) {
   const chartRef = useRef<ChartJS<"line">>(null);
 
+  // Format the date to show month name only
+  const formatMonthName = (dateString: string) => {
+    // Check if date is already a month name (Jan, Feb, etc.)
+    if (dateString.length <= 3) return dateString;
+    
+    // Otherwise parse and format it
+    const date = new Date(dateString);
+    return date.toLocaleString('default', { month: 'short' });
+  };
+
+  // Format the number to thousands format (k LKR)
+  const formatToThousands = (value: number) => {
+    if (value === 0) return '0k';
+    if (value < 1000) return `${(value / 1000).toFixed(1)}k`;
+    return `${Math.round(value / 1000)}k`;
+  };
+
   // Check if the document has a dark mode class or attribute
   const isDarkMode = () => {
     return document.documentElement.classList.contains('dark') || 
@@ -77,14 +94,19 @@ export function RevenueChart({ data, isLoading, error }: RevenueChartProps) {
     };
   }, []);
 
+  // Ensure we only display the last 6 months of data
+  const lastSixMonthsData = useMemo(() => {
+    return [...data].slice(-6);
+  }, [data]);
+
   const chartData = useMemo(() => {
     const isDark = isDarkMode();
     return {
-      labels: data.map((item) => item.date),
+      labels: lastSixMonthsData.map((item) => formatMonthName(item.date)),
       datasets: [
         {
           label: 'Revenue',
-          data: data.map((item) => item.revenue),
+          data: lastSixMonthsData.map((item) => item.revenue),
           borderColor: isDark ? '#34d399' : '#10b981', // Emerald-400 : Emerald-500 (gamer green)
           backgroundColor: isDark ? 'rgba(52, 211, 153, 0.1)' : 'rgba(16, 185, 129, 0.1)', // Emerald with opacity
           fill: true,
@@ -100,7 +122,7 @@ export function RevenueChart({ data, isLoading, error }: RevenueChartProps) {
         },
       ],
     };
-  }, [data]);
+  }, [lastSixMonthsData]);
 
   const options: ChartOptions<'line'> = {
     responsive: true,
@@ -123,7 +145,7 @@ export function RevenueChart({ data, isLoading, error }: RevenueChartProps) {
         displayColors: false,
         callbacks: {
           label: (context) => {
-            return `$${context.parsed.y.toLocaleString()}`;
+            return `LKR ${context.parsed.y.toLocaleString()}`;
           },
         },
       },
@@ -155,7 +177,7 @@ export function RevenueChart({ data, isLoading, error }: RevenueChartProps) {
           font: {
             size: 12,
           },
-          callback: (value) => `$${value.toLocaleString()}`,
+          callback: (value) => `${formatToThousands(value as number)} LKR`,
         },
       },
     },
