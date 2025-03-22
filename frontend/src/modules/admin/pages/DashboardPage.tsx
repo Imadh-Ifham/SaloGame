@@ -1,8 +1,9 @@
-// frontend/src/modules/admin/pages/DashboardPage.tsx
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../../axios.config";
 import { useAuth } from "../../../hooks/useAuth";
 import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { Line, Bar } from "react-chartjs-2";
+import "chart.js/auto";
 
 interface User {
   _id: string;
@@ -10,14 +11,24 @@ interface User {
   role: "user" | "manager" | "owner";
 }
 
+interface AnalyticsData {
+  labels: string[];
+  values: number[];
+}
+
 const DashboardPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [analyticsLoading, setAnalyticsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+
+  // Analytics states
+  const [userActivity, setUserActivity] = useState<AnalyticsData>({ labels: [], values: [] });
+  const [topActions, setTopActions] = useState<AnalyticsData>({ labels: [], values: [] });
 
   const fetchUsers = async () => {
     try {
@@ -27,6 +38,27 @@ const DashboardPage: React.FC = () => {
       setError("Failed to fetch users");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchAnalyticsData = async () => {
+    setAnalyticsLoading(true);
+    try {
+      // Fetch user activity data from backend analytics route
+      const activityRes = await axiosInstance.get<AnalyticsData>("/analytics/ga4/userActivity");
+      if (activityRes.data) {
+        setUserActivity(activityRes.data);
+      }
+      // Fetch top actions data from backend analytics route
+      const actionsRes = await axiosInstance.get<AnalyticsData>("/analytics/ga4/top-actions");
+      if (actionsRes.data) {
+        setTopActions(actionsRes.data);
+      }
+    } catch (err) {
+      console.error("Error fetching analytics data", err);
+      setError("Failed to fetch analytics data");
+    } finally {
+      setAnalyticsLoading(false);
     }
   };
 
@@ -53,6 +85,7 @@ const DashboardPage: React.FC = () => {
 
   useEffect(() => {
     fetchUsers();
+    fetchAnalyticsData();
   }, []);
 
   if (loading) {
@@ -66,6 +99,7 @@ const DashboardPage: React.FC = () => {
   return (
     <div>
       <div className="container mx-auto px-4 py-8">
+        {/* Existing User Management Header */}
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-primary dark:text-white">
             User Management
@@ -78,6 +112,7 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
+        {/* Existing User Management Table */}
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
@@ -104,8 +139,7 @@ const DashboardPage: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold
-                      ${
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${
                         user.role === "owner"
                           ? "bg-purple-100 text-purple-800"
                           : user.role === "manager"
@@ -117,9 +151,8 @@ const DashboardPage: React.FC = () => {
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {currentUser?.role === "owner" ||
-                    (currentUser?.role === "manager" &&
-                      user.role === "user") ? (
+                    {(currentUser?.role === "owner" ||
+                      (currentUser?.role === "manager" && user.role === "user")) && (
                       <div className="flex space-x-2">
                         <button
                           onClick={() => setEditingUser(user)}
@@ -140,12 +173,67 @@ const DashboardPage: React.FC = () => {
                             </button>
                           )}
                       </div>
-                    ) : null}
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* Google Analytics Section */}
+        <div className="mt-8">
+          <h2 className="text-xl font-bold text-primary dark:text-white mb-4">
+            Google Analytics Data
+          </h2>
+          {analyticsLoading ? (
+            <div className="flex justify-center items-center h-64">
+              <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* User Activity - Line Chart */}
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">
+                  User Activity
+                </h3>
+                <Line
+                  data={{
+                    labels: userActivity.labels,
+                    datasets: [
+                      {
+                        label: "Active Users",
+                        data: userActivity.values,
+                        fill: false,
+                        borderColor: "rgba(75,192,192,1)",
+                      },
+                    ],
+                  }}
+                  options={{ responsive: true, scales: { y: { beginAtZero: true } } }}
+                />
+              </div>
+
+              {/* Top Actions - Bar Chart */}
+              <div className="bg-white dark:bg-gray-800 p-4 rounded-lg shadow">
+                <h3 className="text-lg font-semibold mb-2">
+                  Top Actions
+                </h3>
+                <Bar
+                  data={{
+                    labels: topActions.labels,
+                    datasets: [
+                      {
+                        label: "Event Count",
+                        data: topActions.values,
+                        backgroundColor: "rgba(54, 162, 235, 0.6)",
+                      },
+                    ],
+                  }}
+                  options={{ responsive: true, scales: { y: { beginAtZero: true } } }}
+                />
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Edit User Modal */}
@@ -173,14 +261,11 @@ const DashboardPage: React.FC = () => {
                     name="role"
                     defaultValue={editingUser.role}
                     disabled={currentUser?.role !== "owner"}
-                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 
-                             shadow-sm dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                    className="mt-1 block w-full rounded-md border-gray-300 dark:border-gray-600 shadow-sm dark:bg-gray-700 dark:text-white disabled:opacity-50"
                   >
                     <option value="user">User</option>
                     <option value="manager">Manager</option>
-                    {currentUser?.role === "owner" && (
-                      <option value="owner">Owner</option>
-                    )}
+                    {currentUser?.role === "owner" && <option value="owner">Owner</option>}
                   </select>
                   {currentUser?.role !== "owner" && (
                     <p className="mt-1 text-sm text-gray-500">
@@ -188,7 +273,6 @@ const DashboardPage: React.FC = () => {
                     </p>
                   )}
                 </div>
-
                 <div className="flex justify-end space-x-3">
                   <button
                     type="button"
@@ -220,8 +304,7 @@ const DashboardPage: React.FC = () => {
                 Delete User
               </h3>
               <p className="text-sm text-gray-500 text-center mb-4">
-                Are you sure you want to delete {userToDelete.email}? This
-                action cannot be undone.
+                Are you sure you want to delete {userToDelete.email}? This action cannot be undone.
               </p>
               <div className="flex justify-end space-x-3">
                 <button

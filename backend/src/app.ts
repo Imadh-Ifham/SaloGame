@@ -1,6 +1,10 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 
+//google analytics
+import dotenv from "dotenv";
+dotenv.config();
+
 import packageroute from "./routes/package.routes";
 import gameRoutes from "./routes/game.routes";
 import bookingRoutes from "./routes/booking.routes";
@@ -13,6 +17,9 @@ import currencyRoutes from "./routes/currency.routes";
 import machineGameRoutes from "./routes/machineGame.routes";
 import eventRoutes from "./routes/event.routes/event.routes";
 import teamRoutes from "./routes/event.routes/team.routes";
+
+//google analytics route
+import analyticsRoutes from "./routes/analytics.routes";
 
 const app: Express = express();
 
@@ -35,6 +42,9 @@ app.use("/api/currency", currencyRoutes);
 app.use("/api/machinegames", machineGameRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/teams", teamRoutes);
+
+//google analytics route
+app.use("api/analytics", analyticsRoutes);
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
