@@ -1,66 +1,54 @@
-import React from "react";
+import React, { useEffect } from "react";
 import {
   UserOutlined,
   CreditCardOutlined,
   DollarOutlined,
   GiftOutlined,
-  IdcardOutlined,
 } from "@ant-design/icons";
 import { FaGamepad, FaDesktop } from "react-icons/fa";
 import dayjs from "dayjs";
-
-type BookingStatus = "Booked" | "InUse" | "Completed" | "Cancelled";
-type BookingType = "online-booking" | "walk-in-booking";
-type PaymentType = "cash" | "card" | "game-currency" | "membership";
-
-interface Booking {
-  customerName: string;
-  phoneNumber: string;
-  startTime: string;
-  endTime: string;
-  price: number;
-  notes: string;
-  status: BookingStatus;
-  bookingType: BookingType;
-  paymentType: PaymentType;
-  machines: {
-    machineID: string;
-    userCount: number;
-    type: "console" | "pc";
-    name: string;
-  }[];
-}
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/store/store";
+import { fetchSelectedBooking } from "@/store/thunks/bookingThunk";
+import { selectSelectedBooking } from "@/store/slices/bookingHistorySlice";
+import { bookingStatusString, PaymentType } from "@/types/booking";
 
 const BookingDetail: React.FC = () => {
-  const booking: Booking = {
-    customerName: "John Doe",
-    phoneNumber: "123-456-7890",
-    startTime: "2025-03-20T15:30:00Z",
-    endTime: "2025-03-20T16:30:00Z",
-    price: 500,
-    notes: "This is a mock booking.",
-    status: "Booked",
-    bookingType: "online-booking",
-    paymentType: "card",
-    machines: [
-      { machineID: "1", userCount: 2, type: "console", name: "Console 1" },
-      { machineID: "2", userCount: 1, type: "pc", name: "PC 1" },
-    ],
+  const dispatch = useDispatch<AppDispatch>();
+  const callBooking = async () => {
+    try {
+      await dispatch(
+        fetchSelectedBooking({ bookingID: "67dedc97ad6be8bdb4653e41" })
+      );
+    } catch (error) {
+      console.error("Failed to fetch booking:", error);
+    }
   };
+  useEffect(() => {
+    callBooking();
+  }, []);
+  const selectedBooking = useSelector(selectSelectedBooking);
 
-  const statusColors: Record<BookingStatus, string> = {
+  const statusColors: Record<bookingStatusString, string> = {
     Booked: "bg-blue-500",
     InUse: "bg-yellow-500",
     Completed: "bg-green-500",
     Cancelled: "bg-red-500",
+    Available: "bg-gray-500",
   };
 
   const paymentIcons: Record<PaymentType, JSX.Element> = {
     cash: <DollarOutlined />,
     card: <CreditCardOutlined />,
-    "game-currency": <GiftOutlined />,
-    membership: <IdcardOutlined />,
+    XP: <GiftOutlined />,
   };
+
+  if (!selectedBooking) {
+    return <div>Loading...</div>;
+  }
+
+  const booking = selectedBooking.booking;
+  const transaction = selectedBooking.transaction;
 
   return (
     <div className="flex justify-center items-center h-full p-4">
@@ -72,7 +60,7 @@ const BookingDetail: React.FC = () => {
               <UserOutlined className="text-lg" />
             </div>
             <span className="font-semibold text-lg text-gray-900 dark:text-white">
-              {booking.customerName}
+              {selectedBooking.booking.customerName}
             </span>
           </div>
           <span
@@ -108,7 +96,7 @@ const BookingDetail: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <span className="font-medium">Price:</span>
-            Rs. {booking.price}
+            Rs. {transaction.amount}
           </div>
           <div className="flex justify-between">
             <span className="font-medium">Description:</span>
@@ -116,14 +104,18 @@ const BookingDetail: React.FC = () => {
           </div>
           <div className="flex justify-between">
             <span className="font-medium">Booking Type:</span>
-            {booking.bookingType}
+            {transaction.transactionType}
           </div>
           <div className="flex justify-between items-center">
             <span className="font-medium">Payment Type:</span>
             <div className="flex items-center gap-1">
-              {paymentIcons[booking.paymentType]}
-              <span>{booking.paymentType}</span>
+              {paymentIcons[transaction.paymentType]}
+              <span>{transaction.paymentType}</span>
             </div>
+          </div>
+          <div className="flex justify-between">
+            <span className="font-medium">Payment Status:</span>
+            {transaction.status}
           </div>
         </div>
 
@@ -135,16 +127,16 @@ const BookingDetail: React.FC = () => {
           <div className="flex flex-wrap justify-center items-center gap-4 mt-4">
             {booking.machines.map((machine) => (
               <div
-                key={machine.machineID}
+                key={machine.machineID._id}
                 className="relative flex flex-col items-center"
               >
-                {machine.type === "console" ? (
+                {machine.machineID.machineCategory === "Console" ? (
                   <FaGamepad className="text-6xl text-gray-700 dark:text-gray-300" />
                 ) : (
                   <FaDesktop className="text-6xl text-gray-700 dark:text-gray-300" />
                 )}
                 <div className="mt-2 text-sm text-gray-900 dark:text-white">
-                  {machine.name}
+                  {machine.machineID.serialNumber}
                 </div>
                 <div className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
                   {machine.userCount}

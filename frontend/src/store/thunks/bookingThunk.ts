@@ -4,7 +4,8 @@ import {
   bookingStatusString,
   CustomerBooking,
   MachineBooking,
-} from "../slices/bookingSlice";
+  NewCustomerBooking,
+} from "@/types/booking";
 
 // Fetch the current and next booking for the selected machine
 export const fetchFirstAndNextBooking = createAsyncThunk<
@@ -104,6 +105,31 @@ export const updateBookingStatus = createAsyncThunk(
         console.error("Error message:", error.message);
         return rejectWithValue("An unexpected error occurred.");
       }
+    }
+  }
+);
+
+// Define the selectedBookingThunk
+export const fetchSelectedBooking = createAsyncThunk<
+  NewCustomerBooking, // The type of the data returned
+  { bookingID: String }, // The type of the argument (startTime and duration)
+  { rejectValue: string } // The type of the error message on failure
+>(
+  "bookings/fetchSelectedBooking",
+  async ({ bookingID }, { rejectWithValue }) => {
+    try {
+      console.log("fetchbooking called ", bookingID);
+      // Make sure the data is correctly passed to the API
+      const response = await axiosInstance.post(
+        `/bookings/get-booking/${bookingID}`, // Use POST request
+        {} // Pass the body
+      );
+      console.log("fetchbooking response ", response.data.data);
+      return response.data.data; // Return the data from the API
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data || "Failed to fetch bookings"
+      );
     }
   }
 );

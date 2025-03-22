@@ -13,44 +13,13 @@ import {
   fetchMachineStatus,
 } from "../thunks/bookingThunk";
 import { calculateEndTime, toUTC } from "@/utils/date.util";
-
-interface IMachineBooking {
-  machineID: string;
-  userCount: number;
-}
-
-export type CustomerBooking = {
-  _id?: string;
-  customerName: string;
-  phoneNumber?: string | null;
-  notes?: string | null;
-  startTime: string; // Booking start time in UTC format
-  endTime?: string; // Auto-calculated based on duration
-  duration: number; // Booking duration in minutes
-  machines: IMachineBooking[]; // List of machines booked
-  totalPrice?: number;
-  status: bookingStatusString;
-};
-
-export interface MachineBooking {
-  firstBooking: CustomerBooking | null; // Current booking
-  status: bookingStatusString; // Machine status
-  nextBooking: CustomerBooking | null; // Upcoming booking
-}
-
-export interface MachineStatus {
-  [machineID: string]: {
-    status: bookingStatusString;
-  };
-}
-
-type bookingModalString = "cancel" | "extend" | "end" | "start";
-export type bookingStatusString =
-  | "Booked"
-  | "InUse"
-  | "Completed"
-  | "Cancelled"
-  | "Available";
+import {
+  bookingModalString,
+  bookingStatusString,
+  CustomerBooking,
+  MachineBooking,
+  MachineStatus,
+} from "@/types/booking";
 
 interface BookingState {
   formData: CustomerBooking;

@@ -11,7 +11,7 @@ import revenueReducer from "./slices/revenueSlice";
 import transactionReducer from "./slices/transactionSlice";
 import { setupRevenueWebSocketListeners } from "./slices/revenueSlice";
 import { setupTransactionWebSocketListeners } from "./slices/transactionSlice";
-import bookingHistoryReducer from "./slices/transactionSlice";
+import bookingHistoryReducer from "./slices/bookingHistorySlice";
 
 const store = configureStore({
   reducer: {
