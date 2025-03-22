@@ -5,6 +5,8 @@ import isSlotAvailable from "../services/isSlotAvailable";
 import Booking from "../models/booking.model";
 import calculateTotalPrice from "../services/calculatePrice";
 import { getBookingStatus } from "../services/getBookingStatus";
+import { createTransaction } from "./transaction.controller";
+import { AuthRequest } from "../middleware/types";
 
 // Define controller for fetching booking status for all the machines
 export const getBookingStatusForAllMachines = async (
@@ -122,10 +124,14 @@ export const getFirstAndNextBooking = async (
 };
 
 export const createBooking = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
     const {
       machines,
       startTime,
@@ -222,6 +228,44 @@ export const createBooking = async (
       });
 
       await newBooking.save({ session });
+
+      let transactionType;
+
+      mode === "admin"
+        ? (transactionType = "walk-in-booking")
+        : (transactionType = "online-booking");
+      console.log("transactionType", transactionType);
+
+      // Create transaction
+      const transactionReq = {
+        user: req.user,
+        body: {
+          paymentType: "cash", // or other payment type as required
+          amount: totalPrice,
+          transactionType: transactionType, // set the transaction type based on mode
+        },
+      };
+      const transactionRes = {
+        status: (code: number) => ({
+          json: (data: any) => {
+            if (code !== 201) {
+              throw new Error(data.message || "Transaction creation failed");
+            }
+            return data;
+          },
+        }),
+      } as Response;
+      console.log("transactionReq", transactionReq);
+      const transactionData = await createTransaction(
+        transactionReq as AuthRequest,
+        transactionRes as Response
+      );
+      console.log("transactionRes", transactionData);
+
+      // Update booking with transaction ID
+      //newBooking.transactionID = transactionData.transaction._id;
+      //await newBooking.save({ session });
+
       await session.commitTransaction();
       session.endSession();
 
@@ -273,6 +317,37 @@ export const updateBookingStatus = async (
     await booking.save();
 
     res.json({ message: "Booking status updated successfully." });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unexpected server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getBookingByID = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { bookingID } = req.params;
+
+    if (!bookingID) {
+      res.status(400).json({ message: "Booking ID is required." });
+      return;
+    }
+
+    const booking = await Booking.findById(bookingID).populate({
+      path: "transactionID",
+      select: "-userID", // Exclude userID
+    });
+
+    if (!booking) {
+      res.status(404).json({ message: "Booking not found." });
+      return;
+    }
+
+    res.json({ status: "Success", data: booking });
   } catch (error) {
     res.status(500).json({
       message: "Unexpected server error",
