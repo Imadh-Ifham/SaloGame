@@ -8,7 +8,8 @@ import {
   deleteTransaction,
   getLast30DaysEarnings,
   getMonthlyRevenue,
-  getTransactionReport
+  getTransactionReport,
+  updateTransaction
 } from "../controllers/transaction.controller";
 
 const router = express.Router();
@@ -36,5 +37,8 @@ router.get("/report", managerOrOwner, getTransactionReport);
 
 // Delete a transaction (requires owner role)
 router.delete("/:transactionId", ownerOnly, deleteTransaction);
+
+// Update a transaction (requires owner or manager role)
+router.put("/:transactionId", managerOrOwner, updateTransaction);
 
 export default router; 

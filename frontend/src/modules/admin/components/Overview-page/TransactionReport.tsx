@@ -651,7 +651,7 @@ const TransactionReport: React.FC<TransactionReportProps> = ({
                       {transaction.transactionType}
                     </Text>
                     <Text style={[styles.tableCell, styles.tableCellText]}>
-                      {transaction.paymentType}
+                      {transaction.paymentType || 'N/A'}
                     </Text>
                     <Text style={[styles.tableCell, styles.tableCellText]}>
                       {transaction.status}
