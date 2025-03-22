@@ -1,9 +1,10 @@
-import { Response } from "express";
+import { Request, Response } from "express";
 import { AuthRequest } from "../middleware/types";
 import Transaction from "../models/transaction.model";
 import Last30DaysTransactions from "../models/last30DaysTransactions.model";
 import User from "../models/user.model";
 import { Server as SocketIOServer } from "socket.io";
+import { deductXP } from "./currency.controller";
 
 let io: SocketIOServer | null = null;
 
@@ -17,9 +18,9 @@ export const initializeSocketIO = (socketIO: SocketIOServer) => {
  * If payment type is XP, it will deduct XP from the user's account
  * 
  * Validation rules:
- * 1. Walk-in-booking: payment type must be cash and user role must be owner or manager
+ * 1. Walk-in-booking: payment type can be cash or card (optional), status is pending, and user role must be owner or manager
  * 2. Membership: payment can be cash or card, but cash is only acceptable for manager or owner
- * 3. Online-booking: payment must be XP and user role must be user
+ * 3. Online-booking: payment can be XP or card and user role must be user
  * 4. Refund: only admin/manager can create refunds, payment type must be cash or XP, amounts are automatically stored as negative
  */
 export const createTransaction = async (
@@ -34,11 +35,24 @@ export const createTransaction = async (
 
     const { paymentType, amount, transactionType } = req.body;
 
+    // Check if payment type is required based on transaction type and user role
+    const isPaymentTypeOptional = 
+      transactionType === "walk-in-booking" && 
+      (req.user.role === "owner" || req.user.role === "manager");
+    
+    // Validate payment type is provided when required
+    if (!paymentType && !isPaymentTypeOptional) {
+      res.status(400).json({ 
+        error: "Payment type is required for this transaction" 
+      });
+      return;
+    }
+
     // Validation rule 1: For walk-in-booking
     if (transactionType === "walk-in-booking") {
-      if (paymentType !== "cash") {
+      if (paymentType && paymentType !== "cash" && paymentType !== "card") {
         res.status(400).json({ 
-          error: "Payment type for walk-in-booking must be cash" 
+          error: "Payment type for walk-in-booking must be cash or card if specified" 
         });
         return;
       }
@@ -70,9 +84,9 @@ export const createTransaction = async (
 
     // Validation rule 3: For online-booking
     if (transactionType === "online-booking") {
-      if (paymentType !== "XP") {
+      if (paymentType !== "XP" && paymentType !== "card") {
         res.status(400).json({ 
-          error: "Payment type for online-booking must be XP" 
+          error: "Payment type for online-booking must be XP or card" 
         });
         return;
       }
@@ -114,24 +128,42 @@ export const createTransaction = async (
 
     // If payment type is XP, deduct XP from user's account
     if (paymentType === "XP") {
-      const user = await User.findById(req.user.id);
-      if (!user) {
-        res.status(404).json({ error: "User not found" });
-        return;
-      }
-
-      if (user.xp < amount) {
-        res.status(400).json({ error: "Insufficient XP balance" });
-        return;
-      }
-
-      // Deduct XP from user's account
-      user.xp -= amount;
-      await user.save();
+      // Create mock request object for deductXP controller
+      const deductXPReq = {
+        body: {
+          userId: req.user.id,
+          amount: amount
+        }
+      };
+      
+      // Create mock response object with handlers
+      const deductXPRes = {
+        status: (code: number) => ({
+          json: (data: any) => {
+            if (code !== 200) {
+              // If deductXP returns an error, propagate it to the transaction response
+              res.status(code).json(data);
+              return {
+                end: () => {}
+              };
+            }
+            return {
+              end: () => {}
+            };
+          }
+        })
+      } as Response;
+      
+      // Call the deductXP controller directly
+      console.log("Calling deductXP controller with request:", deductXPReq);
+      await deductXP(deductXPReq as Request, deductXPRes);
+      console.log("deductXP controller call completed");
     }
 
-    // Mark transaction as completed
-    transaction.status = "completed";
+    // Mark transaction as completed unless it's a walk-in-booking
+    if (transactionType !== "walk-in-booking") {
+      transaction.status = "completed";
+    }
     await transaction.save();
 
     // Update Last30DaysTransactions collection
@@ -677,10 +709,11 @@ export const getTransactionReport = async (
       return acc;
     }, {} as Record<string, number>);
     
-    // Group transactions by payment method
+    // Group transactions by payment method (excluding undefined payment types)
     const transactionsByPayment = transactions.reduce((acc, t) => {
-      const paymentType = t.paymentType;
-      acc[paymentType] = (acc[paymentType] || 0) + 1;
+      if (t.paymentType) {
+        acc[t.paymentType] = (acc[t.paymentType] || 0) + 1;
+      }
       return acc;
     }, {} as Record<string, number>);
     
@@ -700,6 +733,103 @@ export const getTransactionReport = async (
     });
   } catch (error) {
     console.error("Error generating transaction report:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+/**
+ * Update a transaction by ID
+ * Only allows updating paymentType and amount (optional) with proper validations
+ * Security validations:
+ * 1. Only pending walk-in-booking transactions can be updated
+ * 2. Payment type must be cash or card
+ * 3. Status is automatically set to completed
+ */
+export const updateTransaction = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    const { transactionId } = req.params;
+    const { paymentType, amount } = req.body;
+
+    // Find the transaction
+    const transaction = await Transaction.findById(transactionId);
+    
+    if (!transaction) {
+      res.status(404).json({ error: "Transaction not found" });
+      return;
+    }
+
+    // Only pending walk-in-booking transactions can be updated
+    if (transaction.status !== "pending" || transaction.transactionType !== "walk-in-booking") {
+      res.status(400).json({ 
+        error: "Only pending walk-in-booking transactions can be updated" 
+      });
+      return;
+    }
+
+    // Validate payment type for walk-in-booking - must be cash or card only
+    if (paymentType !== undefined) {
+      if (paymentType !== "cash" && paymentType !== "card") {
+        res.status(400).json({ 
+          error: "Payment type for walk-in-booking must be cash or card" 
+        });
+        return;
+      }
+    }
+
+    // Update the transaction
+    const updates: { paymentType?: string; amount?: number; status: string } = {
+      status: "completed" // Always set status to completed
+    };
+    
+    if (paymentType !== undefined) {
+      updates.paymentType = paymentType;
+    }
+    
+    if (amount !== undefined) {
+      updates.amount = amount;
+    }
+
+    const updatedTransaction = await Transaction.findByIdAndUpdate(
+      transactionId,
+      { $set: updates },
+      { new: true }
+    );
+
+    if (!updatedTransaction) {
+      res.status(500).json({ error: "Failed to update transaction" });
+      return;
+    }
+    
+    // Update Last30DaysTransactions collection
+    await updateLast30DaysTransactions(updatedTransaction);
+
+    // Emit socket events for real-time updates
+    if (io) {
+      io.emit('transaction:updated', {
+        _id: updatedTransaction._id,
+        userID: updatedTransaction.userID,
+        paymentType: updatedTransaction.paymentType,
+        amount: updatedTransaction.amount,
+        transactionType: updatedTransaction.transactionType,
+        status: updatedTransaction.status,
+        createdAt: updatedTransaction.createdAt
+      });
+    }
+
+    res.status(200).json({ 
+      message: "Transaction updated successfully", 
+      transaction: updatedTransaction 
+    });
+  } catch (error) {
+    console.error("Error updating transaction:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }; 

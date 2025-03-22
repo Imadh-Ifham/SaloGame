@@ -8,6 +8,7 @@ export interface ISubscription extends Document {
   duration: number;
   totalAmount: number;
   status: "active" | "expired" | "cancelled";
+  autoRenew: { type: Boolean; default: false };
   paymentStatus: "pending" | "completed" | "failed";
 }
 

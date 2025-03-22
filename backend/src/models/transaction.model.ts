@@ -2,7 +2,7 @@ import mongoose, { Document, Model, Schema } from "mongoose";
 
 export interface ITransaction extends Document {
   userID: Schema.Types.ObjectId;
-  paymentType: "cash" | "card" | "XP";
+  paymentType?: "cash" | "card" | "XP";
   amount: number;
   transactionType: "online-booking" | "walk-in-booking" | "membership" | "refund";
   status: "pending" | "completed" | "failed";
@@ -18,7 +18,7 @@ const transactionSchema = new Schema<ITransaction>({
   paymentType: {
     type: String,
     enum: ["cash", "card", "XP"],
-    required: true
+    required: false
   },
   amount: {
     type: Number,

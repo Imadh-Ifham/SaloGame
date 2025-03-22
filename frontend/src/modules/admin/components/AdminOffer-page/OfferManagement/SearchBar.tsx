@@ -1,47 +1,49 @@
 import React from "react";
 import { FaSearch } from "react-icons/fa";
 
-interface SearchFilterProps {
+interface SearchBarProps {
   searchTerm: string;
   categoryFilter: string;
   categories: string[];
-  setSearchTerm: (value: string) => void;
-  setCategoryFilter: (value: string) => void;
+  setSearchTerm: (term: string) => void;
+  setCategoryFilter: (category: string) => void;
 }
 
-export const SearchBar: React.FC<SearchFilterProps> = ({
+export const SearchBar: React.FC<SearchBarProps> = ({
   searchTerm,
   categoryFilter,
   categories,
   setSearchTerm,
   setCategoryFilter,
-}) => (
-  <div className="mb-6 flex justify-between items-center">
-    <div className="relative w-72">
-      <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-      <input
-        type="text"
-        placeholder="Search offers..."
-        value={searchTerm}
-        onChange={(e) => setSearchTerm(e.target.value)}
-        className="pl-10 pr-4 py-2 w-full border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-      />
+}) => {
+  return (
+    <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="md:col-span-2 relative">
+        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <FaSearch className="text-gray-400 dark:text-gray-500" />
+        </div>
+        <input
+          type="text"
+          className="pl-10 w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+          placeholder="Search by promotion name or code..."
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+      </div>
+      <div>
+        <select
+          className="w-full p-3 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-all"
+          value={categoryFilter}
+          onChange={(e) => setCategoryFilter(e.target.value)}
+        >
+          <option value="all">All Game Categories</option>
+          {categories.map((category) => (
+            <option key={category} value={category}>
+              {category}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
-
-    <select
-      value={categoryFilter}
-      onChange={(e) => setCategoryFilter(e.target.value)}
-      className="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
-    >
-      <option value="all">All Categories</option>
-      {categories.map((category) => (
-        <option key={category} value={category}>
-          {category
-            .split("-")
-            .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(" ")}
-        </option>
-      ))}
-    </select>
-  </div>
-);
+  );
+};

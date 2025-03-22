@@ -73,10 +73,21 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
       const isSuccessful = Math.random() <= 0.8;
 
       if (isSuccessful) {
-        toast.success("Payment processed successfully!");
-        setShowPaymentPortal(false);
-        // After successful payment, proceed to actual subscription
-        handleSubmit();
+        checkExistingSubscription().then((hasActive) => {
+          if (hasActive) {
+            toast.error(
+              "You already have an active subscription. Please cancel your current subscription before subscribing to a new plan."
+            );
+            setShowPaymentPortal(false);
+            setShowConfirmation(false);
+            return;
+          }
+
+          // Only show success and proceed if no active subscription
+          toast.success("Payment processed successfully!");
+          setShowPaymentPortal(false);
+          handleSubmit();
+        });
       } else {
         toast.error(
           "Payment failed. Please try again or use a different payment method."

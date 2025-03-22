@@ -28,7 +28,7 @@ export const createSubscription = async (
     if (!user || user.role !== "user") {
       res.status(403).json({
         success: false,
-        message: "Only users can create subscriptions"
+        message: "Only users can create subscriptions",
       });
       return;
     }
@@ -73,6 +73,8 @@ export const createSubscription = async (
       endDate: parsedEndDate,
       status: "active",
       paymentStatus: "completed",
+      autoRenew: req.body.autoRenew,
+      paymentDetails: req.body.paymentDetails,
     });
 
     await subscription.save({ session });
@@ -145,7 +147,7 @@ export const getUserSubscriptions = async (
     if (!user || user.role !== "user") {
       res.status(403).json({
         success: false,
-        message: "Only users can view their subscriptions"
+        message: "Only users can view their subscriptions",
       });
       return;
     }
@@ -193,7 +195,7 @@ export const assignMembership = async (
     if (!targetUser || targetUser.role !== "user") {
       res.status(403).json({
         success: false,
-        message: "Membership can only be assigned to users"
+        message: "Membership can only be assigned to users",
       });
       return;
     }
@@ -335,5 +337,136 @@ export const getUserExpiringNotifications = async (
       message: "Failed to fetch notifications",
       error: error instanceof Error ? error.message : "Unknown error",
     });
+  }
+};
+
+export const getMembershipStats = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    // Query the database for statistics
+    const totalActiveMembers = await Subscription.countDocuments({
+      status: "active",
+    });
+    const totalRevenue = await Subscription.aggregate([
+      { $match: { status: "active" } },
+      { $group: { _id: null, total: { $sum: "$totalAmount" } } },
+    ]);
+    const autoRenewalUsers = await Subscription.countDocuments({
+      status: "active",
+      autoRenew: true,
+    });
+
+    // Return the stats
+    res.status(200).json({
+      totalActiveMembers,
+      totalRevenue: totalRevenue[0]?.total || 0,
+      autoRenewalUsers,
+    });
+  } catch (error) {
+    console.error("Error fetching membership stats:", error);
+    res.status(500).json({ message: "Failed to fetch membership stats" });
+  }
+};
+
+export const getSubscriptionGrowth = async (req: Request, res: Response) => {
+  try {
+    const lastSixMonths = new Date();
+    lastSixMonths.setMonth(lastSixMonths.getMonth() - 6);
+
+    const growthData = await Subscription.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: lastSixMonths },
+        },
+      },
+      {
+        $group: {
+          _id: { $month: "$createdAt" },
+          count: { $sum: 1 },
+        },
+      },
+      {
+        $sort: { _id: 1 },
+      },
+    ]);
+
+    const formattedData = growthData.map((data) => ({
+      month: data._id,
+      count: data.count,
+    }));
+
+    res.status(200).json({ success: true, data: formattedData });
+  } catch (error) {
+    console.error("Error fetching subscription growth data:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch data" });
+  }
+};
+
+export const getRecentActivities = async (req: Request, res: Response) => {
+  try {
+    const recentSubscriptions = await Subscription.find()
+      .sort({ createdAt: -1 })
+      .limit(10)
+      .populate("membershipId userId");
+    console.log("Recent subscriptions", recentSubscriptions);
+
+    const soonExpiringMemberships = await Subscription.find({
+      status: "active",
+      endDate: { $lte: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) }, // Expiring in 7 days
+    })
+      .sort({ endDate: 1 })
+      .populate("membershipId userId");
+    console.log("Soon Expiring Memberships:", soonExpiringMemberships);
+
+    const autoRenewals = await Subscription.find({
+      status: "active",
+      autoRenew: true,
+      endDate: {
+        $gte: new Date(),
+        $lte: new Date(Date.now() + 24 * 60 * 60 * 1000),
+      }, // Renewing in 24 hours
+    })
+      .sort({ endDate: 1 })
+      .populate("membershipId userId");
+    console.log("Auto Renewals:", autoRenewals);
+
+    const activities = [
+      ...recentSubscriptions.map((sub) => ({
+        type: "new_subscription",
+        user: sub.userId,
+        membership: sub.membershipId,
+        date: sub.startDate,
+      })),
+      ...soonExpiringMemberships.map((sub) => ({
+        type: "expiring_membership",
+        user: sub.userId,
+        membership: sub.membershipId,
+        date: sub.endDate,
+      })),
+      ...autoRenewals.map((sub) => ({
+        type: "auto_renewal",
+        user: sub.userId,
+        membership: sub.membershipId,
+        date: sub.endDate,
+      })),
+    ];
+
+    console.log("Combined Activities Before Sorting:", activities);
+
+    // Sort activities by date (most recent first)
+    activities.sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    console.log("Sorted Activities:", activities);
+
+    res.status(200).json({ success: true, data: activities });
+  } catch (error) {
+    console.error("Error fetching recent activities:", error);
+    res
+      .status(500)
+      .json({ success: false, message: "Failed to fetch recent activities" });
   }
 };
