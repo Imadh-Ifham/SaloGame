@@ -131,8 +131,10 @@ export const getUsers = async (
       })
       .populate({
         path: "subscription", // Add this to populate subscription data
-        select: "startDate endDate status",
+        select:
+          "_id startDate endDate status totalAmount duration autoRenew paymentStatus",
       })
+      .select("email name defaultMembershipId subscription")
       .sort({ createdAt: -1 })
       .lean();
 

@@ -21,15 +21,17 @@ import TimeBased from "./modules/users/pages/OfferPages/TimeBased";
 import MembershipBased from "./modules/users/pages/OfferPages/MembershipBased";
 import General from "./modules/users/pages/OfferPages/General";
 import EventPage from "./modules/users/pages/EventPage";
-import VerifyEmail from './modules/users/pages/EventPages/VerifyEmail';
+import VerifyEmail from "./modules/users/pages/EventPages/VerifyEmail";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import MembershipPage from "./modules/users/pages/MembershipPage";
-import AdminMembershipPage from "./modules/admin/pages/AdminMembershipPage";
+//import AdminMembershipPage from "./modules/admin/pages/AdminMembershipPage";
+
+import AdminMembershipPage from "./modules/admin/pages/TestAdminDashboard";
 import AdminPackagePage from "./modules/admin/pages/AdminPackagePage";
 import PackagesPage from "./modules/users/pages/PackagesPage";
 import AuthPage from "./modules/users/pages/AuthPage";
-import ForgotPassword from "./modules/users/pages/ForgotPassword"
+import ForgotPassword from "./modules/users/pages/ForgotPassword";
 import ProfilePage from "./modules/users/pages/ProfilePage";
 import AdminBookingManager from "./modules/admin/pages/AdminBookingManager";
 import AdminAuthPage from "./modules/admin/pages/AdminAuthPage";
@@ -70,7 +72,7 @@ const App: React.FC = () => {
         <Route path="/offers/general" element={<General />} />
 
         <Route path="/single-battle" element={<SingleBattle />} />
-        <Route path="/team-battle" element={< TeamBattle/>} />
+        <Route path="/team-battle" element={<TeamBattle />} />
         <Route path="/verify/:token" element={<VerifyEmail />} />
 
         <Route path="/admin" element={<AdminLayout />}>
