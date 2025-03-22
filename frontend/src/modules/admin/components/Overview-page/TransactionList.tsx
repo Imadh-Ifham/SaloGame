@@ -82,7 +82,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
     const searchLower = searchTerm.toLowerCase();
     const matchesSearch = 
       transaction.transactionType.toLowerCase().includes(searchLower) ||
-      transaction.paymentType.toLowerCase().includes(searchLower) ||
+      (transaction.paymentType?.toLowerCase().includes(searchLower) || false) ||
       transaction.status.toLowerCase().includes(searchLower);
     
     // Client-side filtering only happens with the search term since date filtering is now handled by the server
@@ -398,7 +398,7 @@ const TransactionList: React.FC<TransactionListProps> = ({
                 
                 <div className="sm:col-span-2">
                   <span className="inline-flex px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                    {transaction.paymentType.toUpperCase()}
+                    {transaction.paymentType?.toUpperCase() || 'N/A'}
                   </span>
                 </div>
                 
