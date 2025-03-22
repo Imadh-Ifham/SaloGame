@@ -50,6 +50,13 @@ const transactionSlice = createSlice({
       state.transactions.unshift(action.payload);
       state.totalCount += 1;
     },
+    updateTransaction: (state, action: PayloadAction<ITransaction>) => {
+      // Find and update the transaction in the list
+      const index = state.transactions.findIndex(t => t._id === action.payload._id);
+      if (index !== -1) {
+        state.transactions[index] = action.payload;
+      }
+    },
     resetTransactions: (state) => {
       state.transactions = [];
       state.currentPage = 1;
@@ -87,11 +94,17 @@ export const setupTransactionWebSocketListeners = (dispatch: any) => {
     dispatch(addNewTransaction(data));
   });
 
+  // Listen for transaction updates
+  socket.on('transaction:updated', (data: ITransaction) => {
+    dispatch(updateTransaction(data));
+  });
+
   return () => {
     socket.off('transaction:created');
+    socket.off('transaction:updated');
   };
 };
 
-export const { setDateFilter, addNewTransaction, resetTransactions } = transactionSlice.actions;
+export const { setDateFilter, addNewTransaction, updateTransaction, resetTransactions } = transactionSlice.actions;
 
 export default transactionSlice.reducer; 
