@@ -51,7 +51,7 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/transactions", transactionRoutes);
 
 //google analytics route
-app.use("api/analytics", analyticsRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

@@ -39,6 +39,7 @@ import AdminEventPage from "./modules/admin/pages/AdminEventPage";
 import OverviewPage from "./modules/admin/pages/OverviewPage";
 import SingleBattle from "./modules/users/pages/EventPages/SingleBattle";
 import TeamBattle from "./modules/users/pages/EventPages/TeamBattle";
+
 const App: React.FC = () => {
   useEffect(() => {
     // Always set dark mode as default
@@ -53,6 +54,7 @@ const App: React.FC = () => {
         {/* User Routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/admin/auth" element={<AdminAuthPage />} />
+        
 
         <Route path="/" element={<HomePage />} />
         <Route path="/games" element={<GamesPage />} />

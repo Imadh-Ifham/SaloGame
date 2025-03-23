@@ -1,119 +1,252 @@
-import express from 'express';
+import express, { Request, Response } from 'express';
 import { BetaAnalyticsDataClient } from '@google-analytics/data';
+import dotenv from 'dotenv';
+
+dotenv.config();
+
 const router = express.Router();
 
-
-//Google Analytics Data API client from environment variables
+// Initialize the Google Analytics client
 const analyticsDataClient = new BetaAnalyticsDataClient({
   credentials: {
     client_email: process.env.GA_CLIENT_EMAIL,
-    private_key: process.env.GA_PRIVATE_KEY,
+    private_key: process.env.GA_PRIVATE_KEY?.replace(/\\n/g, '\n'),
   },
-
-  projectId: process.env.project_id,
+  projectId: process.env.PROJECT_ID,
 });
 
-//Google Analytics Property ID from environment variables
-const propertyId = process.env.GA_PROPERTY_ID;
-
-
-//User activity
-router.get("/ga4/userActivity", async (req, res) => {
+// Get active users for the past 7 days
+router.get('/active-users', async (_req: Request, res: Response) : Promise<void> =>  {
   try {
-    //The request to the Google Analytics Data API
+    const propertyId = process.env.GA_PROPERTY_ID;
+    
+    if (!propertyId) {
+       res.status(500).json({ error: 'Google Analytics Property ID not found' });
+    }
+
     const [response] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
-
-      //The date range for which the data is to be fetched
-      dateRanges:[{startDate: '2021-01-01', endDate: 'today'}],
-
-      //The dimensions for the data to be fetched
-      dimensions: [{name: "date"}],
-
-      //The metrics for the data to be fetched
-      metrics: [{name: "activeUsers"}],
-});
-
-  //The data from the response
-   const labels : string[] = [];
-   const values : number[] = [];
-
-   response.rows?.forEach(row => {
-    const date = row.dimensionValues?.[0]?.value;
-    //Formatting the date to be in the format YYYY-MM-DD
-    const formattedDate = date?.substring(0, 4) + "-" + date?.substring(4, 6) + "-" + date?.substring(6, 8);
-    labels.push(formattedDate);
-    values.push(parseInt(row.metricValues?.[0]?.value || "0"));
+      dateRanges: [
+        {
+          startDate: '7daysAgo',
+          endDate: 'today',
+        },
+      ],
+      metrics: [
+        {
+          name: 'activeUsers',
+        },
+      ],
+      dimensions: [
+        {
+          name: 'date',
+        },
+      ],
     });
 
-    res.json({labels, values});
+    const formattedData = response.rows?.map(row => ({
+      date: row.dimensionValues?.[0].value,
+      activeUsers: row.metricValues?.[0].value,
+    }));
+
+    res.status(200).json(formattedData);
   } catch (error) {
-    console.error("Error fetching GA4 user activity",error);
-    res.status(500).json({error: "Failed to fetch analytics data"});
+    console.error('Error fetching Google Analytics data:', error);
+    res.status(500).json({ error: 'Failed to fetch Google Analytics data' });
+  }
+});
+
+// Get page views for the past 7 days
+router.get('/page-views', async (req: Request, res: Response) : Promise<void> =>  {
+  try {
+    const propertyId = process.env.GA_PROPERTY_ID;
+    
+    if (!propertyId) {
+       res.status(500).json({ error: 'Google Analytics Property ID not found' });
+    }
+
+    const [response] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [
+        {
+          startDate: '7daysAgo',
+          endDate: 'today',
+        },
+      ],
+      metrics: [
+        {
+          name: 'screenPageViews',
+        },
+      ],
+      dimensions: [
+        {
+          name: 'pagePath',
+        },
+      ],
+      orderBys: [
+        {
+          metric: {
+            metricName: 'screenPageViews',
+          },
+          desc: true,
+        },
+      ],
+      limit: 10,
+    });
+
+    const formattedData = response.rows?.map(row => ({
+      pagePath: row.dimensionValues?.[0].value,
+      pageViews: row.metricValues?.[0].value,
+    }));
+
+    res.status(200).json(formattedData);
+  } catch (error) {
+    console.error('Error fetching Google Analytics data:', error);
+    res.status(500).json({ error: 'Failed to fetch Google Analytics data' });
+  }
+});
+
+// Get user engagement metrics
+router.get('/user-engagement', async (_req: Request, res: Response) : Promise<void> =>  {
+  try {
+    const propertyId = process.env.GA_PROPERTY_ID;
+    
+    if (!propertyId) {
+       res.status(500).json({ error: 'Google Analytics Property ID not found' });
+    }
+
+    const [response] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [
+        {
+          startDate: '30daysAgo',
+          endDate: 'today',
+        },
+      ],
+      metrics: [
+        {
+          name: 'userEngagementDuration',
+        },
+        {
+          name: 'engagementRate',
+        },
+        {
+          name: 'sessionsPerUser',
+        },
+      ],
+    });
+
+    const metrics = {
+      userEngagementDuration: response.rows?.[0].metricValues?.[0].value,
+      engagementRate: response.rows?.[0].metricValues?.[1].value,
+      sessionsPerUser: response.rows?.[0].metricValues?.[2].value,
+    };
+
+    res.status(200).json(metrics);
+  } catch (error) {
+    console.error('Error fetching Google Analytics data:', error);
+    res.status(500).json({ error: 'Failed to fetch Google Analytics data' });
+  }
+});
+
+// Get event count for the past 7 days
+router.get('/event-count', async (_req: Request, res: Response) : Promise<void> =>  {
+  try {
+    const propertyId = process.env.GA_PROPERTY_ID;
+    
+    if (!propertyId) {
+       res.status(500).json({ error: 'Google Analytics Property ID not found' });
+    }
+
+    const [response] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [
+        {
+          startDate: '7daysAgo',
+          endDate: 'today',
+        },
+      ],
+      metrics: [
+        {
+          name: 'eventCount',
+        },
+      ],
+      dimensions: [
+        {
+          name: 'date',
+        },
+      ],
+    });
+
+    const formattedData = response.rows?.map(row => ({
+      date: row.dimensionValues?.[0].value,
+      eventCount: row.metricValues?.[0].value,
+    }));
+
+    // Get the total event count for summary
+    const totalEventCount = response.rows?.reduce((sum, row) => {
+      return sum + Number(row.metricValues?.[0].value || 0);
+    }, 0);
+
+    res.status(200).json({
+      total: totalEventCount,
+      dailyData: formattedData
+    });
+  } catch (error) {
+    console.error('Error fetching Google Analytics data:', error);
+    res.status(500).json({ error: 'Failed to fetch Google Analytics data' });
   }
 });
 
 
-//top actions
-router.get("/ga4/top-actions", async (req, res) => {
-    try{
+// Get counts for specific event types
+router.get('/event-types', async (_req: Request, res: Response): Promise<void> => {
+  try {
+    const propertyId = process.env.GA_PROPERTY_ID;
+    
+    if (!propertyId) {
+      res.status(500).json({ error: 'Google Analytics Property ID not found' });
+      return;
+    }
 
-        const [response] = await analyticsDataClient.runReport({
-            property: `properties/${propertyId}`,
-            dateRanges: [{startDate: "30daysAgo", endDate: 'today'}],
-            dimensions: [{name: "eventName"}],
-            metrics: [{name: "eventCount"}],
-            limit: 5
-            
-        });
-
-        const labels : string[] = [];
-        const values : number[] = [];
-
-        response.rows?.forEach(row => {
-
-            labels.push(row.dimensionValues?.[0]?.value ?? "unknown");
-            values.push(parseInt(row.metricValues?.[0]?.value ?? "0"));
-        });
-
-        res.json({labels, values});
-    }  catch (error) {
-        console.error("Error fetching GA4 top actions",error);
-        res.status(500).json({error: "Failed to fetch analytics data"});
-      }
-});
-
-//page views
-router.get("/ga4/page-views", async (req, res) => {
-
-    try{
-        
-        //Calls the Google Analytics Data API to retrieve an analytics report.
-        const [response] = await analyticsDataClient.runReport({
-            property: `properties/${propertyId}`,
-            dateRanges: [{startDate: "30daysAgo", endDate: 'today'}],
-            dimensions: [{name: "pagePath"}],
-            metrics: [{name: "screenPageViews"}],
-            orderBys: [{metric: {metricName: "screenPageViews"}, desc: true}],
-            //Limits the results to only the top 5 most viewed pages.
-            limit: 5
+    const [response] = await analyticsDataClient.runReport({
+      property: `properties/${propertyId}`,
+      dateRanges: [
+        {
+          startDate: '7daysAgo',
+          endDate: 'today',
+        },
+      ],
+      metrics: [
+        {
+          name: 'eventCount',
+        },
+      ],
+      dimensions: [
+        {
+          name: 'eventName',
+        },
+      ],
+      orderBys: [
+        {
+          metric: {
+            metricName: 'eventCount',
+          },
+          desc: true,
+        },
+      ],
+      limit: 20,
     });
 
-    const labels : string[] = [];
-    const values : number[] = [];
+    const formattedData = response.rows?.map(row => ({
+      eventName: row.dimensionValues?.[0].value,
+      count: row.metricValues?.[0].value,
+    }));
 
-    response.rows?.forEach(row => {
-     let path = row.dimensionValues?.[0]?.value;
-
-     //If the path is a URL, we extract the page path from the URL.
-     path = path ? (path.length > 20 ? path.substring(0, 20) + "..." : path) : "";
-        labels.push(path);
-        values.push(parseInt(row.metricValues?.[0]?.value || "0"));
-    });
-    res.json({labels, values});
-}catch (error) {
-    console.error("Error fetching GA4 page views",error);
-    res.status(500).json({error: "Failed to fetch analytics data"});
+    res.status(200).json(formattedData);
+  } catch (error) {
+    console.error('Error fetching Google Analytics event data:', error);
+    res.status(500).json({ error: 'Failed to fetch Google Analytics event data' });
   }
 });
 

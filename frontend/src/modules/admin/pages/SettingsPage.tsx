@@ -9,6 +9,7 @@ import {
 
 import { useAuth } from "../../../hooks/useAuth";
 import { Navigate } from "react-router-dom";
+import AnalyticsDashboard from "./AnalyticsDashboard";
 
 const SettingsPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -119,7 +120,7 @@ const SettingsPage: React.FC = () => {
                     Enable
                   </button>
                 </div>
-                {/* Add more security options */}
+                
               </div>
             </div>
           </Tab.Panel>
@@ -129,8 +130,15 @@ const SettingsPage: React.FC = () => {
               <h2 className="text-xl font-semibold mb-4">
                 System Activity Logs
               </h2>
+              
+              {/* Analytics Dashboard  */}
+              <div className="mb-6">
+                <AnalyticsDashboard />
+              </div>
+              
               <div className="space-y-4">
-                {/* Add activity log table/list here */}
+                {/*  activity log table  */}
+                
               </div>
             </div>
           </Tab.Panel>
@@ -140,7 +148,7 @@ const SettingsPage: React.FC = () => {
                 User Payment Details
               </h2>
               <div className="space-y-4">
-                {/* Add User Payment Details table/list here */}
+                {/* User Payment Details  */}
               </div>
             </div>
           </Tab.Panel>
