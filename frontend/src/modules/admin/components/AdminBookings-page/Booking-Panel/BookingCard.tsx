@@ -34,15 +34,15 @@ const BookingCard: React.FC<BookingCardProps> = ({
       initial={{ height: "90px" }}
       animate={{ height: expanded ? "auto" : "90px" }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className=" bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:scale-95 transition-all"
+      className="border border-gray-300 dark:border-gray-500 dark:bg-gray-700 rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:scale-[0.99] transition-all"
       onClick={() => setExpanded(!expanded)}
     >
       {/* Compact View */}
       <div className="flex items-center justify-between px-3 py-2">
         {/* Profile Icon & Name */}
         <div className="flex items-center gap-2">
-          <UserCircle className="w-6 h-6 text-gray-500" />
-          <span className="text-sm font-semibold text-gray-800">
+          <UserCircle className="w-6 h-6 text-gray-500 dark:text-gray-300" />
+          <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
             {customerName}
           </span>
         </div>
@@ -58,12 +58,14 @@ const BookingCard: React.FC<BookingCardProps> = ({
               )}
             </div>
           )}
-          {isMultipleMachines && <Plus className="w-4 h-4 text-gray-500" />}
+          {isMultipleMachines && (
+            <Plus className="w-4 h-4 text-gray-500 dark:text-gray-300" />
+          )}
         </div>
       </div>
 
       {/* Start Time & Duration */}
-      <div className="px-3 flex justify-between text-xs text-gray-600">
+      <div className="px-3 flex justify-between text-xs text-gray-600 dark:text-gray-300">
         <span>Start: {startTime}</span>
         <span>Duration: {duration}</span>
       </div>
@@ -76,7 +78,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
               ? "bg-green-100 text-green-600"
               : status === "Pending"
               ? "bg-yellow-100 text-yellow-600"
-              : "bg-gray-100 text-gray-600"
+              : "bg-gray-100 text-red-600"
           }`}
         >
           {status}
@@ -89,7 +91,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.3 }}
-          className="px-3 py-2 border-t border-gray-200 text-xs text-gray-700"
+          className="px-3 py-2 border-t border-gray-200 text-xs text-gray-700 dark:text-gray-300"
         >
           <p>
             <strong>End Time:</strong> {parseInt(startTime) + 0.5}:00

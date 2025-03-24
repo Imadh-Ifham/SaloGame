@@ -7,7 +7,7 @@ const UpcomingBooking: React.FC = () => {
       <div className="text-sm font-poppins font-semibold my-2">
         Upcoming Bookings
       </div>
-      <div className="border dark:border-gray-500 rounded-lg h-[calc(100%-2rem)] p-2 w-full flex flex-col gap-2 overflow-y-auto scrollbar-hide shadow-lg">
+      <div className="border dark:border-gray-700 rounded-lg h-[calc(100%-2rem)] p-2 w-full flex flex-col gap-2 overflow-y-auto scrollbar-hide shadow-lg">
         <div className="text-xs font-poppins font-semibold">Today</div>
         {/** Booking Card */}
         <div className="flex flex-col gap-2">
@@ -51,7 +51,7 @@ const UpcomingBooking: React.FC = () => {
         </div>
         <div className="text-xs font-poppins font-semibold">Tomorow</div>
         {/** Booking Card */}
-        <div>
+        <div className="flex flex-col gap-2">
           <BookingCard
             customerName="John Doe"
             machines={[

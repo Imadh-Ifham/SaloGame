@@ -68,10 +68,14 @@ export const getBookingStatusForAllMachines = async (
 };
 
 export const getFirstAndNextBooking = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
     const {
       inputStartTime,
       duration,
@@ -95,7 +99,7 @@ export const getFirstAndNextBooking = async (
     // Get the status of the first booking (if it exists)
     let status = "Available"; // Default status
     if (firstBooking) {
-      status = firstBooking.status; // Adjust logic as needed
+      status = firstBooking.booking.status; // Adjust logic as needed
     }
 
     const bookingDetails = {
@@ -358,14 +362,15 @@ export const getBookingByID = async (
       .populate({
         path: "machines.machineID", // Populate machine details
         select: "machineCategory serialNumber", // Exclude unnecessary fields
-      });
+      })
+      .lean();
     if (!booking) {
       res.status(404).json({ message: "Booking not found." });
       return;
     }
 
     // Extract transaction details separately
-    const { transactionID, ...bookingData } = booking.toObject(); // Convert Mongoose document to plain object
+    const { transactionID, ...bookingData } = booking; // Convert Mongoose document to plain object
 
     // Separate booking and transaction
     const structuredResponse = {

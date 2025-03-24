@@ -36,14 +36,14 @@ const BookingPanel: React.FC = () => {
             <UpcomingBooking />
           </div>
         </div>
-        <div className="col-span-3 max-h-[80vh] my-auto overflow-y-auto scrollbar-hide">
+        <div className="col-span-3 max-h-[80vh] border dark:border-gray-600 rounded-xl my-auto overflow-y-auto scrollbar-hide">
           {/* Current Booking Status */}
           {selectedMachine ? (
             <div className="">
               {currentBooking ? (
                 <CurrentBookingDetails
                   currentBooking={currentBooking}
-                  nextBooking={nextBooking}
+                  nextBooking={nextBooking ? nextBooking : null}
                 />
               ) : showBookingForm ? (
                 <NewBookingForm />

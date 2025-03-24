@@ -13,11 +13,21 @@ import {
   selectBookingHistoryLoading,
   selectSelectedBooking,
 } from "@/store/slices/bookingHistorySlice";
-import { bookingStatusString, PaymentType } from "@/types/booking";
+import {
+  bookingStatusString,
+  NewCustomerBooking,
+  PaymentType,
+} from "@/types/booking";
 import SkeletonLoader from "./SkeletonLoader";
 
-const BookingDetail: React.FC = () => {
-  const selectedBooking = useSelector(selectSelectedBooking);
+interface BookingDetailProps {
+  selectedBooking?: NewCustomerBooking | null;
+}
+
+const BookingDetail: React.FC<BookingDetailProps> = ({ selectedBooking }) => {
+  selectedBooking
+    ? selectedBooking
+    : (selectedBooking = useSelector(selectSelectedBooking));
   const loading = useSelector(selectBookingHistoryLoading);
 
   const statusColors: Record<bookingStatusString, string> = {
@@ -53,8 +63,8 @@ const BookingDetail: React.FC = () => {
   const transaction = selectedBooking.transaction;
 
   return (
-    <div className="flex justify-center items-center h-full p-4">
-      <div className="w-full max-w-3xl p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+    <div className="flex justify-center items-center h-full">
+      <div className="w-full max-w-3xl p-6 bg-white dark:bg-gray-800">
         {/* Booking Info */}
         <div className="flex flex-col md:flex-row justify-between items-center border-b pb-3">
           <div className="flex items-center gap-2">

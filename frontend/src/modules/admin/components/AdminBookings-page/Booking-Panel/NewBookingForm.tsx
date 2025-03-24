@@ -107,7 +107,7 @@ const NewBookingForm: React.FC = () => {
   );
 
   return (
-    <div className="dark:bg-gray-700 text-gray-700 dark:text-gray-50 border dark:border-gray-500 p-6 rounded-2xl shadow-lg w-full max-w-md mx-auto">
+    <div className="text-gray-700 dark:text-gray-50 p-6 w-full max-w-md mx-auto">
       <h3 className="text-lg font-semibold mb-4">New Booking</h3>
 
       <div className="mb-4 flex justify-between">
@@ -182,7 +182,7 @@ const NewBookingForm: React.FC = () => {
           <input
             type="text"
             placeholder="Customer Name"
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border dark:border-gray-500 dark:bg-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.customerName}
             onChange={(e) =>
               dispatch(updateBookingForm({ customerName: e.target.value }))
@@ -196,7 +196,7 @@ const NewBookingForm: React.FC = () => {
           <input
             type="tel"
             placeholder="Contact Number"
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full pl-10 pr-4 py-2 border dark:border-gray-500 dark:bg-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.phoneNumber ? formData.phoneNumber : ""}
             onChange={(e) =>
               dispatch(updateBookingForm({ phoneNumber: e.target.value }))
@@ -210,7 +210,7 @@ const NewBookingForm: React.FC = () => {
           <textarea
             placeholder="Notes (optional)"
             rows={3}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+            className="w-full pl-10 pr-4 py-2 border dark:border-gray-500 dark:bg-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
             value={formData.notes ? formData.notes : ""}
             onChange={(e) =>
               dispatch(updateBookingForm({ notes: e.target.value }))

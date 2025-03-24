@@ -8,9 +8,9 @@ export type bookingStatusString =
 export type PaymentType = "cash" | "card" | "XP";
 
 export interface MachineBooking {
-  firstBooking: CustomerBooking | null; // Current booking
+  firstBooking: NewCustomerBooking | null; // Current booking
   status: bookingStatusString; // Machine status
-  nextBooking: CustomerBooking | null; // Upcoming booking
+  nextBooking: NewCustomerBooking | null; // Upcoming booking
 }
 
 export interface IMachineBooking {
@@ -37,7 +37,7 @@ export type CustomerBooking = {
 };
 
 interface Booking {
-  _id?: string;
+  _id: string;
   customerName: string;
   phoneNumber?: string | null;
   notes?: string | null;

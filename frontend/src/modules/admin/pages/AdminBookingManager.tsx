@@ -54,7 +54,7 @@ const AdminBookingManager: React.FC = () => {
       <div className="absolute top-8 right-10 flex space-x-4 rounded-lg ">
         <button
           className={`p-1 hover:bg-gray-200 dark:bg-gray-50 rounded border shadow-md ${
-            view === "booking" ? "bg-gray-200 dark:bg-gamer-green" : ""
+            view === "booking" ? "bg-gray-200 dark:bg-gamer-green/100" : ""
           }`}
           onClick={() => setView("booking")}
         >
@@ -62,7 +62,7 @@ const AdminBookingManager: React.FC = () => {
         </button>
         <button
           className={`p-1 hover:bg-gray-200 dark:bg-gray-50 rounded border shadow-md ${
-            view === "history" ? "bg-gray-200 dark:bg-gamer-green" : ""
+            view === "history" ? "bg-gray-200 dark:bg-gamer-green/100" : ""
           }`}
           onClick={() => setView("history")}
         >

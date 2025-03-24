@@ -14,7 +14,7 @@ const findFirstAndNextBooking = async (
   ); // 120 minutes after InputStartTime
 
   // Step 1: Find the first booking where the machineID matches and time overlaps
-  const firstBooking = await Booking.findOne({
+  const firstBookingData = await Booking.findOne({
     machines: {
       $elemMatch: {
         machineID: machineID, // Check for matching machineID in the array
@@ -26,24 +26,36 @@ const findFirstAndNextBooking = async (
     ],
   })
     .sort({ startTime: 1, endTime: 1 }) // Sort by startTime and then endTime
-    .select(
-      "customerName phoneNumber notes startTime endTime machines status totalPrice"
-    ) // Select all fields you need
+    .select("-isBooked -reservedAt -createdAt -updatedAt -__v")
+    .populate({
+      path: "transactionID",
+      select: "-userID -__v -createdAt", // Exclude userID
+    })
+    .populate({
+      path: "machines.machineID", // Populate machine details
+      select: "machineCategory serialNumber", // Exclude unnecessary fields
+    })
     .lean();
 
-  if (firstBooking) {
-    // Explicitly filter the machines array
-    firstBooking.machines = firstBooking.machines.filter(
-      (machine: IMachineBooking) =>
-        machine.machineID.toString() !== machineID.toString() // Compare using ObjectId equals
-    );
+  let firstBooking = null;
+
+  if (firstBookingData) {
+    // Extract transaction details separately
+    const { transactionID, ...bookingData } = firstBookingData; // Convert Mongoose document to plain object
+
+    // Separate booking and transaction
+    firstBooking = {
+      booking: bookingData,
+      transaction: transactionID || null, // Ensure transaction is explicitly null if not present
+    };
   }
 
+  let secondBookingData = null;
   let secondBooking = null;
 
   // Step 2: If no first booking, find second booking where startTime is between InputEndTime and CalculatedEndTime
-  if (!firstBooking) {
-    secondBooking = await Booking.findOne({
+  if (!firstBookingData) {
+    secondBookingData = await Booking.findOne({
       machines: {
         $elemMatch: {
           machineID: machineID, // Check for matching machineID in the array
@@ -55,42 +67,60 @@ const findFirstAndNextBooking = async (
         $lte: CalculatedEndTime, // Or it should be before CalculatedEndTime
       },
     })
-      .select(
-        "customerName phoneNumber notes startTime endTime machines status totalPrice"
-      ) // Select all fields you need
+      .select("-isBooked -reservedAt -createdAt -updatedAt -__v")
+      .populate({
+        path: "transactionID",
+        select: "-userID -__v -createdAt", // Exclude userID
+      })
+      .populate({
+        path: "machines.machineID", // Populate machine details
+        select: "machineCategory serialNumber", // Exclude unnecessary fields
+      })
       .lean();
 
-    if (secondBooking) {
-      // Explicitly filter the machines array
-      secondBooking.machines = secondBooking.machines.filter(
-        (machine: IMachineBooking) =>
-          machine.machineID.toString() !== machineID.toString() // Compare machineID using .equals() for ObjectId
-      );
+    if (secondBookingData) {
+      // Extract transaction details separately
+      const { transactionID, ...bookingData } = secondBookingData; // Convert Mongoose document to plain object
+
+      // Separate booking and transaction
+      secondBooking = {
+        booking: bookingData,
+        transaction: transactionID || null, // Ensure transaction is explicitly null if not present
+      };
     }
   } else {
     // Step 3: Find second booking based on the first booking's endTime and CalculatedEndTime
-    secondBooking = await Booking.findOne({
+    secondBookingData = await Booking.findOne({
       machines: {
         $elemMatch: {
           machineID: machineID, // Check for matching machineID in the array
         },
       },
       startTime: {
-        $gte: firstBooking.endTime, // Start time of second booking must be after first booking's endTime
+        $gte: firstBookingData.endTime, // Start time of second booking must be after first booking's endTime
         $lte: CalculatedEndTime, // Or it should be within the CalculatedEndTime
       },
     })
-      .select(
-        "customerName phoneNumber notes startTime endTime machines status totalPrice"
-      ) // Select all fields you need
+      .select("-isBooked -reservedAt -createdAt -updatedAt -__v")
+      .populate({
+        path: "transactionID",
+        select: "-userID -__v -createdAt", // Exclude userID
+      })
+      .populate({
+        path: "machines.machineID", // Populate machine details
+        select: "machineCategory serialNumber", // Exclude unnecessary fields
+      })
       .lean();
 
-    if (secondBooking) {
-      // Explicitly filter the machines array
-      secondBooking.machines = secondBooking.machines.filter(
-        (machine: IMachineBooking) =>
-          machine.machineID.toString() !== machineID.toString() // Compare machineID using .equals() for ObjectId
-      );
+    if (secondBookingData) {
+      // Extract transaction details separately
+      const { transactionID, ...bookingData } = secondBookingData; // Convert Mongoose document to plain object
+
+      // Separate booking and transaction
+      secondBooking = {
+        booking: bookingData,
+        transaction: transactionID || null, // Ensure transaction is explicitly null if not present
+      };
     }
   }
 
