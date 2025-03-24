@@ -8,7 +8,7 @@ import { AppDispatch } from "@/store/store";
 import { fetchMachineStatus } from "@/store/thunks/bookingThunk";
 import { getCurrentUTC } from "@/utils/date.util";
 import { FiCalendar, FiClock } from "react-icons/fi";
-import BookingHistory from "../components/AdminBookings-page/Booking-History";
+import BookingHistory from "../components/AdminBookings-page/Booking-History/BookingHistory";
 import BookingDetail from "../components/AdminBookings-page/Booking-History/BookingDetail";
 
 const AdminBookingManager: React.FC = () => {
@@ -51,7 +51,7 @@ const AdminBookingManager: React.FC = () => {
         </>
       )}
       {/* Top-right fixed icons */}
-      <div className="absolute top-2 right-10 flex space-x-4 rounded-lg">
+      <div className="absolute top-8 right-10 flex space-x-4 rounded-lg ">
         <button
           className={`p-1 hover:bg-gray-200 dark:bg-gray-50 rounded border shadow-md ${
             view === "booking" ? "bg-gray-200 dark:bg-gamer-green" : ""

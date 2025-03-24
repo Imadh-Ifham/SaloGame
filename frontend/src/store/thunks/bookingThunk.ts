@@ -6,6 +6,7 @@ import {
   MachineBooking,
   NewCustomerBooking,
 } from "@/types/booking";
+import { BookingLog } from "../slices/bookingHistorySlice";
 
 // Fetch the current and next booking for the selected machine
 export const fetchFirstAndNextBooking = createAsyncThunk<
@@ -112,7 +113,7 @@ export const updateBookingStatus = createAsyncThunk(
 // Define the selectedBookingThunk
 export const fetchSelectedBooking = createAsyncThunk<
   NewCustomerBooking, // The type of the data returned
-  { bookingID: String }, // The type of the argument (startTime and duration)
+  { bookingID: string }, // The type of the argument (startTime and duration)
   { rejectValue: string } // The type of the error message on failure
 >(
   "bookings/fetchSelectedBooking",
@@ -133,3 +134,19 @@ export const fetchSelectedBooking = createAsyncThunk<
     }
   }
 );
+
+// Define the fetchBookingLogsThunk
+export const fetchBookingLogs = createAsyncThunk<
+  BookingLog[], // The return type
+  void, // No arguments
+  { rejectValue: string } // Error message type
+>("bookings/fetchBookingLogs", async (_, { rejectWithValue }) => {
+  try {
+    const response = await axiosInstance.get("/bookings/get-log", {});
+    return response.data.data; // Return machine status object
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || "Failed to fetch booking logs"
+    );
+  }
+});

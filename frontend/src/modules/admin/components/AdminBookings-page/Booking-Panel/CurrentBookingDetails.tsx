@@ -57,7 +57,7 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
   }, [selectedMachine, currentBooking]);
 
   return (
-    <div className="w-full p-4 bg-white shadow-lg rounded-xl border">
+    <div className="w-full p-4 dark:bg-gray-700 text-gray-700 dark:text-gray-50 shadow-lg rounded-xl border dark:border-gray-500">
       {/* Booking Info */}
       <div className="flex justify-between items-center border-b pb-3">
         <div className="flex items-center gap-2">
@@ -81,7 +81,7 @@ const CurrentBookingDetails: React.FC<CurrentBookingDetailsProps> = ({
       </div>
 
       {/* Booking Details */}
-      <div className="mt-4 text-gray-700 text-sm space-y-2">
+      <div className="mt-4 text-sm space-y-2">
         <div className="flex justify-between">
           <span className="font-medium">Contact:</span>
           {currentBooking.phoneNumber}

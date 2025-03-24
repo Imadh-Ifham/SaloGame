@@ -1,33 +1,23 @@
-import React, { useEffect } from "react";
+import React from "react";
 import {
   UserOutlined,
   CreditCardOutlined,
   DollarOutlined,
   GiftOutlined,
+  ExclamationCircleOutlined,
 } from "@ant-design/icons";
 import { FaGamepad, FaDesktop } from "react-icons/fa";
 import dayjs from "dayjs";
-import { useDispatch, useSelector } from "react-redux";
-import { AppDispatch } from "@/store/store";
-import { fetchSelectedBooking } from "@/store/thunks/bookingThunk";
-import { selectSelectedBooking } from "@/store/slices/bookingHistorySlice";
+import { useSelector } from "react-redux";
+import {
+  selectBookingHistoryLoading,
+  selectSelectedBooking,
+} from "@/store/slices/bookingHistorySlice";
 import { bookingStatusString, PaymentType } from "@/types/booking";
 
 const BookingDetail: React.FC = () => {
-  const dispatch = useDispatch<AppDispatch>();
-  const callBooking = async () => {
-    try {
-      await dispatch(
-        fetchSelectedBooking({ bookingID: "67dedc97ad6be8bdb4653e41" })
-      );
-    } catch (error) {
-      console.error("Failed to fetch booking:", error);
-    }
-  };
-  useEffect(() => {
-    callBooking();
-  }, []);
   const selectedBooking = useSelector(selectSelectedBooking);
+  const loading = useSelector(selectBookingHistoryLoading);
 
   const statusColors: Record<bookingStatusString, string> = {
     Booked: "bg-blue-500",
@@ -44,7 +34,56 @@ const BookingDetail: React.FC = () => {
   };
 
   if (!selectedBooking) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex flex-col justify-center items-center h-full text-gray-700 dark:text-gray-300">
+        <ExclamationCircleOutlined className="text-5xl text-gray-500 dark:text-gray-400" />
+        <p className="mt-2 text-lg font-medium">
+          Please select a booking to view details
+        </p>
+      </div>
+    );
+  }
+
+  if (loading) {
+    const SkeletonLoader = () => (
+      <div className="animate-pulse space-y-4">
+        <div className="h-6 w-1/3 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-4 w-2/3 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-4 w-1/2 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-4 w-1/4 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-6 w-1/3 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-4 w-1/2 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-4 w-1/4 bg-gray-300 dark:bg-gray-700 rounded" />
+        <div className="h-4 w-full bg-gray-300 dark:bg-gray-700 rounded" />
+      </div>
+    );
+    return (
+      <div className="flex justify-center items-center h-full p-4">
+        <div className="w-full max-w-3xl p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col md:flex-row justify-between items-center border-b pb-3">
+            <div className="flex items-center gap-2">
+              <div className="h-10 w-10 bg-gray-300 dark:bg-gray-700 rounded-full" />
+              <div className="h-6 w-32 bg-gray-300 dark:bg-gray-700 rounded" />
+            </div>
+            <div className="h-6 w-20 bg-gray-300 dark:bg-gray-700 rounded" />
+          </div>
+          <div className="mt-4 space-y-2">
+            <SkeletonLoader />
+          </div>
+          <div className="mt-6">
+            <div className="h-6 w-1/3 bg-gray-300 dark:bg-gray-700 rounded mx-auto" />
+            <div className="flex flex-wrap justify-center items-center gap-4 mt-4">
+              {[...Array(3)].map((_, index) => (
+                <div
+                  key={index}
+                  className="h-16 w-16 bg-gray-300 dark:bg-gray-700 rounded-lg"
+                />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   const booking = selectedBooking.booking;
@@ -131,14 +170,14 @@ const BookingDetail: React.FC = () => {
                 className="relative flex flex-col items-center"
               >
                 {machine.machineID.machineCategory === "Console" ? (
-                  <FaGamepad className="text-6xl text-gray-700 dark:text-gray-300" />
+                  <FaGamepad className="text-4xl text-gray-700 dark:text-gray-300" />
                 ) : (
-                  <FaDesktop className="text-6xl text-gray-700 dark:text-gray-300" />
+                  <FaDesktop className="text-4xl text-gray-700 dark:text-gray-300" />
                 )}
                 <div className="mt-2 text-sm text-gray-900 dark:text-white">
                   {machine.machineID.serialNumber}
                 </div>
-                <div className="absolute top-0 right-0 bg-red-500 text-white text-xs rounded-full w-6 h-6 flex items-center justify-center">
+                <div className="absolute top-0 right-0 bg-green-500 text-white text-xs font-bold rounded-full w-4 h-4 flex items-center justify-center">
                   {machine.userCount}
                 </div>
               </div>

@@ -1,17 +1,19 @@
 import React from "react";
 import { FaUserCircle } from "react-icons/fa";
+import dayjs from "dayjs";
 
 interface BookingCardProps {
-  userName: string;
-  bookingType: "walk-in-booking" | "online-booking";
-  dateTime: string;
-  status: "Booked" | "InUse" | "Completed" | "Cancelled";
+  customerName: string;
+  transactionType: string;
+  startTime: string;
+  status: string;
 }
+type StatusType = "Booked" | "InUse" | "Completed" | "Cancelled";
 
 const BookingCard: React.FC<BookingCardProps> = ({
-  userName,
-  bookingType,
-  dateTime,
+  customerName,
+  transactionType,
+  startTime,
   status,
 }) => {
   const statusColors = {
@@ -27,19 +29,21 @@ const BookingCard: React.FC<BookingCardProps> = ({
         <FaUserCircle className="h-10 w-10 text-gray-700 dark:text-gray-300 mr-4" />
         <div>
           <div className="font-semibold text-gray-900 dark:text-white">
-            {userName}
+            {customerName}
           </div>
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            {bookingType}
+            {transactionType}
           </div>
         </div>
       </div>
       <div className="text-right">
         <div className="text-sm text-gray-500 dark:text-gray-400">
-          {dateTime}
+          {dayjs(startTime).format("MMM D, YYYY h:mm A")}
         </div>
         <div
-          className={`mt-1 inline-block px-3 py-1 text-sm font-semibold text-white rounded-full ${statusColors[status]}`}
+          className={`mt-1 inline-block px-3 py-1 text-sm font-semibold text-white rounded-full ${
+            statusColors[status as StatusType]
+          }`}
         >
           {status}
         </div>

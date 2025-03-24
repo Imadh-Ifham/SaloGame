@@ -47,11 +47,11 @@ const LayoutSection: React.FC = () => {
       </div>
 
       {/* Outer container for the layout */}
-      <div id="frame" className="w-full py-7 overflow-auto">
+      <div id="frame" className="w-full py-7 overflow-auto scrollbar-hide">
         {/* Container for the layout area */}
-        <div className="border border-slate-400 min-w-96 max-w-[400px] rounded-lg bg-slate-200 overflow-hidden box-border p-1 m-auto shadow-lg shadow-slate-400">
+        <div className="border border-slate-400 dark:border-gray-500 min-w-96 max-w-[400px] rounded-lg bg-slate-200 dark:bg-gray-700 overflow-hidden box-border p-1 m-auto shadow-lg shadow-slate-400 dark:shadow-gray-700">
           {/* Inner frame with a border and rounded corners */}
-          <div className="border border-slate-400 w-full bg-slate-100 rounded-lg box-border overflow-hidden flex pb-16">
+          <div className="border border-slate-400 dark:border-gray-500 w-full bg-slate-100 dark:bg-gray-800 rounded-lg box-border overflow-hidden flex pb-16">
             {/* Left section: BlockA */}
             <section
               id="BlockA"

@@ -34,7 +34,7 @@ const BookingCard: React.FC<BookingCardProps> = ({
       initial={{ height: "90px" }}
       animate={{ height: expanded ? "auto" : "90px" }}
       transition={{ duration: 0.3, ease: "easeInOut" }}
-      className="w-[250px] bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:scale-95 transition-all"
+      className=" bg-white border border-gray-300 rounded-lg shadow-md overflow-hidden cursor-pointer hover:shadow-lg hover:scale-95 transition-all"
       onClick={() => setExpanded(!expanded)}
     >
       {/* Compact View */}
