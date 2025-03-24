@@ -125,7 +125,6 @@ export const fetchSelectedBooking = createAsyncThunk<
         `/bookings/get-booking/${bookingID}`, // Use POST request
         {} // Pass the body
       );
-      console.log("fetchbooking response ", response.data.data);
       return response.data.data; // Return the data from the API
     } catch (error: any) {
       return rejectWithValue(
@@ -135,14 +134,32 @@ export const fetchSelectedBooking = createAsyncThunk<
   }
 );
 
+interface FetchBookingLogsFilters {
+  status: "Booked" | "Completed" | "InUse" | "Cancelled" | "";
+  date: Date | null;
+  filterType: "day" | "month" | "";
+  count: number;
+}
+
 // Define the fetchBookingLogsThunk
 export const fetchBookingLogs = createAsyncThunk<
   BookingLog[], // The return type
-  void, // No arguments
+  FetchBookingLogsFilters, // No arguments
   { rejectValue: string } // Error message type
->("bookings/fetchBookingLogs", async (_, { rejectWithValue }) => {
+>("bookings/fetchBookingLogs", async (filters, { rejectWithValue }) => {
   try {
-    const response = await axiosInstance.get("/bookings/get-log", {});
+    const { status, date, filterType, count } = filters;
+
+    // Construct the query parameters based on the filters
+    const body: any = {
+      status,
+      count,
+      date,
+      filterType,
+    };
+
+    const response = await axiosInstance.post("/bookings/get-log", body);
+
     return response.data.data; // Return machine status object
   } catch (error: any) {
     return rejectWithValue(

@@ -386,20 +386,55 @@ export const getBookingLog = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
+  const { status, date, filterType, count } = req.body;
   try {
     if (!req.user?.id) {
       res.status(401).json({ message: "Not authenticated" });
       return;
     }
-    const bookings = await Booking.find()
+
+    let query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (date && filterType) {
+      const selectedDate = new Date(date);
+      if (filterType === "day") {
+        query.startTime = {
+          $gte: selectedDate.setHours(0, 0, 0, 0),
+          $lt: selectedDate.setHours(23, 59, 59, 999),
+        };
+      } else if (filterType === "month") {
+        query.startTime = {
+          $gte: new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            1
+          ),
+          $lt: new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth() + 1,
+            1
+          ),
+        };
+      }
+    }
+
+    const limit = count || 20; // Default to 20 if count is not provided
+
+    const bookings = await Booking.find(query)
       .select("customerName startTime status transactionID") // Include transactionID for population
       .populate({
         path: "transactionID",
         select: "transactionType -_id",
       })
+      .sort({ startTime: -1 }) // Sort by startTime in descending order
+      .limit(limit) // Limit the number of results based on the count
       .lean(); // Converts Mongoose documents to plain objects
-
     const structuredResponse = bookings.map((booking) => ({
+      _id: booking._id,
       customerName: booking.customerName,
       startTime: booking.startTime,
       status: booking.status,

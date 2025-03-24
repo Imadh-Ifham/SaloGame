@@ -8,18 +8,31 @@ import {
   fetchBookingLogs,
   fetchSelectedBooking,
 } from "@/store/thunks/bookingThunk";
+import FilterButton from "./FilterButton";
+import { format, isToday, isYesterday, isTomorrow } from "date-fns";
 
 const BookingHistory: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedBooking, setSelectedBooking] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [filters, setFilters] = useState<{
+    status: "Booked" | "Completed" | "InUse" | "Cancelled" | "";
+    date: Date | null;
+    filterType: "day" | "month" | "";
+    count: number;
+  }>({
+    status: "",
+    date: null,
+    filterType: "",
+    count: 20,
+  });
 
   const dispatch = useDispatch<AppDispatch>();
   const bookingLogs = useSelector(selectBookingLog);
 
   useEffect(() => {
     const fetchBookingLog = async () => {
-      await dispatch(fetchBookingLogs());
+      await dispatch(fetchBookingLogs(filters));
     };
     if (bookingLogs.length === 0) fetchBookingLog();
   }, [dispatch]);
@@ -28,9 +41,24 @@ const BookingHistory: React.FC = () => {
     setSearchQuery(e.target.value);
   };
 
+  const handleApplyFilters = async (appliedFilters: {
+    status: "Booked" | "Completed" | "InUse" | "Cancelled" | "";
+    date: Date | null;
+    filterType: "day" | "month" | "";
+    count: number;
+  }) => {
+    setFilters(appliedFilters); // Wait for this to update
+  };
+
+  // useEffect ensures we wait for filters to be updated before dispatching
+  useEffect(() => {
+    if (filters) {
+      dispatch(fetchBookingLogs(filters));
+    }
+  }, [filters]); // Runs when `filters` changes
+
   const handleBookingCardClick = async (bookingID: string) => {
     setSelectedBooking(bookingID);
-    console.log("Selected booking:", bookingID);
     await dispatch(fetchSelectedBooking({ bookingID }));
     window.scrollTo({ top: 0, behavior: "smooth" });
     // Additional logic can be added here
@@ -38,9 +66,24 @@ const BookingHistory: React.FC = () => {
 
   const handleRefreshClick = async () => {
     setIsRefreshing(true);
-    await dispatch(fetchBookingLogs());
+    await dispatch(fetchBookingLogs(filters));
     setIsRefreshing(false);
   };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    if (isToday(date)) return "Today";
+    if (isYesterday(date)) return "Yesterday";
+    if (isTomorrow(date)) return "Tomorrow";
+    return format(date, "yyyy-MM-dd");
+  };
+
+  const groupedBookings = bookingLogs.reduce((acc, booking) => {
+    const date = formatDate(booking.startTime);
+    if (!acc[date]) acc[date] = [];
+    acc[date].push(booking);
+    return acc;
+  }, {} as Record<string, typeof bookingLogs>);
 
   return (
     <div className="py-2 px-4 flex flex-col gap-4 h-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
@@ -62,37 +105,48 @@ const BookingHistory: React.FC = () => {
           />
         </div>
 
-        {/* Refresh Button */}
-        <button
-          onClick={handleRefreshClick}
-          className="ml-4 p-2 rounded-lg border-2 dark:border-gamer-green/20 text-gamer-green hover:bg-gamer-green/10 transition-colors"
-          disabled={isRefreshing}
-        >
-          <ArrowPathIcon
-            className={`h-4 w-4 transition-transform ${
-              isRefreshing ? "animate-spin" : ""
-            }`}
-          />
-        </button>
+        <div className="flex">
+          {/* Filter Button */}
+          <FilterButton onApply={handleApplyFilters} />
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefreshClick}
+            className="ml-4 p-2 rounded-lg border-2 dark:border-gamer-green/20 text-gamer-green hover:bg-gamer-green/10 transition-colors"
+            disabled={isRefreshing}
+          >
+            <ArrowPathIcon
+              className={`h-4 w-4 transition-transform ${
+                isRefreshing ? "animate-spin" : ""
+              }`}
+            />
+          </button>
+        </div>
       </section>
       <section className="h-[calc(100vh-10rem)] overflow-y-auto scrollbar-hide border-t dark:border-gamer-green/20">
-        {bookingLogs
-          .filter((booking) =>
-            booking.customerName
-              .toLowerCase()
-              .includes(searchQuery.toLowerCase())
-          )
-          .map((booking, index) => (
-            <div
-              key={index}
-              onClick={() => handleBookingCardClick(booking._id)}
-              className={`hover:shadow-lg hover:scale-[0.99] transition-transform duration-300 ease-in-out cursor-pointer ${
-                selectedBooking === booking._id ? "scale-[0.99] shadow-lg" : ""
-              }`}
-            >
-              <BookingCard {...booking} />
-            </div>
-          ))}
+        {Object.entries(groupedBookings).map(([date, bookings]) => (
+          <div key={date}>
+            <div className="text-lg font-semibold mt-4">{date}</div>
+            {bookings
+              .filter((booking) =>
+                booking.customerName
+                  .toLowerCase()
+                  .includes(searchQuery.toLowerCase())
+              )
+              .map((booking, index) => (
+                <div
+                  key={index}
+                  onClick={() => handleBookingCardClick(booking._id)}
+                  className={`hover:shadow-lg hover:scale-[0.99] transition-transform duration-300 ease-in-out cursor-pointer ${
+                    selectedBooking === booking._id
+                      ? "scale-[0.99] shadow-lg"
+                      : ""
+                  }`}
+                >
+                  <BookingCard {...booking} />
+                </div>
+              ))}
+          </div>
+        ))}
       </section>
     </div>
   );
