@@ -33,26 +33,6 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
 }) => {
   if (!member) return null;
 
-  const handleRenewMembership = async () => {
-    try {
-      await axiosInstance.post(`/subscriptions/${member._id}/renew`);
-      refreshMembers();
-      onClose();
-    } catch (error) {
-      console.error("Error renewing membership:", error);
-    }
-  };
-
-  const handleCancelMembership = async () => {
-    try {
-      await axiosInstance.post(`/subscriptions/${member._id}/cancel`);
-      refreshMembers();
-      onClose();
-    } catch (error) {
-      console.error("Error canceling membership:", error);
-    }
-  };
-
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Member Details">
       <div className="p-4">
@@ -88,20 +68,6 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
               </p>
             </>
           )}
-          <div className="flex justify-end space-x-3 mt-6">
-            <button
-              onClick={handleCancelMembership}
-              className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
-            >
-              Cancel Membership
-            </button>
-            <button
-              onClick={handleRenewMembership}
-              className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-            >
-              Renew Membership
-            </button>
-          </div>
         </div>
       </div>
     </Modal>

@@ -8,7 +8,7 @@ import {
 } from "@/store/slices/membershipSlice";
 import { FiSearch, FiEye, FiRefreshCw, FiX } from "react-icons/fi";
 import { toast } from "react-hot-toast";
-
+import MemberDetailsModal from "./MemberDetailsModal";
 interface Subscription {
   _id: string;
   startDate: string;
@@ -32,11 +32,15 @@ const UserSubscriptionsTable: React.FC = () => {
     (state: RootState) => state.membership
   );
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<
     "all" | "active" | "expired" | "autoRenew"
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
+
   const rowsPerPage = 3;
 
   useEffect(() => {
@@ -93,6 +97,11 @@ const UserSubscriptionsTable: React.FC = () => {
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
+
+  const handleViewDetails = (member: Member) => {
+    setSelectedMember(member);
+    setIsModalOpen(true);
+  };
 
   const handleNextPage = () => {
     if (currentPage < totalPages) {
@@ -290,9 +299,7 @@ const UserSubscriptionsTable: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() =>
-                          console.log("View subscription", member._id)
-                        }
+                        onClick={() => handleViewDetails(member)}
                         className="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                         title="View Details"
                       >
@@ -336,6 +343,16 @@ const UserSubscriptionsTable: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Member Details Modal */}
+      {selectedMember && (
+        <MemberDetailsModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          member={selectedMember}
+          refreshMembers={() => dispatch(fetchMembers())}
+        />
+      )}
 
       {/* Pagination Controls */}
       {paginatedSubscriptions.length > 0 && (

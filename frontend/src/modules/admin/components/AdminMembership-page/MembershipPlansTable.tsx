@@ -273,9 +273,9 @@ const MembershipPlansTable: React.FC = () => {
                   name: editingPlan.name,
                   price: editingPlan.price,
                   xpRate: editingPlan.xpRate,
-                  tagline: "", // You should fetch the full membership data instead
-                  benefits: editingPlan.benefits, // These should come from your API
-                  isActive: true, // This should reflect the actual state
+                  tagline: "",
+                  benefits: editingPlan.benefits,
+                  isActive: true,
                 }
               : undefined
           }
