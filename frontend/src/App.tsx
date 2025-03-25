@@ -39,6 +39,8 @@ import AdminEventPage from "./modules/admin/pages/AdminEventPage";
 import OverviewPage from "./modules/admin/pages/OverviewPage";
 import SingleBattle from "./modules/users/pages/EventPages/SingleBattle";
 import TeamBattle from "./modules/users/pages/EventPages/TeamBattle";
+import BookingReportPage from "./modules/admin/components/AdminBookings-page/BookingReport/BookingReportPage";
+
 const App: React.FC = () => {
   useEffect(() => {
     // Always set dark mode as default
@@ -88,6 +90,9 @@ const App: React.FC = () => {
           <Route path="events" element={<AdminEventPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
+
+        {/* Report Routes */}
+        <Route path="/booking-report" element={<BookingReportPage />} />
       </Routes>
     </Router>
   );

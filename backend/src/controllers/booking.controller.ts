@@ -7,6 +7,7 @@ import calculateTotalPrice from "../services/calculatePrice";
 import { getBookingStatus } from "../services/getBookingStatus";
 import { createTransaction } from "./transaction.controller";
 import { AuthRequest } from "../middleware/types";
+import { BookingReportData } from "../types/booking";
 
 // Define controller for fetching booking status for all the machines
 export const getBookingStatusForAllMachines = async (
@@ -449,6 +450,106 @@ export const getBookingLog = async (
     }));
 
     res.json({ status: "Success", data: structuredResponse });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unexpected server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+// Function to calculate the start date based on the given period
+const calculateStartDate = (period: string): Date => {
+  const endDate = new Date();
+  let startDate = new Date();
+
+  switch (period) {
+    case "previous-month":
+      startDate.setMonth(endDate.getMonth() - 1);
+      break;
+    case "last-3-months":
+      startDate.setMonth(endDate.getMonth() - 3);
+      break;
+    case "last-6-months":
+      startDate.setMonth(endDate.getMonth() - 6);
+      break;
+    case "last-year":
+      startDate.setFullYear(endDate.getFullYear() - 1);
+      break;
+    default:
+      throw new Error("Invalid period specified");
+  }
+
+  return startDate;
+};
+
+// Function to generate booking report
+export const generateReport = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const period: string = req.query.period as string;
+    const startDate = calculateStartDate(period);
+    const endDate = new Date();
+
+    const bookings = await Booking.find({
+      startTime: { $gte: startDate, $lte: endDate },
+    })
+      .populate<{ transactionID: { amount: number } }>("transactionID")
+      .populate("userID")
+      .populate("machines.machineID")
+      .lean();
+
+    const totalBookings = bookings.length;
+    const completedBookings = bookings.filter(
+      (booking) => booking.status === "Completed"
+    ).length;
+    const totalRevenue = bookings.reduce((acc, booking) => {
+      if (booking.transactionID?.amount) {
+        return acc + booking.transactionID.amount;
+      }
+      return acc;
+    }, 0);
+    const averageBookingValue = totalRevenue / totalBookings;
+
+    const bookingsByStatus: Record<string, number> = bookings.reduce(
+      (acc, booking) => {
+        acc[booking.status] = (acc[booking.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    const bookingsByMachine: Record<string, number> = await bookings.reduce(
+      async (accPromise, booking) => {
+        const acc = await accPromise;
+        for (const machine of booking.machines) {
+          const machineDoc = await Machine.findById(machine.machineID);
+          if (machineDoc) {
+            const serialNumber = machineDoc.serialNumber;
+            acc[serialNumber] = (acc[serialNumber] || 0) + 1;
+          }
+        }
+        return acc;
+      },
+      Promise.resolve({} as Record<string, number>)
+    );
+
+    const reportData: BookingReportData = {
+      metrics: {
+        totalBookings,
+        completedBookings,
+        totalRevenue,
+        averageBookingValue,
+        bookingsByStatus,
+        bookingsByMachine,
+      },
+      startDate,
+      endDate,
+    };
+
+    res.status(200).json(reportData);
   } catch (error) {
     res.status(500).json({
       message: "Unexpected server error",

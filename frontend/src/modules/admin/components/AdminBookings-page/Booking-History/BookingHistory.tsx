@@ -10,6 +10,7 @@ import {
 } from "@/store/thunks/bookingThunk";
 import FilterButton from "./FilterButton";
 import { format, isToday, isYesterday, isTomorrow } from "date-fns";
+import BookingReportButton from "./BookingReportButton";
 
 const BookingHistory: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,6 +107,8 @@ const BookingHistory: React.FC = () => {
         </div>
 
         <div className="flex">
+          {/* Download Report Button */}
+          <BookingReportButton />
           {/* Filter Button */}
           <FilterButton onApply={handleApplyFilters} />
           {/* Refresh Button */}
