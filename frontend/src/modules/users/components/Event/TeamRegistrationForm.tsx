@@ -129,7 +129,7 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Team Name */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Team Name
             </label>
             <input
@@ -142,6 +142,7 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
                       rounded-md shadow-sm p-2 
                       bg-white dark:bg-gray-700 
                       text-gray-900 dark:text-white"
+              placeholder="Team Name"
               required
             />
           </div>
@@ -174,24 +175,25 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
           </div>
 */}
 
-{/* Team Leader Email Input */}
-<div>
-  <label className="block text-sm font-medium text-gray-700 mb-1">
-    Team Leader Email
-  </label>
-  <input
-    type="email"
-    value={formData.teamLeaderEmail}
-    onChange={(e) =>
-      setFormData((prev) => ({ ...prev, teamLeaderEmail: e.target.value }))
-    }
-    className="w-full border border-gray-300 dark:border-gray-600 
-              rounded-md shadow-sm p-2 
-              bg-white dark:bg-gray-700 
-              text-gray-900 dark:text-white"
-    required
-  />
-</div>
+            {/* Team Leader Email Input */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                Team Leader Email
+              </label>
+              <input
+                type="email"
+                value={formData.teamLeaderEmail}
+                onChange={(e) =>
+                  setFormData((prev) => ({ ...prev, teamLeaderEmail: e.target.value }))
+                }
+                className="w-full border border-gray-300 dark:border-gray-600 
+                          rounded-md shadow-sm p-2 
+                          bg-white dark:bg-gray-700 
+                          text-gray-900 dark:text-white"
+                placeholder="Team Leader Email"
+                required
+              />
+            </div>
             {/* Member Emails */}
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -235,7 +237,7 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
 
           {/* Contact Number */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Contact Number
             </label>
             <input
@@ -248,13 +250,14 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
                       rounded-md shadow-sm p-2 
                       bg-white dark:bg-gray-700 
                       text-gray-900 dark:text-white"
+              placeholder="Contact Number"
               required
             />
           </div>
 
           {/* Team Logo Upload */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
               Team Logo
             </label>
             <input
