@@ -1,63 +1,111 @@
 import React from "react";
+import { FaEdit, FaTrash, FaCalendarPlus } from "react-icons/fa";
 
 interface AdminEventCardProps {
-  event: {
+  events: Array<{
     _id: string;
     eventName: string;
-    image: string;
+    category: string;
     startDateTime: string;
     endDateTime: string;
-    participationType: string;
     numberOfTeams?: number;
     participationPerTeam?: number;
     totalSpots?: number;
-  };
+    availableSpots?: number;
+  }>;
   onEdit: (event: any) => void;
   onDelete: (eventId: string) => void;
+  onCreateEvent: () => void;
 }
 
-const AdminEventCard: React.FC<AdminEventCardProps> = ({ event, onEdit, onDelete }) => {
+const AdminEventCard: React.FC<AdminEventCardProps> = ({ 
+  events, 
+  onEdit, 
+  onDelete,
+  onCreateEvent 
+}) => {
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 mb-4">
-      <img src={event.image} alt={event.eventName} className="w-full h-40 object-cover rounded-lg mb-4" />
-      <h3 className="text-xl font-semibold mb-2">{event.eventName}</h3>
-      <p className="text-gray-600 dark:text-gray-300 mb-2">
-        <strong>Start:</strong> {new Date(event.startDateTime).toLocaleString()}
-      </p>
-      <p className="text-gray-600 dark:text-gray-300 mb-2">
-        <strong>End:</strong> {new Date(event.endDateTime).toLocaleString()}
-      </p>
-      <p className="text-gray-600 dark:text-gray-300 mb-2">
-        <strong>Participation Type:</strong> {event.participationType}
-      </p>
-      {event.numberOfTeams && (
-        <p className="text-gray-600 dark:text-gray-300 mb-2">
-          <strong>Number of Teams:</strong> {event.numberOfTeams}
-        </p>
-      )}
-      {event.participationPerTeam && (
-        <p className="text-gray-600 dark:text-gray-300 mb-2">
-          <strong>Participation Per Team:</strong> {event.participationPerTeam}
-        </p>
-      )}
-      {event.totalSpots && (
-        <p className="text-gray-600 dark:text-gray-300 mb-2">
-          <strong>Total Spots:</strong> {event.totalSpots}
-        </p>
-      )}
-      <div className="flex justify-end space-x-2">
+    <div className="bg-gray-800 p-6 rounded-lg shadow-lg border-l-4 border-green-500">
+      {/* Header with Title and Create Button */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-xl font-bold text-gray-100 flex items-center">
+          <FaCalendarPlus className="mr-2 text-green-500" />
+          Event List
+        </h2>
         <button
-          onClick={() => onEdit(event)}
-          className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-700"
+          onClick={onCreateEvent}
+          className="bg-gradient-to-r from-green-600 to-green-800 hover:from-green-700 hover:to-green-900 
+                   text-white font-bold py-2 px-4 rounded-lg flex items-center transition-all duration-300 
+                   shadow-lg hover:shadow-xl transform hover:-translate-y-1"
         >
-          Edit
+          <FaCalendarPlus className="mr-2" /> Create Event
         </button>
-        <button
-          onClick={() => onDelete(event._id)}
-          className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-700"
-        >
-          Delete
-        </button>
+      </div>
+
+      {/* Events List */}
+      <div className="overflow-x-auto">
+        <table className="min-w-full">
+          <thead>
+            <tr className="bg-gray-700 border-b border-gray-600">
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Event Name
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Category
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Date
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Teams/Spots
+              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-300 uppercase tracking-wider">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-700">
+            {events.map((event) => (
+              <tr key={event._id} className="hover:bg-gray-700 transition-colors">
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {event.eventName}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  <span className="px-2 py-1 rounded-full bg-gray-700 text-gray-300">
+                    {event.category}
+                  </span>
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {new Date(event.startDateTime).toLocaleDateString()}
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                  {event.category === 'team-battle' 
+                    ? `${event.numberOfTeams || 0} teams (${event.participationPerTeam || 0} per team)`
+                    : `${event.totalSpots || 0} spots`
+                  }
+                </td>
+                <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => onEdit(event)}
+                      className="text-green-400 hover:text-green-300 bg-gray-800 p-2 rounded-lg transition-colors duration-200"
+                      title="Edit Event"
+                    >
+                      <FaEdit size={18} />
+                    </button>
+                    <button
+                      onClick={() => onDelete(event._id)}
+                      className="text-red-400 hover:text-red-300 bg-gray-800 p-2 rounded-lg transition-colors duration-200"
+                      title="Delete Event"
+                    >
+                      <FaTrash size={18} />
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

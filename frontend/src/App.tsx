@@ -22,6 +22,7 @@ import MembershipBased from "./modules/users/pages/OfferPages/MembershipBased";
 import General from "./modules/users/pages/OfferPages/General";
 import EventPage from "./modules/users/pages/EventPage";
 import VerifyEmail from "./modules/users/pages/EventPages/VerifyEmail";
+import VerifyTeamMember from "./modules/users/pages/EventPages/VerifyTeamMember";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import MembershipPage from "./modules/users/pages/MembershipPage";
@@ -70,10 +71,11 @@ const App: React.FC = () => {
         <Route path="/offers/time-based" element={<TimeBased />} />
         <Route path="/offers/membership-based" element={<MembershipBased />} />
         <Route path="/offers/general" element={<General />} />
-
+        {/* Events Routes */}
         <Route path="/single-battle" element={<SingleBattle />} />
         <Route path="/team-battle" element={<TeamBattle />} />
         <Route path="/verify/:token" element={<VerifyEmail />} />
+        <Route path="/verify-member/:token" element={<VerifyTeamMember />} />
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="overview" />} />
