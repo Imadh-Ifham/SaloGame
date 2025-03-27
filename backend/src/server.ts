@@ -15,6 +15,11 @@ connectDB();
 // Create HTTP server
 const server = http.createServer(app);
 
+// Declare global io
+declare global {
+  var io: any;
+}
+
 // Set up Socket.IO
 const io = new SocketIOServer(server, {
   cors: {
@@ -22,6 +27,9 @@ const io = new SocketIOServer(server, {
     methods: ["GET", "POST"]
   }
 });
+
+// Set global io
+global.io = io;
 
 // Initialize Socket.IO in transaction controller
 initializeSocketIO(io);
@@ -32,6 +40,16 @@ io.on("connection", (socket) => {
   
   socket.on("disconnect", () => {
     console.log(`Client disconnected: ${socket.id}`);
+  });
+});
+
+// Add leaderboard namespace
+const leaderboardNamespace = io.of('/leaderboard');
+leaderboardNamespace.on('connection', (socket) => {
+  console.log(`Client connected to leaderboard namespace: ${socket.id}`);
+  
+  socket.on('disconnect', () => {
+    console.log(`Client disconnected from leaderboard namespace: ${socket.id}`);
   });
 });
 

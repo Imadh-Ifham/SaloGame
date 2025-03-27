@@ -23,6 +23,7 @@ import General from "./modules/users/pages/OfferPages/General";
 import EventPage from "./modules/users/pages/EventPage";
 import VerifyEmail from "./modules/users/pages/EventPages/VerifyEmail";
 import VerifyTeamMember from "./modules/users/pages/EventPages/VerifyTeamMember";
+import Leaderboard from "./modules/users/pages/EventPages/Leaderboard";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import MembershipPage from "./modules/users/pages/MembershipPage";
@@ -76,6 +77,7 @@ const App: React.FC = () => {
         <Route path="/team-battle" element={<TeamBattle />} />
         <Route path="/verify/:token" element={<VerifyEmail />} />
         <Route path="/verify-member/:token" element={<VerifyTeamMember />} />
+        <Route path="/events/leaderboard" element={<Leaderboard />} />
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="overview" />} />

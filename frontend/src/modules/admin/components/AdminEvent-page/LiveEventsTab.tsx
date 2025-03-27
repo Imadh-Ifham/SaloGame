@@ -3,17 +3,28 @@ import { motion } from 'framer-motion';
 import { 
   FaCrown, FaPlay, FaPause, FaStop, FaUser, 
   FaUserTie, FaTrophy, FaClock, FaUsers 
- } from 'react-icons/fa';
+} from 'react-icons/fa';
 import { toast } from 'react-hot-toast';
 import axiosInstance from '@/axios.config';
 
+interface TeamMember {
+  email: string;
+  verified: boolean;
+}
+
+interface EventRegistration {
+  eventId: string;
+  memberEmails: string[];
+  registrationDate: Date;
+}
+
 interface LeaderboardEntry {
-    id: string;
-    name: string;
-    logo?: string;
-    score: number;
-    rank: number;
-    isTeam: boolean;
+  id: string;
+  name: string;
+  logo?: string;
+  score: number;
+  rank: number;
+  isTeam: boolean;
 }
 
 interface LiveEvent {
@@ -29,6 +40,7 @@ interface LiveEvent {
     teamLogo: string;
     score?: number;
     isWinner?: boolean;
+    members?: TeamMember[]; // Added members to show in the UI
   }[];
   participants?: {
     email: string;
@@ -48,6 +60,7 @@ const LiveEventsTab = () => {
   const [showRefereeModal, setShowRefereeModal] = useState(false);
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [refereeEmail, setRefereeEmail] = useState('');
+  const [selectedPlacement, setSelectedPlacement] = useState<1 | 2 | 3>(1);
 
 
   useEffect(() => {
@@ -59,39 +72,61 @@ const LiveEventsTab = () => {
 
   const fetchLiveEvents = async () => {
     try {
-      // Get all events
+      // Get all events and teams
       const eventsResponse = await axiosInstance.get('/events');
       const teamsResponse = await axiosInstance.get('/teams');
       
+      const events = eventsResponse.data.data;
+      const teams = teamsResponse.data.data;
+      
       // Transform events into LiveEvent format
-      const events = eventsResponse.data.data.map((event: any) => ({
-        _id: event._id,
-        eventName: event.eventName,
-        category: event.category,
-        startDateTime: event.startDateTime,
-        endDateTime: event.endDateTime,
-        status: event.status || 'not_started',
-        // For team battles, map registered teams
-        teams: event.category === 'team-battle' ? teamsResponse.data.data
-          .filter((team: any) => team.eventId === event._id)
-          .map((team: any) => ({
+      const liveEvents = events.map((event: any) => {
+        // Find teams registered for this event
+        const registeredTeams = teams.filter((team: any) => 
+          team.eventRegistrations && 
+          team.eventRegistrations.some((reg: EventRegistration) => reg.eventId === event._id)
+        );
+        
+        return {
+          _id: event._id,
+          eventName: event.eventName,
+          category: event.category,
+          startDateTime: event.startDateTime,
+          endDateTime: event.endDateTime,
+          status: event.status || 'not_started',
+          
+          // For team battles, map registered teams with members
+          teams: event.category === 'team-battle' ? registeredTeams.map((team: any) => ({
             teamId: team.teamId,
             teamName: team.teamName,
-            teamLogo: team.teamLogo,
+            teamLogo: team.teamLogo || 'https://via.placeholder.com/80',
             score: team.score || 0,
-            isWinner: team.isWinner || false
+            isWinner: team.isWinner || false,
+            members: [
+              // Add team leader as first member
+              { email: team.teamLeaderEmail, verified: true },
+              // Add other team members
+              ...(team.memberEmails || []).map((member: any) => ({
+                email: member.email,
+                verified: member.verified || false
+              }))
+            ]
           })) : undefined,
-        // For single battles, map registered participants
-        participants: event.category === 'single-battle' ? 
-          event.registeredEmails.map((registration: any) => ({
-            email: registration.email,
-            score: registration.score || 0,
-            isWinner: registration.isWinner || false
-          })) : undefined,
-        referee: event.referee
-      }));
+          
+          // For single battles, map registered participants
+          participants: event.category === 'single-battle' ? 
+            (event.registeredEmails || []).map((registration: any) => ({
+              email: registration.email,
+              score: registration.score || 0,
+              isWinner: registration.isWinner || false
+            })) : undefined,
+            
+          referee: event.referee
+        };
+      });
   
-      setLiveEvents(events);
+      setLiveEvents(liveEvents);
+      console.log('Live events fetched:', liveEvents);
     } catch (error) {
       console.error('Error fetching live events:', error);
       toast.error('Failed to fetch live events');
@@ -100,7 +135,7 @@ const LiveEventsTab = () => {
     }
   };
 
- /* const handleEventControl = async (eventId: string, action: 'start' | 'pause' | 'end') => {
+  const handleEventControl = async (eventId: string, action: 'start' | 'pause' | 'end') => {
     try {
       await axiosInstance.post(`/events/${eventId}/${action}`);
       fetchLiveEvents();
@@ -108,18 +143,22 @@ const LiveEventsTab = () => {
     } catch (error) {
       toast.error(`Failed to ${action} event`);
     }
-  };*/
+  };
 
-  /*const handleWinnerSelection = async (eventId: string, teamId: string) => {
+  const handlePlacementSelection = async (eventId: string, teamId: string) => {
     try {
-      await axiosInstance.post(`/events/${eventId}/winner`, { teamId });
+      await axiosInstance.post(`/events/${eventId}/placement`, { 
+        teamId, 
+        placement: selectedPlacement 
+      });
       fetchLiveEvents();
       setShowWinnerModal(false);
-      toast.success('Winner updated successfully');
+      toast.success(`Team placed at position ${selectedPlacement} successfully`);
     } catch (error) {
-      toast.error('Failed to update winner');
+      toast.error('Failed to update placement');
     }
-  };*/
+  };
+  
   const calculateTimeRemaining = (endDateTime: string) => {
     const now = new Date().getTime();
     const end = new Date(endDateTime).getTime();
@@ -133,6 +172,7 @@ const LiveEventsTab = () => {
 
     return `${hours}h ${minutes}m ${seconds}s`;
   };
+  
   const handleAddReferee = async (eventId: string) => {
     try {
       await axiosInstance.post(`/events/${eventId}/referee`, { email: refereeEmail });
@@ -143,6 +183,18 @@ const LiveEventsTab = () => {
       toast.error('Failed to assign referee');
     }
   };
+  
+  const handleSelectWinner = (event: LiveEvent, teamId: string) => {
+    setSelectedEvent(event);
+    setSelectedTeam(teamId);
+    setShowWinnerModal(true);
+  };
+  
+  const handleAssignReferee = (event: LiveEvent) => {
+    setSelectedEvent(event);
+    setShowRefereeModal(true);
+  };
+  
   const StatsCards = () => (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <motion.div
@@ -160,6 +212,7 @@ const LiveEventsTab = () => {
           <FaPlay className="text-green-500 text-2xl" />
         </div>
       </motion.div>
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -170,14 +223,22 @@ const LiveEventsTab = () => {
           <div>
             <h3 className="text-gray-400 text-sm">Active Participants</h3>
             <p className="text-2xl font-bold text-white">
-              {liveEvents.reduce((acc, event) => 
-                acc + (event.teams?.length || 0) + (event.participants?.length || 0), 0
-              )}
+              {liveEvents.reduce((acc, event) => {
+                // Count all team members for team battles
+                const teamMembersCount = event.teams?.reduce((teamAcc, team) => 
+                  teamAcc + (team.members?.length || 0), 0) || 0;
+                  
+                // Count individual participants
+                const individualCount = event.participants?.length || 0;
+                
+                return acc + teamMembersCount + individualCount;
+              }, 0)}
             </p>
           </div>
           <FaUsers className="text-blue-500 text-2xl" />
         </div>
       </motion.div>
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -192,6 +253,7 @@ const LiveEventsTab = () => {
           <FaTrophy className="text-yellow-500 text-2xl" />
         </div>
       </motion.div>
+      
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -210,6 +272,7 @@ const LiveEventsTab = () => {
       </motion.div>
     </div>
   );
+  
   const EventCard = ({ event }: { event: LiveEvent }) => {
     const hasParticipants = event.category === 'team-battle' ? 
       (event.teams?.length || 0) > 0 : 
@@ -250,6 +313,8 @@ const LiveEventsTab = () => {
               )}
             </div>
           </div>
+          
+          <EventControls event={event} />
         </div>
   
         {/* Event Content */}
@@ -264,35 +329,67 @@ const LiveEventsTab = () => {
               </p>
             </div>
           ) : event.category === 'team-battle' ? (
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               {event.teams?.map(team => (
                 <motion.div
                   key={team.teamId}
-                  whileHover={{ scale: 1.05 }}
+                  whileHover={{ scale: 1.02 }}
                   className={`p-4 rounded-lg ${
                     team.isWinner ? 'bg-green-900/30' : 'bg-gray-700'
-                  } cursor-pointer group`}
+                  } cursor-pointer group relative`}
+                  onClick={() => handleSelectWinner(event, team.teamId)}
                 >
-                  <div className="relative">
-                    <img
-                      src={team.teamLogo}
-                      alt={team.teamName}
-                      className="w-16 h-16 mx-auto rounded-full mb-2 group-hover:opacity-75 transition-opacity"
-                    />
-                    {team.isWinner && (
-                      <motion.div
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        className="absolute -top-2 -right-2"
-                      >
-                        <FaCrown className="text-yellow-400 w-6 h-6" />
-                      </motion.div>
-                    )}
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="relative">
+                      <img
+                        src={team.teamLogo}
+                        alt={team.teamName}
+                        className="w-16 h-16 rounded-full object-cover border-2 border-gray-600"
+                      />
+                      {team.isWinner && (
+                        <motion.div
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          className="absolute -top-2 -right-2"
+                        >
+                          <FaCrown className="text-yellow-400 w-6 h-6" />
+                        </motion.div>
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="text-white font-medium text-lg">{team.teamName}</h4>
+                      {team.score !== undefined && (
+                        <p className="text-green-400 font-semibold">Score: {team.score}</p>
+                      )}
+                    </div>
                   </div>
-                  <h4 className="text-center text-white font-medium">{team.teamName}</h4>
-                  {team.score !== undefined && (
-                    <p className="text-center text-2xl text-green-400">{team.score}</p>
-                  )}
+                  
+                  {/* Team Members */}
+                  <div className="bg-gray-800/50 rounded-lg p-3 mt-2">
+                    <h5 className="text-gray-300 text-sm font-semibold mb-2 border-b border-gray-700 pb-1">
+                      Team Members
+                    </h5>
+                    <div className="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                      {team.members?.map((member, i) => (
+                        <div 
+                          key={i} 
+                          className="flex items-center justify-between text-sm"
+                        >
+                          <div className="flex items-center">
+                            <FaUser className="w-3 h-3 text-gray-400 mr-2" />
+                            <span className="text-gray-200">{member.email}</span>
+                          </div>
+                          <span className={`text-xs px-1.5 py-0.5 rounded ${
+                            member.verified 
+                              ? 'bg-green-900/40 text-green-300' 
+                              : 'bg-yellow-900/40 text-yellow-300'
+                          }`}>
+                            {member.verified ? 'Verified' : 'Pending'}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </motion.div>
               ))}
             </div>
@@ -318,18 +415,39 @@ const LiveEventsTab = () => {
             </div>
           )}
   
-          {/* Time Remaining */}
-          <div className="mt-4 p-4 bg-gray-700 rounded-lg">
-            <div className="flex items-center justify-between">
-              <FaClock className="text-green-400" />
-              <motion.p 
-                className="text-lg text-white font-mono"
-                key={calculateTimeRemaining(event.endDateTime)}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-              >
-                {calculateTimeRemaining(event.endDateTime)}
-              </motion.p>
+          {/* Time Remaining and Referee */}
+          <div className="mt-4 space-y-2">
+            <div className="p-4 bg-gray-700 rounded-lg">
+              <div className="flex items-center justify-between">
+                <FaClock className="text-green-400" />
+                <motion.p 
+                  className="text-lg text-white font-mono"
+                  key={calculateTimeRemaining(event.endDateTime)}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                >
+                  {calculateTimeRemaining(event.endDateTime)}
+                </motion.p>
+              </div>
+            </div>
+            
+            {/* Referee section */}
+            <div className="flex items-center justify-between p-3 bg-gray-700 rounded-lg">
+              <div className="flex items-center">
+                <FaUserTie className="text-purple-400 mr-2" />
+                <span className="text-sm text-gray-300">Referee:</span>
+              </div>
+              
+              {event.referee ? (
+                <span className="text-white text-sm">{event.referee}</span>
+              ) : (
+                <button
+                  onClick={() => handleAssignReferee(event)}
+                  className="px-3 py-1 bg-purple-700 hover:bg-purple-600 rounded text-xs text-white"
+                >
+                  Assign Referee
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -363,8 +481,24 @@ const LiveEventsTab = () => {
           </button>
         </>
       )}
+      {event.status === 'paused' && (
+        <button
+          onClick={() => handleEventControl(event._id, 'start')}
+          className="p-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+        >
+          <FaPlay className="w-4 h-4" />
+        </button>
+      )}
     </div>
   );
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -372,39 +506,64 @@ const LiveEventsTab = () => {
       <StatsCards />
     
       {/* Live Events Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {liveEvents.map(event => (
-          <EventCard key={event._id} event={event} />
-        ))}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {liveEvents.length > 0 ? (
+          liveEvents.map(event => (
+            <EventCard key={event._id} event={event} />
+          ))
+        ) : (
+          <div className="col-span-2 bg-gray-800 rounded-lg p-8 text-center">
+            <p className="text-gray-400">No live events scheduled</p>
+          </div>
+        )}
       </div>
 
       {/* Winner Selection Modal */}
       {showWinnerModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
-            <h3 className="text-xl font-semibold text-white mb-4">
-              Confirm Winner
-            </h3>
-            <p className="text-gray-300 mb-6">
-              Are you sure you want to declare this team as the winner?
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
+          <h3 className="text-xl font-semibold text-white mb-4">
+            Select Placement
+          </h3>
+          <div className="mb-6">
+            <p className="text-gray-300 mb-3">
+              Choose position for this team:
             </p>
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={() => setShowWinnerModal(false)}
-                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={() => handleWinnerSelection(selectedEvent?._id || '', selectedTeam)}
-                className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Confirm
-              </button>
+            <div className="flex space-x-4">
+              {[1, 2, 3].map((place) => (
+                <button
+                  key={place}
+                  onClick={() => setSelectedPlacement(place as 1 | 2 | 3)}
+                  className={`px-6 py-3 rounded-lg transition-colors ${
+                    selectedPlacement === place
+                      ? 'bg-primary text-white'
+                      : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                  }`}
+                >
+                  {place === 1 ? '🥇 First' : place === 2 ? '🥈 Second' : '🥉 Third'}
+                </button>
+              ))}
             </div>
           </div>
+          <div className="flex justify-end space-x-3">
+            <button
+              onClick={() => setShowWinnerModal(false)}
+              className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={() => handlePlacementSelection(selectedEvent?._id || '', selectedTeam)}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Confirm
+            </button>
+          </div>
         </div>
+      </div>
       )}
+      
+      {/* Referee Assignment Modal */}
       {showRefereeModal && (
         <motion.div
           initial={{ opacity: 0 }}
@@ -428,7 +587,7 @@ const LiveEventsTab = () => {
                 className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700"
               >
                 Cancel
-                </button>
+              </button>
               <button
                 onClick={() => handleAddReferee(selectedEvent?._id || '')}
                 className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
