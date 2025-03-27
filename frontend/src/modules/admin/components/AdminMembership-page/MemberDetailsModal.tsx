@@ -1,11 +1,10 @@
 import React from "react";
 import Modal from "@/components/Modal";
 import { XMarkIcon } from "@heroicons/react/24/outline";
-import axiosInstance from "@/axios.config";
 
 interface Member {
   _id: string;
-  name: string;
+
   email: string;
   defaultMembershipId?: {
     _id: string;
@@ -29,7 +28,6 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
   isOpen,
   onClose,
   member,
-  refreshMembers,
 }) => {
   if (!member) return null;
 
@@ -43,7 +41,6 @@ const MemberDetailsModal: React.FC<MemberDetailsModalProps> = ({
           <XMarkIcon className="w-6 h-6 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200" />
         </button>
 
-        <h3 className="text-xl font-semibold mb-4">{member.name}</h3>
         <div className="space-y-4">
           <p>
             <span className="font-medium">Email:</span> {member.email}

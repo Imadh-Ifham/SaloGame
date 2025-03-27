@@ -43,6 +43,7 @@ const MembershipPlansTable: React.FC = () => {
     currentPage * rowsPerPage
   );
 
+  // Event handlers
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);

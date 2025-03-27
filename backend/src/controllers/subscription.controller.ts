@@ -342,7 +342,6 @@ export const getRecentActivities = async (req: Request, res: Response) => {
       .sort({ createdAt: -1 })
       .limit(10)
       .populate("membershipId userId");
-    console.log("Recent subscriptions", recentSubscriptions);
 
     const soonExpiringMemberships = await Subscription.find({
       status: "active",
@@ -350,7 +349,6 @@ export const getRecentActivities = async (req: Request, res: Response) => {
     })
       .sort({ endDate: 1 })
       .populate("membershipId userId");
-    console.log("Soon Expiring Memberships:", soonExpiringMemberships);
 
     const autoRenewals = await Subscription.find({
       status: "active",
@@ -362,7 +360,6 @@ export const getRecentActivities = async (req: Request, res: Response) => {
     })
       .sort({ endDate: 1 })
       .populate("membershipId userId");
-    console.log("Auto Renewals:", autoRenewals);
 
     const activities = [
       ...recentSubscriptions.map((sub) => ({
@@ -385,14 +382,10 @@ export const getRecentActivities = async (req: Request, res: Response) => {
       })),
     ];
 
-    console.log("Combined Activities Before Sorting:", activities);
-
     // Sort activities by date (most recent first)
     activities.sort(
       (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
     );
-
-    console.log("Sorted Activities:", activities);
 
     res.status(200).json({ success: true, data: activities });
   } catch (error) {

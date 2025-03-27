@@ -21,6 +21,7 @@ interface Member {
   _id: string;
   email: string;
   defaultMembershipId?: {
+    _id: string;
     name: string;
   };
   subscription?: Subscription;
@@ -44,13 +45,12 @@ const UserSubscriptionsTable: React.FC = () => {
   const rowsPerPage = 3;
 
   useEffect(() => {
-    // Fetch user subscriptions using Redux action
     dispatch(fetchMembers());
   }, [dispatch]);
 
   // Filter and search logic
   const filteredSubscriptions = useMemo(() => {
-    let filtered = members.filter((member) => member.subscription) as Member[]; // Ensure only users with subscriptions are included
+    let filtered = members.filter((member) => member.subscription) as Member[];
 
     if (filter === "active") {
       filtered = filtered.filter(
