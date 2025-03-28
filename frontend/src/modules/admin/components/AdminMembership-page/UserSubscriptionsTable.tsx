@@ -3,7 +3,6 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
 import {
   fetchMembers,
-  deleteMembership,
   renewSubscription,
 } from "@/store/slices/membershipSlice";
 import { FiSearch, FiEye, FiRefreshCw, FiX } from "react-icons/fi";
@@ -42,7 +41,7 @@ const UserSubscriptionsTable: React.FC = () => {
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
 
-  const rowsPerPage = 3;
+  const rowsPerPage = 4;
 
   useEffect(() => {
     dispatch(fetchMembers());
@@ -61,26 +60,9 @@ const UserSubscriptionsTable: React.FC = () => {
         (member) => member.subscription?.status === "expired"
       );
     } else if (filter === "autoRenew") {
-      filtered = filtered.filter((member) => {
-        const subscription = member.subscription;
-        if (!subscription) return false;
-
-        // Check both possible formats
-        if (typeof subscription.autoRenew === "boolean") {
-          return subscription.autoRenew === true;
-        }
-
-        if (
-          subscription.autoRenew &&
-          typeof subscription.autoRenew === "object"
-        ) {
-          if ("type" in subscription.autoRenew) {
-            return subscription.autoRenew.type === true;
-          }
-        }
-
-        return false;
-      });
+      filtered = filtered.filter(
+        (member) => member.subscription?.autoRenew === true
+      );
     }
 
     if (searchTerm) {
@@ -115,14 +97,14 @@ const UserSubscriptionsTable: React.FC = () => {
     }
   };
 
-  const handleCancel = async (subscriptionId: string) => {
+  /*const handleCancel = async (subscriptionId: string) => {
     try {
       await dispatch(deleteMembership(subscriptionId)).unwrap();
       toast.success("Subscription canceled successfully.");
     } catch (error: any) {
       toast.error(error.message || "Failed to cancel subscription.");
     }
-  };
+  };*/
 
   const handleRenew = async (subscriptionId: string) => {
     try {
@@ -307,9 +289,9 @@ const UserSubscriptionsTable: React.FC = () => {
                       </button>
                       {member.subscription?.status === "active" ? (
                         <button
-                          onClick={() =>
+                          /*onClick={() =>
                             handleCancel(member.subscription?._id || "")
-                          }
+                          }*/
                           className="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                           title="Cancel Subscription"
                         >
