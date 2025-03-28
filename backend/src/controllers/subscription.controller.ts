@@ -170,91 +170,6 @@ export const getUserSubscriptions = async (
 };
 
 /**
- * Assign MembershipType to a user
- */
-export const assignMembership = async (
-  req: AuthRequest,
-  res: Response
-): Promise<void> => {
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const { userId, membershipId } = req.body;
-
-    if (!userId || !membershipId) {
-      res.status(400).json({
-        success: false,
-        message: "Please provide both userId and membershipId",
-      });
-      return;
-    }
-
-    // Check if target user has role "user"
-    const targetUser = await User.findById(userId);
-    if (!targetUser || targetUser.role !== "user") {
-      res.status(403).json({
-        success: false,
-        message: "Membership can only be assigned to users",
-      });
-      return;
-    }
-
-    // Calculate dates
-    const startDate = new Date();
-    const endDate = new Date();
-    endDate.setMonth(endDate.getMonth() + 1); // Default 1 month
-
-    // Create new subscription
-    const subscription = new Subscription({
-      userId,
-      membershipId,
-      startDate,
-      endDate,
-      duration: 1,
-      totalAmount: 0, // You might want to add price calculation logic
-      status: "active",
-      paymentStatus: "completed",
-    });
-
-    await subscription.save({ session });
-
-    // Update user's membership
-    await User.findByIdAndUpdate(
-      userId,
-      {
-        defaultMembershipId: membershipId,
-        subscription: subscription._id,
-      },
-      { session }
-    );
-
-    // Update membership subscriber count
-    await MembershipType.findByIdAndUpdate(
-      membershipId,
-      { $inc: { subscriberCount: 1 } },
-      { session }
-    );
-
-    await session.commitTransaction();
-
-    res.status(200).json({
-      success: true,
-      message: "Membership assigned successfully",
-    });
-  } catch (error) {
-    await session.abortTransaction();
-    console.error("Error assigning membership:", error);
-    res.status(500).json({
-      success: false,
-      message: "Failed to assign membership",
-    });
-  } finally {
-    session.endSession();
-  }
-};
-
-/**
  * Get current user's expiring subscription notifications
  */
 export const getUserExpiringNotifications = async (
@@ -340,6 +255,9 @@ export const getUserExpiringNotifications = async (
   }
 };
 
+/**
+ * Get Membership Statistics
+ */
 export const getMembershipStats = async (
   req: Request,
   res: Response
@@ -358,11 +276,19 @@ export const getMembershipStats = async (
       autoRenew: true,
     });
 
+    const failedPayments = await Subscription.countDocuments({
+      renewalAttempted: true,
+      renewalSuccessful: false,
+      status: "active", // Still active but failed to renew
+      autoRenew: true,
+    });
+
     // Return the stats
     res.status(200).json({
       totalActiveMembers,
       totalRevenue: totalRevenue[0]?.total || 0,
       autoRenewalUsers,
+      failedPayments,
     });
   } catch (error) {
     console.error("Error fetching membership stats:", error);
@@ -370,6 +296,9 @@ export const getMembershipStats = async (
   }
 };
 
+/**
+ * Get Subscription Growth
+ */
 export const getSubscriptionGrowth = async (req: Request, res: Response) => {
   try {
     const lastSixMonths = new Date();
@@ -404,6 +333,9 @@ export const getSubscriptionGrowth = async (req: Request, res: Response) => {
   }
 };
 
+/**
+ * Get Recent Activities
+ */
 export const getRecentActivities = async (req: Request, res: Response) => {
   try {
     const recentSubscriptions = await Subscription.find()
@@ -468,5 +400,138 @@ export const getRecentActivities = async (req: Request, res: Response) => {
     res
       .status(500)
       .json({ success: false, message: "Failed to fetch recent activities" });
+  }
+};
+
+/**
+ * Get failed auto-renewals
+ */
+export const getFailedRenewals = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const failedRenewals = await Subscription.find({
+      $or: [{ status: "active" }, { status: "expired" }], // bcs auto-renwal marks them as expired
+      autoRenew: true,
+      renewalAttempted: true,
+      renewalSuccessful: false,
+      // Typically subscriptions with past end dates
+      endDate: { $lt: new Date() },
+    })
+      .populate("userId", "email name")
+      .populate("membershipId", "name duration price")
+      .sort({ lastRenewalAttempt: -1 });
+
+    res.status(200).json({
+      success: true,
+      count: failedRenewals.length,
+      data: failedRenewals,
+    });
+  } catch (error) {
+    console.error("Error fetching failed renewals:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch failed auto-renewals",
+    });
+  }
+};
+
+/**
+ * Manually renew a subscription
+ */
+export const manuallyRenewSubscription = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    const { subscriptionId } = req.body;
+
+    if (!subscriptionId) {
+      res
+        .status(400)
+        .json({ success: false, message: "Subscription ID is required" });
+      return;
+    }
+
+    // Find the subscription
+    const subscription = await Subscription.findById(subscriptionId)
+      .populate("membershipId")
+      .populate("userId");
+
+    if (!subscription) {
+      res
+        .status(404)
+        .json({ success: false, message: "Subscription not found" });
+      return;
+    }
+
+    // Calculate new dates
+    const startDate = new Date(); // Start from today for manual renewal
+    const endDate = new Date(startDate);
+    const duration = subscription.duration || 1;
+    endDate.setMonth(endDate.getMonth() + duration);
+
+    // Create new subscription record
+    const newSubscription = new Subscription({
+      userId: subscription.userId,
+      membershipId: subscription.membershipId,
+      startDate,
+      endDate,
+      duration,
+      totalAmount: subscription.totalAmount,
+      status: "active",
+      paymentStatus: "completed",
+      autoRenew: subscription.autoRenew,
+      ...(subscription.paymentDetails
+        ? { paymentDetails: subscription.paymentDetails }
+        : {}),
+      renewedFromSubscription: subscription._id,
+      renewalCompleted: true,
+      renewalCompletedAt: new Date(),
+      manuallyRenewed: true, // Add this flag for tracking manual renewalsl
+    });
+
+    await newSubscription.save({ session });
+
+    // Update user's active subscription
+    await User.findByIdAndUpdate(
+      subscription.userId,
+      { subscription: newSubscription._id },
+      { session }
+    );
+
+    // Mark old subscription as expired
+    await Subscription.findByIdAndUpdate(
+      subscriptionId,
+      {
+        status: "expired",
+        renewalSuccessful: true,
+        renewalCompletedAt: new Date(),
+        manuallyRenewed: true,
+      },
+      { session }
+    );
+
+    await session.commitTransaction();
+
+    res.status(200).json({
+      success: true,
+      message: "Subscription manually renewed successfully",
+      newSubscriptionId: newSubscription._id,
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error manually renewing subscription:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to manually renew subscription",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  } finally {
+    session.endSession();
   }
 };

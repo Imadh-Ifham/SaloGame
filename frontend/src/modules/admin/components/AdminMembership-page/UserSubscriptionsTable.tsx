@@ -6,7 +6,7 @@ import {
   deleteMembership,
   renewSubscription,
 } from "@/store/slices/membershipSlice";
-import { FaEye, FaSyncAlt, FaTimes } from "react-icons/fa";
+import { FiSearch, FiEye, FiRefreshCw, FiX } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 
 interface Subscription {
@@ -37,7 +37,7 @@ const UserSubscriptionsTable: React.FC = () => {
     "all" | "active" | "expired" | "autoRenew"
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 2;
+  const rowsPerPage = 3;
 
   useEffect(() => {
     // Fetch user subscriptions using Redux action
@@ -53,23 +53,13 @@ const UserSubscriptionsTable: React.FC = () => {
         (member) => member.subscription?.status === "active"
       );
     } else if (filter === "expired") {
-      console.log("Looking for expired subscriptions");
-      const expiredMembers = filtered.filter(
+      filtered = filtered.filter(
         (member) => member.subscription?.status === "expired"
       );
-      console.log("Found expired members:", expiredMembers.length);
-      filtered = expiredMembers;
     } else if (filter === "autoRenew") {
       filtered = filtered.filter((member) => {
         const subscription = member.subscription;
         if (!subscription) return false;
-
-        // Log for debugging
-        console.log(
-          "Checking autoRenew for:",
-          member.email,
-          subscription.autoRenew
-        );
 
         // Check both possible formats
         if (typeof subscription.autoRenew === "boolean") {
@@ -134,9 +124,21 @@ const UserSubscriptionsTable: React.FC = () => {
     }
   };
 
+  // Get status badge styling
+  const getStatusBadgeClass = (status: string) => {
+    switch (status) {
+      case "active":
+        return "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400";
+      case "expired":
+        return "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400";
+      default:
+        return "bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-400";
+    }
+  };
+
   if (loading) {
     return (
-      <div className="text-center py-4">
+      <div className="flex justify-center items-center py-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
       </div>
     );
@@ -144,140 +146,225 @@ const UserSubscriptionsTable: React.FC = () => {
 
   if (error) {
     return (
-      <div className="text-red-500 text-center py-4">
+      <div className="p-6 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg">
         Failed to load user subscriptions: {error}
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold text-gray-100">User Subscriptions</h2>
-        <input
-          type="text"
-          placeholder="Search by email"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          className="px-4 py-2 rounded bg-gray-700 text-gray-300"
-        />
-      </div>
-      <div className="flex justify-between items-center mb-4">
-        <div>
-          <button
-            onClick={() => setFilter("all")}
-            className={`px-4 py-2 rounded ${
-              filter === "all"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-700 text-gray-300"
-            }`}
-          >
-            All
-          </button>
-          <button
-            onClick={() => setFilter("active")}
-            className={`px-4 py-2 rounded ml-2 ${
-              filter === "active"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-700 text-gray-300"
-            }`}
-          >
-            Active
-          </button>
-          <button
-            onClick={() => setFilter("expired")}
-            className={`px-4 py-2 rounded ml-2 ${
-              filter === "expired"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-700 text-gray-300"
-            }`}
-          >
-            Expired
-          </button>
-          <button
-            onClick={() => setFilter("autoRenew")}
-            className={`px-4 py-2 rounded ml-2 ${
-              filter === "autoRenew"
-                ? "bg-blue-500 text-white"
-                : "bg-gray-700 text-gray-300"
-            }`}
-          >
-            Auto Renew
-          </button>
+    <div className="h-full">
+      <div className="mb-6 space-y-4">
+        {/* Search and Filters */}
+        <div className="flex flex-col sm:flex-row justify-between gap-4">
+          {/* Search */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="text-gray-400 dark:text-gray-500" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-2 w-full border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+            />
+          </div>
+
+          {/* Filter tabs */}
+          <div className="flex bg-gray-100 dark:bg-gray-800 p-1 rounded-lg">
+            <button
+              onClick={() => setFilter("all")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                filter === "all"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setFilter("active")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                filter === "active"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              Active
+            </button>
+            <button
+              onClick={() => setFilter("expired")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                filter === "expired"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              Expired
+            </button>
+            <button
+              onClick={() => setFilter("autoRenew")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
+                filter === "autoRenew"
+                  ? "bg-white dark:bg-gray-700 text-gray-900 dark:text-white shadow"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
+              }`}
+            >
+              Auto-Renew
+            </button>
+          </div>
         </div>
       </div>
-      <table className="w-full text-left text-gray-300">
-        <thead>
-          <tr className="bg-gray-700">
-            <th className="px-4 py-2">Email</th>
-            <th className="px-4 py-2">Current Plan</th>
-            <th className="px-4 py-2">Expiry Date</th>
-            <th className="px-4 py-2">Status</th>
-            <th className="px-4 py-2">Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {paginatedSubscriptions.map((member) => (
-            <tr key={member._id} className="border-b border-gray-700">
-              <td className="px-4 py-2">{member.email}</td>
-              <td className="px-4 py-2">
-                {member.defaultMembershipId?.name || "N/A"}
-              </td>
-              <td className="px-4 py-2">
-                {member.subscription?.endDate
-                  ? new Date(member.subscription.endDate).toLocaleDateString()
-                  : "N/A"}
-              </td>
-              <td className="px-4 py-2 capitalize">
-                {member.subscription?.status || "N/A"}
-              </td>
-              <td className="px-4 py-2">
-                <button
-                  onClick={() => console.log("View subscription", member._id)}
-                  className="text-blue-400 hover:text-blue-300 mr-2"
-                >
-                  <FaEye />
-                </button>
-                {member.subscription?.status === "active" ? (
-                  <button
-                    onClick={() => handleCancel(member.subscription?._id || "")}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <FaTimes />
-                  </button>
-                ) : (
-                  <button
-                    onClick={() => handleRenew(member.subscription?._id || "")}
-                    className="text-green-400 hover:text-green-300"
-                  >
-                    <FaSyncAlt />
-                  </button>
-                )}
-              </td>
+
+      {/* Table */}
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Email
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Current Plan
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Expiry Date
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Status
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Actions
+              </th>
             </tr>
-          ))}
-        </tbody>
-      </table>
-      {/* Pagination Controls */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          onClick={handlePreviousPage}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <span className="text-gray-300">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50"
-        >
-          Next
-        </button>
+          </thead>
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            {paginatedSubscriptions.length > 0 ? (
+              paginatedSubscriptions.map((member) => (
+                <tr
+                  key={member._id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    {member.email}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    {member.defaultMembershipId?.name || "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    {member.subscription?.endDate
+                      ? new Date(
+                          member.subscription.endDate
+                        ).toLocaleDateString("en-US", {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })
+                      : "N/A"}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getStatusBadgeClass(
+                        member.subscription?.status || ""
+                      )}`}
+                    >
+                      {member.subscription?.status?.toUpperCase() || "N/A"}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() =>
+                          console.log("View subscription", member._id)
+                        }
+                        className="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
+                        title="View Details"
+                      >
+                        <FiEye size={16} />
+                      </button>
+                      {member.subscription?.status === "active" ? (
+                        <button
+                          onClick={() =>
+                            handleCancel(member.subscription?._id || "")
+                          }
+                          className="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
+                          title="Cancel Subscription"
+                        >
+                          <FiX size={16} />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleRenew(member.subscription?._id || "")
+                          }
+                          className="p-1.5 rounded-full text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30 transition-colors"
+                          title="Renew Subscription"
+                        >
+                          <FiRefreshCw size={16} />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={5}
+                  className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                >
+                  No subscriptions found with the current filters.
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
       </div>
+
+      {/* Pagination Controls */}
+      {paginatedSubscriptions.length > 0 && (
+        <div className="flex justify-between items-center mt-4">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Showing {Math.min(rowsPerPage, paginatedSubscriptions.length)} of{" "}
+            {filteredSubscriptions.length} subscriptions
+          </div>
+          <div className="flex space-x-2">
+            <button
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Previous
+            </button>
+            <div className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600">
+              Page {currentPage} of {totalPages || 1}
+            </div>
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages || totalPages === 0}
+              className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

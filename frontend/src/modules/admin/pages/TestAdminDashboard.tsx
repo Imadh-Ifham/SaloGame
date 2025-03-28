@@ -1,19 +1,19 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
-  FaUsers,
-  FaDollarSign,
-  FaSyncAlt,
-  FaExclamationCircle,
-  FaSun,
-  FaMoon,
-} from "react-icons/fa";
+  FiUsers,
+  FiDollarSign,
+  FiRefreshCw,
+  FiAlertCircle,
+  FiSun,
+  FiMoon,
+} from "react-icons/fi";
 import axiosInstance from "@/axios.config";
-import { useEffect } from "react";
 import SubscriptionGrowthChart from "../components/AdminMembership-page/SubscriptionGrowthChart";
 import RecentActivityFeed from "../components/AdminMembership-page/RecentActivityFeed";
 import MembershipPlansTable from "../components/AdminMembership-page/MembershipPlansTable";
 import UserSubscriptionsTable from "../components/AdminMembership-page/UserSubscriptionsTable";
 import InvoiceManagementTable from "../components/AdminMembership-page/InvoiceManagementTable";
+import FailedRenewalsTable from "../components/AdminMembership-page/FailedRenewalsTable";
 
 export default function AdminMembershipPage() {
   const [stats, setStats] = useState({
@@ -53,117 +53,156 @@ export default function AdminMembershipPage() {
     fetchStats();
   }, []);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
+  // Format currency
+  const formatCurrency = (amount: number): string => {
+    return `LKR ${amount.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    })}`;
   };
 
   if (loading) {
-    return <p className="text-center text-gray-400">Loading...</p>;
+    return (
+      <div className="h-full w-full flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   if (error) {
     return (
-      <div className="text-center text-red-500 bg-gray-800 p-4 rounded-lg shadow">
-        Error: {error}
+      <div className="h-full w-full bg-gray-50 dark:bg-gray-900 px-4 sm:px-6 lg:px-8 py-6">
+        <div className="p-6 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg">
+          Error: {error}
+        </div>
       </div>
     );
   }
 
   return (
-    <div
-      className={`min-h-screen ${
-        darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-100 text-gray-900"
-      } p-8 overflow-y-auto`}
-    >
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="flex justify-between items-center mb-8 bg-gray-800 p-4 rounded-lg shadow-lg border-l-4 border-purple-500">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-blue-500 bg-clip-text text-transparent">
-            Membership & Invoice Management
+    <div className="h-full w-full bg-gray-50 dark:bg-gray-900">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
+        <div className="flex items-center justify-between mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Membership & Subscription Management
           </h1>
-          <button
-            onClick={toggleDarkMode}
-            className="p-2 rounded-full bg-gray-700 hover:bg-gray-600 transition-colors"
-          >
-            {darkMode ? (
-              <FaSun className="text-yellow-400" />
-            ) : (
-              <FaMoon className="text-gray-300" />
-            )}
-          </button>
         </div>
 
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          <div
-            className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
-            } p-4 rounded-lg shadow`}
-          >
-            <FaUsers className="text-4xl text-blue-500 mb-2" />
-            <h2 className="text-lg font-semibold">Total Active Members</h2>
-            <p className="text-2xl font-bold">{stats.totalActiveMembers}</p>
+        {/* Stats Cards Row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-all border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Total Active Members
+                </p>
+                <h3 className="text-2xl font-semibold mt-2 text-gray-900 dark:text-white">
+                  {stats.totalActiveMembers}
+                </h3>
+              </div>
+              <div className="p-3 rounded-full bg-gray-50 dark:bg-gray-700">
+                <FiUsers className="text-blue-600 dark:text-blue-400" />
+              </div>
+            </div>
           </div>
-          <div
-            className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
-            } p-4 rounded-lg shadow`}
-          >
-            <FaDollarSign className="text-4xl text-green-500 mb-2" />
-            <h2 className="text-lg font-semibold">Total Revenue</h2>
-            <p className="text-2xl font-bold">
-              LKR {stats.totalRevenue.toLocaleString()}
-            </p>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-all border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Total Revenue
+                </p>
+                <h3 className="text-2xl font-semibold mt-2 text-gray-900 dark:text-white">
+                  {formatCurrency(stats.totalRevenue)}
+                </h3>
+              </div>
+              <div className="p-3 rounded-full bg-gray-50 dark:bg-gray-700">
+                <FiDollarSign className="text-green-600 dark:text-green-400" />
+              </div>
+            </div>
           </div>
-          <div
-            className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
-            } p-4 rounded-lg shadow`}
-          >
-            <FaSyncAlt className="text-4xl text-yellow-500 mb-2" />
-            <h2 className="text-lg font-semibold">Auto-Renewal Users</h2>
-            <p className="text-2xl font-bold">{stats.autoRenewalUsers}</p>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-all border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Auto-Renewal Users
+                </p>
+                <h3 className="text-2xl font-semibold mt-2 text-gray-900 dark:text-white">
+                  {stats.autoRenewalUsers}
+                </h3>
+              </div>
+              <div className="p-3 rounded-full bg-gray-50 dark:bg-gray-700">
+                <FiRefreshCw className="text-yellow-600 dark:text-yellow-400" />
+              </div>
+            </div>
           </div>
-          <div
-            className={`${
-              darkMode ? "bg-gray-800" : "bg-white"
-            } p-4 rounded-lg shadow`}
-          >
-            <FaExclamationCircle className="text-4xl text-red-500 mb-2" />
-            <h2 className="text-lg font-semibold">Failed Payments</h2>
-            <p className="text-2xl font-bold">{stats.failedPayments}</p>
+
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 hover:shadow-md transition-all border border-gray-200 dark:border-gray-700">
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
+                  Failed Payments
+                </p>
+                <h3 className="text-2xl font-semibold mt-2 text-gray-900 dark:text-white">
+                  {stats.failedPayments}
+                </h3>
+              </div>
+              <div className="p-3 rounded-full bg-gray-50 dark:bg-gray-700">
+                <FiAlertCircle className="text-red-600 dark:text-red-400" />
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* Subscription Growth Chart */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-            <h2 className="text-xl font-bold mb-4 text-gray-100">
+        {/* Charts Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
               Subscription Growth (Last 6 Months)
             </h2>
             <SubscriptionGrowthChart data={growthData} />
           </div>
 
-          {/* Recent Activity Feed */}
-          <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Recent Activity
+            </h2>
             <RecentActivityFeed activities={recentActivities} />
           </div>
         </div>
 
-        {/* Membership Plans Table */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
-          <div className="mt-8">
+        {/* Membership Management Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              Membership Plans
+            </h2>
             <MembershipPlansTable />
           </div>
 
-          <div className="mt-8">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+              User Subscriptions
+            </h2>
             <UserSubscriptionsTable />
           </div>
         </div>
 
-        {/* Invoice Management Table */}
-        <div className="mt-8">
+        {/* Invoice Management Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Invoice Management
+          </h2>
           <InvoiceManagementTable />
+        </div>
+
+        {/* Auto-Renewal Status Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Failed Auto-Renewals Management
+          </h2>
+          <FailedRenewalsTable />
         </div>
       </div>
     </div>

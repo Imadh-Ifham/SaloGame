@@ -1,4 +1,5 @@
 import React from "react";
+import { FiChevronUp, FiChevronDown } from "react-icons/fi";
 
 interface TableHeaderProps {
   columnKey: string;
@@ -18,34 +19,24 @@ export const TableHeader: React.FC<TableHeaderProps> = ({
 
   return (
     <th
-      className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-semibold text-sm"
+      className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
       onClick={() => handleSort(columnKey)}
     >
-      <div className="flex items-center cursor-pointer group">
+      <div className="flex items-center group">
         <span className="mr-2">{label}</span>
-        <span className="flex flex-col">
-          <svg
-            className={`w-2 h-2 ${
-              isSorted && sortDirection === "asc"
-                ? "text-purple-600 dark:text-purple-400"
-                : "text-gray-400 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400"
-            }`}
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M7 14l5-5 5 5H7z" />
-          </svg>
-          <svg
-            className={`w-2 h-2 ${
-              isSorted && sortDirection === "desc"
-                ? "text-purple-600 dark:text-purple-400"
-                : "text-gray-400 dark:text-gray-600 group-hover:text-gray-500 dark:group-hover:text-gray-400"
-            }`}
-            viewBox="0 0 24 24"
-            fill="currentColor"
-          >
-            <path d="M7 10l5 5 5-5H7z" />
-          </svg>
+        <span className="flex items-center">
+          {isSorted ? (
+            sortDirection === "asc" ? (
+              <FiChevronUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            ) : (
+              <FiChevronDown className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+            )
+          ) : (
+            <div className="w-4 h-4 flex flex-col items-center justify-center opacity-0 group-hover:opacity-50">
+              <FiChevronUp className="w-3 h-3 text-gray-400 dark:text-gray-600 -mb-1" />
+              <FiChevronDown className="w-3 h-3 text-gray-400 dark:text-gray-600" />
+            </div>
+          )}
         </span>
       </div>
     </th>

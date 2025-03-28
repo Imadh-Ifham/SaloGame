@@ -1,10 +1,10 @@
-import { FaPercent, FaClock, FaGamepad } from "react-icons/fa";
-import { useEffect } from "react";
+import React, { useEffect } from "react";
+import { FiPercent, FiClock, FiMonitor } from "react-icons/fi";
 import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
 import { fetchOfferData } from "@/store/slices/offerSlice";
 
-const DashboardSummary = () => {
+const DashboardSummary: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const { totalActiveOffers, mostUsedOffer, loading } = useSelector(
     (state: RootState) => state.offer
@@ -15,63 +15,63 @@ const DashboardSummary = () => {
   }, [dispatch]);
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-purple-500 transition-all hover:shadow-lg">
-        <div className="flex items-center">
-          <div className="p-3 bg-purple-100 dark:bg-purple-900 rounded-lg mr-4">
-            <FaPercent className="text-3xl text-purple-600 dark:text-purple-300" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
               Active Promotions
-            </h2>
+            </p>
             {loading ? (
-              <div className="h-9 w-20 animate-pulse bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-8 w-20 mt-2 animate-pulse bg-gray-200 dark:bg-gray-700 rounded"></div>
             ) : (
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h3 className="text-2xl font-semibold mt-2 text-gray-900 dark:text-white">
                 {totalActiveOffers}
-              </p>
+              </h3>
             )}
+          </div>
+          <div className="p-3 rounded-full bg-gray-50 dark:bg-gray-700">
+            <FiPercent className="text-blue-600 dark:text-blue-400" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-amber-500 transition-all hover:shadow-lg">
-        <div className="flex items-center">
-          <div className="p-3 bg-amber-100 dark:bg-amber-900 rounded-lg mr-4">
-            <FaGamepad className="text-3xl text-amber-600 dark:text-amber-300" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
               Top Gaming Deal
-            </h2>
+            </p>
             {loading ? (
-              <div className="h-9 w-32 animate-pulse bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-8 w-24 mt-2 animate-pulse bg-gray-200 dark:bg-gray-700 rounded"></div>
             ) : (
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h3 className="text-2xl font-semibold mt-2 text-gray-900 dark:text-white">
                 {mostUsedOffer}
-              </p>
+              </h3>
             )}
+          </div>
+          <div className="p-3 rounded-full bg-gray-50 dark:bg-gray-700">
+            <FiMonitor className="text-yellow-600 dark:text-yellow-400" />
           </div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-md border-l-4 border-green-500 transition-all hover:shadow-lg">
-        <div className="flex items-center">
-          <div className="p-3 bg-green-100 dark:bg-green-900 rounded-lg mr-4">
-            <FaClock className="text-3xl text-green-600 dark:text-green-300" />
-          </div>
-          <div>
-            <h2 className="text-xl font-semibold text-gray-700 dark:text-gray-200">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+        <div className="flex items-center justify-between">
+          <div className="flex-1">
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">
               Expiring Soon
-            </h2>
+            </p>
             {loading ? (
-              <div className="h-9 w-20 animate-pulse bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-8 w-20 mt-2 animate-pulse bg-gray-200 dark:bg-gray-700 rounded"></div>
             ) : (
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h3 className="text-2xl font-semibold mt-2 text-gray-900 dark:text-white">
                 3
-              </p>
+              </h3>
             )}
+          </div>
+          <div className="p-3 rounded-full bg-gray-50 dark:bg-gray-700">
+            <FiClock className="text-green-600 dark:text-green-400" />
           </div>
         </div>
       </div>
