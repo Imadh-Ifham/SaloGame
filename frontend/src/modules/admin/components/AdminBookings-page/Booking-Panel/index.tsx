@@ -23,10 +23,10 @@ const BookingPanel: React.FC = () => {
   }
 
   return (
-    <div className="py-2 px-4 flex flex-col gap-4 h-screen shadow-lg">
+    <div className="py-2 px-4 flex flex-col gap-4 h-[calc(100vh-2rem)] shadow-lg dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
       <div className="text-base font-poppins font-semibold">Booking Mode</div>
-      <div className="grid grid-cols-5 gap-4 h-screen">
-        <div className="grid grid-rows-5 col-span-2 gap-4 h-[calc(100vh-4rem)]">
+      <div className="grid grid-cols-5 gap-4 h-[calc(100%-2rem)]">
+        <div className="grid grid-rows-5 col-span-2 gap-4 h-[calc(100vh-6rem)]">
           {/* Check Availability */}
           <div className="row-span-2">
             <CheckAvailability />
@@ -36,14 +36,14 @@ const BookingPanel: React.FC = () => {
             <UpcomingBooking />
           </div>
         </div>
-        <div className="col-span-3 max-h-[90vh] overflow-y-auto">
+        <div className="col-span-3 max-h-[80vh] border dark:border-gray-600 rounded-xl my-auto overflow-y-auto scrollbar-hide">
           {/* Current Booking Status */}
           {selectedMachine ? (
-            <div className="border rounded-lg p-4 w-full">
+            <div className="">
               {currentBooking ? (
                 <CurrentBookingDetails
                   currentBooking={currentBooking}
-                  nextBooking={nextBooking}
+                  nextBooking={nextBooking ? nextBooking : null}
                 />
               ) : showBookingForm ? (
                 <NewBookingForm />

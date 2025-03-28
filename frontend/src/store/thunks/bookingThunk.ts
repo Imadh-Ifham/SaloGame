@@ -4,7 +4,9 @@ import {
   bookingStatusString,
   CustomerBooking,
   MachineBooking,
-} from "../slices/bookingSlice";
+  NewCustomerBooking,
+} from "@/types/booking";
+import { BookingLog } from "../slices/bookingHistorySlice";
 
 // Fetch the current and next booking for the selected machine
 export const fetchFirstAndNextBooking = createAsyncThunk<
@@ -56,7 +58,11 @@ export const createBooking = createAsyncThunk(
   "booking/createBooking",
   async (formData: CustomerBooking, { rejectWithValue }) => {
     try {
-      const response = await axiosInstance.post("/bookings/", formData);
+      const mode = "admin";
+      const response = await axiosInstance.post(
+        `/bookings/?mode=${mode}`,
+        formData
+      );
       return response.data;
     } catch (error: any) {
       if (error.response) {
@@ -103,3 +109,61 @@ export const updateBookingStatus = createAsyncThunk(
     }
   }
 );
+
+// Define the selectedBookingThunk
+export const fetchSelectedBooking = createAsyncThunk<
+  NewCustomerBooking, // The type of the data returned
+  { bookingID: string }, // The type of the argument (startTime and duration)
+  { rejectValue: string } // The type of the error message on failure
+>(
+  "bookings/fetchSelectedBooking",
+  async ({ bookingID }, { rejectWithValue }) => {
+    try {
+      console.log("fetchbooking called ", bookingID);
+      // Make sure the data is correctly passed to the API
+      const response = await axiosInstance.post(
+        `/bookings/get-booking/${bookingID}`, // Use POST request
+        {} // Pass the body
+      );
+      return response.data.data; // Return the data from the API
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data || "Failed to fetch bookings"
+      );
+    }
+  }
+);
+
+interface FetchBookingLogsFilters {
+  status: "Booked" | "Completed" | "InUse" | "Cancelled" | "";
+  date: Date | null;
+  filterType: "day" | "month" | "";
+  count: number;
+}
+
+// Define the fetchBookingLogsThunk
+export const fetchBookingLogs = createAsyncThunk<
+  BookingLog[], // The return type
+  FetchBookingLogsFilters, // No arguments
+  { rejectValue: string } // Error message type
+>("bookings/fetchBookingLogs", async (filters, { rejectWithValue }) => {
+  try {
+    const { status, date, filterType, count } = filters;
+
+    // Construct the query parameters based on the filters
+    const body: any = {
+      status,
+      count,
+      date,
+      filterType,
+    };
+
+    const response = await axiosInstance.post("/bookings/get-log", body);
+
+    return response.data.data; // Return machine status object
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data?.message || "Failed to fetch booking logs"
+    );
+  }
+});

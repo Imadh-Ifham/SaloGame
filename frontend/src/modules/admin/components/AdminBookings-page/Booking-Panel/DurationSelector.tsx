@@ -18,17 +18,17 @@ const DurationSelector: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const formData = useSelector(selectFormData);
   return (
-    <div className="flex-1 min-w-[200px]">
-      <div className="relative border border-gray-300 rounded-lg px-3 py-2 bg-white">
+    <div className="flex-1 w-full">
+      <div className="relative border dark:border-gray-500 rounded-lg px-3 py-2">
         <Select
           value={formData.duration}
           onChange={(value) => dispatch(updateBookingForm({ duration: value }))}
-          className="w-full bg-transparent"
+          className="w-full bg-transparent dark:text-gray-800"
         >
           {durations.map((d) => (
             <Select.Option key={d.value} value={d.value}>
               <div className="flex items-center">
-                <ClockCircleOutlined className="mr-2 text-gray-500" />
+                <ClockCircleOutlined className="mr-2" />
                 {d.label}
               </div>
             </Select.Option>
