@@ -24,7 +24,7 @@ const PC: React.FC<PCProps> = ({ machine, rotate }) => {
 
   if (!allMachineStatus[machine._id]) {
     return (
-      <div className="w-20 h-20 border border-gray-300 rounded-md bg-gray-300 animate-pulse" />
+      <div className="w-20 h-20 border border-gray-300 dark:border-gray-500 rounded-md bg-gray-300 animate-pulse" />
     );
   }
 
@@ -54,19 +54,23 @@ const PC: React.FC<PCProps> = ({ machine, rotate }) => {
   return (
     <div
       onClick={handleMachineSelect}
-      className={`w-20 h-20 border border-gray-300 rounded-md hover:bg-gray-200 hover:scale-105 shadow-lg transition-transform duration-300 ease-in-out flex flex-col items-center cursor-pointer ${
+      className={`w-20 h-20 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-200 dark:bg-gray-700 hover:scale-105 shadow-lg transition-transform duration-300 ease-in-out flex flex-col items-center cursor-pointer ${
         selectedMachine?.serialNumber === machine.serialNumber &&
         !isMoreMachineClicked
           ? "bg-gray-300 scale-105"
           : ""
-      } ${isSelected ? "bg-gray-300" : ""} ${
+      } ${isSelected ? "bg-gray-300 dark:bg-gray-500" : ""} ${
         !isAvailable && isMoreMachineClicked
           ? "opacity-50 !cursor-default hover:scale-100"
           : ""
       }`}
     >
       <div className="flex justify-center items-center gap-x-2">
-        <div className="text-gray-500 mt-[2px] text-xs">
+        <div
+          className={`text-gray-500 mt-[2px] text-xs ${
+            isSelected ? "dark:text-gray-100" : ""
+          }`}
+        >
           {machine.serialNumber}
         </div>
         <div
