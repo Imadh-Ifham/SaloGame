@@ -7,7 +7,9 @@ import {
   updateEvent,
   getEventsByCategory,
   registerForEvent,
-  verifyEmail
+  verifyEmail,
+  updateEventPlacement,
+  getLeaderboard
 } from "../../controllers/event.controller/event.controller";
 
 const router: Router = express.Router();
@@ -20,7 +22,11 @@ router.post("/:eventID/register", registerForEvent);
 // Route to verify email and reduce total spot count
 router.get("/verify/:token", verifyEmail);
 
+// Route to update event placement
+router.post('/:eventId/placement', updateEventPlacement);
 
+// Route to get leaderboard
+router.get('/leaderboard', getLeaderboard);
 
 // Route to get all events
 router.get("/", getAllEvents);

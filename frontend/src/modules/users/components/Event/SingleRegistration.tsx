@@ -139,12 +139,17 @@ const SingleRegistration: React.FC<SingleRegistrationProps> = ({
             {/* Registration Form */}
             <div className="space-y-4">
               <div className="flex flex-col space-y-2">
-                <input
+              <input
                   type="email"
                   value={email}
                   onChange={onEmailChange}
                   placeholder="Enter your email"
-                  className="px-4 py-2 border rounded focus:ring-2 focus:ring-primary focus:border-primary"
+                  className="px-4 py-2 border rounded 
+                  focus:ring-2 focus:ring-primary focus:border-primary
+                  bg-white dark:bg-gray-700 
+                  text-gray-900 dark:text-white 
+                  border-gray-300 dark:border-gray-600
+                  placeholder-gray-500 dark:placeholder-gray-400"
                   disabled={isSubmitting}
                 />
                 {submitError && (

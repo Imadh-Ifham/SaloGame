@@ -1,29 +1,21 @@
-import mongoose, { Model, Schema, Document } from "mongoose";
+import mongoose, { Schema, Document } from "mongoose";
 
 interface TeamMember {
   email: string;
   verified: boolean;
   token: string;
 }
-interface eventRegistrations {
-  eventId: mongoose.Types.ObjectId;
-  memberVerifications: TeamMember[];
-}
-
 interface ITeam extends Document {
-  _id: mongoose.Types.ObjectId;
   teamId: string;
   teamName: string;
   teamLogo: string;
-  teamLeaderId: mongoose.Types.ObjectId;
+  teamLeaderEmail: string;
   contactNumber: string;
+  memberEmails: TeamMember[];
   eventRegistrations?: Array<{
-    eventId: mongoose.Types.ObjectId;
-    memberVerifications: Array<{
-      email: string;
-      verified: boolean;
-      token: string;
-    }>;
+    eventId: mongoose.Schema.Types.ObjectId;
+    memberEmails: string[];
+    registrationDate: Date;
   }>;
   isVerified: boolean;
   createdAt: Date;
@@ -46,36 +38,32 @@ const teamSchema = new Schema<ITeam>({
     type: String,
     required: true
   },
-  teamLeaderId: { 
-    type: mongoose.Schema.Types.ObjectId, 
-    ref: 'User', 
-    required: true 
-  },
-  contactNumber: { 
+  teamLeaderEmail: { 
     type: String, 
     required: true 
   },
-  eventRegistrations: [
-    {
-      eventId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Event",
-        required: true,
-      },
-      memberVerifications: [
-        {
-          email: { type: String, required: true },
-          verified: { type: Boolean, default: false },
-          token: { type: String, required: true },
-        },
-      ],
-    },
-  ],
+  memberEmails: [{
+    email: { type: String, required: true },
+    verified: { type: Boolean, default: false },
+    token: { type: String, required: true }
+  }],
+  eventRegistrations: [{
+    eventId: { type: Schema.Types.ObjectId, ref: 'Event' },
+    memberEmails: [String],
+    registrationDate: { type: Date, default: Date.now }
+  }],
   isVerified: {
     type: Boolean,
     default: false
   }
 }, { timestamps: true });
 
-const Team = mongoose.models.Team || mongoose.model<ITeam>("Team", teamSchema);
-export default Team;
+// Add middleware to check if all members are verified
+teamSchema.pre('save', function(next) {
+  if (this.memberEmails.length > 0) {
+    this.isVerified = this.memberEmails.every(member => member.verified);
+  }
+  next();
+});
+
+export default mongoose.model<ITeam>('Team', teamSchema);

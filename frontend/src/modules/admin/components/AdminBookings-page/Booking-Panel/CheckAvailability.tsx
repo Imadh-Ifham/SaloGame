@@ -1,5 +1,4 @@
 import {
-  CustomerBooking,
   selectActiveNav,
   selectBookingStatus,
   selectFormData,
@@ -19,6 +18,7 @@ import {
   fetchFirstAndNextBooking,
   fetchMachineStatus,
 } from "@/store/thunks/bookingThunk";
+import { CustomerBooking } from "@/types/booking";
 
 const CheckAvailability: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -78,9 +78,9 @@ const CheckAvailability: React.FC = () => {
   };
 
   return (
-    <>
+    <div className="w-full max-w-full box-border">
       {/* Navigation buttons */}
-      <div className="flex gap-3 bg-gray-100 p-2 rounded-lg mb-4 shadow-sm">
+      <div className="flex gap-3 border dark:border-gray-500  p-2 rounded-lg mb-4 shadow-sm">
         {["Now", "Later"].map((item) => (
           <Button
             key={item}
@@ -89,14 +89,14 @@ const CheckAvailability: React.FC = () => {
             className={`flex-1 py-2 rounded-lg text-base font-medium transition-all duration-300 ${
               activeNav === item
                 ? "bg-blue-600 text-white shadow-md"
-                : "bg-white text-gray-600 hover:bg-gray-200"
+                : "bg-white dark:bg-gray-700 hover:bg-gray-200 hover:dark:bg-gray-600 text-gray-700 dark:text-gray-50"
             }`}
           >
             {item}
           </Button>
         ))}
       </div>
-      <div className="flex flex-wrap items-center gap-2 w-full relative">
+      <div className="flex flex-wrap items-center gap-2 w-full relative box-border">
         {/* Date Picker - Only for "Later" Mode */}
         <div
           className={`transition-all duration-700 ease-in-out transform w-full ${
@@ -115,23 +115,23 @@ const CheckAvailability: React.FC = () => {
         <div
           className={`transition-all duration-700 ease-in-out transform w-full ${
             activeNav === "Later" ? "translate-y-2" : "translate-y-0"
-          }`}
+          } box-border`}
         >
           <DurationSelector />
         </div>
 
         {/* Check Availability Button */}
-        <div className="w-full flex justify-center mt-4">
+        <div className="w-full flex justify-center mt-4 box-border">
           <Button
             type="primary"
             onClick={handleCheckAvailability}
-            className="w-52 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-lg"
+            className="w-full py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-lg"
           >
             {loading ? "Checking..." : "Check Availability"}
           </Button>
         </div>
       </div>
-    </>
+    </div>
   );
 };
 
