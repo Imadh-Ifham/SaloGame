@@ -104,11 +104,26 @@ export const updateMembership = createAsyncThunk(
   }
 );
 
-export const deleteMembership = createAsyncThunk(
-  "membership/deleteMembership",
-  async (id: string) => {
-    await axiosInstance.delete(`/memberships/${id}`);
-    return id;
+// Soft delete
+export const deprecateMembershipPlan = createAsyncThunk(
+  "membership/deprecateMembershipPlan",
+  async ({
+    planId,
+    migrationPlanId,
+    disableAutoRenewal = true,
+  }: {
+    planId: string;
+    migrationPlanId?: string;
+    disableAutoRenewal?: boolean;
+  }) => {
+    const response = await axiosInstance.patch(
+      `/memberships/${planId}/deprecate`,
+      {
+        migrationPlanId,
+        disableAutoRenewal,
+      }
+    );
+    return response.data;
   }
 );
 
@@ -197,17 +212,20 @@ const membershipSlice = createSlice({
     });
 
     // Delete Membership
-    builder.addCase(deleteMembership.pending, (state) => {
+    builder.addCase(deprecateMembershipPlan.pending, (state) => {
       state.loading = true;
       state.error = null;
     });
-    builder.addCase(deleteMembership.fulfilled, (state, action) => {
+    builder.addCase(deprecateMembershipPlan.fulfilled, (state, action) => {
       state.loading = false;
-      state.memberships = state.memberships.filter(
-        (m) => m._id !== action.payload
+      const index = state.memberships.findIndex(
+        (m) => m._id === action.payload._id
       );
+      if (index !== -1) {
+        state.memberships[index] = action.payload;
+      }
     });
-    builder.addCase(deleteMembership.rejected, (state, action) => {
+    builder.addCase(deprecateMembershipPlan.rejected, (state, action) => {
       state.loading = false;
       state.error = action.error.message || "Failed to delete membership";
     });

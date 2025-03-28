@@ -3,12 +3,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
 import {
   fetchMembers,
-  deleteMembership,
   renewSubscription,
 } from "@/store/slices/membershipSlice";
 import { FiSearch, FiEye, FiRefreshCw, FiX } from "react-icons/fi";
 import { toast } from "react-hot-toast";
-
+import MemberDetailsModal from "./MemberDetailsModal";
 interface Subscription {
   _id: string;
   startDate: string;
@@ -21,6 +20,7 @@ interface Member {
   _id: string;
   email: string;
   defaultMembershipId?: {
+    _id: string;
     name: string;
   };
   subscription?: Subscription;
@@ -32,21 +32,24 @@ const UserSubscriptionsTable: React.FC = () => {
     (state: RootState) => state.membership
   );
 
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<Member | null>(null);
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filter, setFilter] = useState<
     "all" | "active" | "expired" | "autoRenew"
   >("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const rowsPerPage = 3;
+
+  const rowsPerPage = 4;
 
   useEffect(() => {
-    // Fetch user subscriptions using Redux action
     dispatch(fetchMembers());
   }, [dispatch]);
 
   // Filter and search logic
   const filteredSubscriptions = useMemo(() => {
-    let filtered = members.filter((member) => member.subscription) as Member[]; // Ensure only users with subscriptions are included
+    let filtered = members.filter((member) => member.subscription) as Member[];
 
     if (filter === "active") {
       filtered = filtered.filter(
@@ -57,26 +60,9 @@ const UserSubscriptionsTable: React.FC = () => {
         (member) => member.subscription?.status === "expired"
       );
     } else if (filter === "autoRenew") {
-      filtered = filtered.filter((member) => {
-        const subscription = member.subscription;
-        if (!subscription) return false;
-
-        // Check both possible formats
-        if (typeof subscription.autoRenew === "boolean") {
-          return subscription.autoRenew === true;
-        }
-
-        if (
-          subscription.autoRenew &&
-          typeof subscription.autoRenew === "object"
-        ) {
-          if ("type" in subscription.autoRenew) {
-            return subscription.autoRenew.type === true;
-          }
-        }
-
-        return false;
-      });
+      filtered = filtered.filter(
+        (member) => member.subscription?.autoRenew === true
+      );
     }
 
     if (searchTerm) {
@@ -94,6 +80,11 @@ const UserSubscriptionsTable: React.FC = () => {
     currentPage * rowsPerPage
   );
 
+  const handleViewDetails = (member: Member) => {
+    setSelectedMember(member);
+    setIsModalOpen(true);
+  };
+
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -106,14 +97,14 @@ const UserSubscriptionsTable: React.FC = () => {
     }
   };
 
-  const handleCancel = async (subscriptionId: string) => {
+  /*const handleCancel = async (subscriptionId: string) => {
     try {
       await dispatch(deleteMembership(subscriptionId)).unwrap();
       toast.success("Subscription canceled successfully.");
     } catch (error: any) {
       toast.error(error.message || "Failed to cancel subscription.");
     }
-  };
+  };*/
 
   const handleRenew = async (subscriptionId: string) => {
     try {
@@ -290,9 +281,7 @@ const UserSubscriptionsTable: React.FC = () => {
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() =>
-                          console.log("View subscription", member._id)
-                        }
+                        onClick={() => handleViewDetails(member)}
                         className="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                         title="View Details"
                       >
@@ -300,9 +289,9 @@ const UserSubscriptionsTable: React.FC = () => {
                       </button>
                       {member.subscription?.status === "active" ? (
                         <button
-                          onClick={() =>
+                          /*onClick={() =>
                             handleCancel(member.subscription?._id || "")
-                          }
+                          }*/
                           className="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
                           title="Cancel Subscription"
                         >
@@ -336,6 +325,16 @@ const UserSubscriptionsTable: React.FC = () => {
           </tbody>
         </table>
       </div>
+
+      {/* Member Details Modal */}
+      {selectedMember && (
+        <MemberDetailsModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          member={selectedMember}
+          refreshMembers={() => dispatch(fetchMembers())}
+        />
+      )}
 
       {/* Pagination Controls */}
       {paginatedSubscriptions.length > 0 && (

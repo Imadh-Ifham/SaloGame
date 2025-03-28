@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { FaTimes } from "react-icons/fa";
+import { useState, useEffect, useMemo } from "react";
+import { FaTimes, FaCheckCircle, FaExclamationCircle } from "react-icons/fa";
 
 interface MembershipType {
   _id?: string;
@@ -18,6 +18,51 @@ interface EditMembershipTypeModalProps {
   membershipType?: MembershipType;
 }
 
+// Custom validation hook
+const useFormValidation = (formData: MembershipType) => {
+  const validations = useMemo(() => {
+    const errors: { [key: string]: string } = {};
+
+    // Name validation
+    if (!formData.name.trim()) {
+      errors.name = "Membership name is required";
+    } else if (formData.name.length < 3) {
+      errors.name = "Name must be at least 3 characters long";
+    }
+
+    // Tagline validation
+    if (formData.tagline && formData.tagline.length > 100) {
+      errors.tagline = "Tagline must be 100 characters or less";
+    }
+
+    // Price validation
+    if (formData.price <= 0) {
+      errors.price = "Price must be greater than 0";
+    }
+
+    // XP Rate validation
+    if (formData.xpRate < 0) {
+      errors.xpRate = "XP Rate cannot be negative";
+    } else if (formData.xpRate > 5000) {
+      errors.xpRate = "XP Rate cannot be greater than 5000";
+    }
+
+    // Benefits validation
+    const invalidBenefits = formData.benefits.filter(
+      (benefit) => !benefit.trim()
+    );
+    if (invalidBenefits.length > 0) {
+      errors.benefits = "All benefits must have content";
+    }
+
+    return errors;
+  }, [formData]);
+
+  const isFormValid = Object.keys(validations).length === 0;
+
+  return { errors: validations, isFormValid };
+};
+
 export default function EditMembershipTypeModal({
   isOpen,
   onClose,
@@ -32,14 +77,18 @@ export default function EditMembershipTypeModal({
     benefits: [""],
     isActive: true,
   });
+  const [touchedFields, setTouchedFields] = useState<{
+    [key: string]: boolean;
+  }>({});
   const [error, setError] = useState<string | null>(null);
+
+  // Validation hook
+  const { errors, isFormValid } = useFormValidation(formData);
 
   useEffect(() => {
     if (membershipType) {
-      // Populate formData with the existing membership data for editing
       setFormData(membershipType);
     } else {
-      // Reset formData to default values for adding a new membership
       setFormData({
         name: "",
         tagline: "",
@@ -49,12 +98,17 @@ export default function EditMembershipTypeModal({
         isActive: true,
       });
     }
-  }, [membershipType]);
+    // Reset touched fields when modal opens/closes
+    setTouchedFields({});
+  }, [membershipType, isOpen]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value, type } = e.target;
+
+    // Mark field as touched
+    setTouchedFields((prev) => ({ ...prev, [name]: true }));
 
     // Handle different input types appropriately
     if (type === "number") {
@@ -73,6 +127,9 @@ export default function EditMembershipTypeModal({
     const newBenefits = [...formData.benefits];
     newBenefits[index] = value;
     setFormData((prev) => ({ ...prev, benefits: newBenefits }));
+
+    // Mark benefits as touched
+    setTouchedFields((prev) => ({ ...prev, benefits: true }));
   };
 
   const addBenefit = () => {
@@ -84,41 +141,38 @@ export default function EditMembershipTypeModal({
     setFormData((prev) => ({ ...prev, benefits: newBenefits }));
   };
 
-  const validateForm = (): boolean => {
-    // Validate name
-    if (!formData.name.trim()) {
-      setError("Name is required");
-      return false;
-    }
-
-    // Validate price
-    if (formData.price <= 0) {
-      setError("Price must be greater than 0");
-      return false;
-    }
-
-    // Validate benefits (no empty benefits)
-    if (formData.benefits.some((benefit) => !benefit.trim())) {
-      setError("All benefits must have content");
-      return false;
-    }
-
-    // Validate tagline length
-    if (formData.tagline.length > 100) {
-      setError("Tagline must be 100 characters or less");
-      return false;
-    }
-
-    return true;
-  };
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateForm()) return;
+
+    // Mark all fields as touched
+    setTouchedFields(
+      Object.keys(formData).reduce(
+        (acc, key) => ({
+          ...acc,
+          [key]: true,
+        }),
+        {}
+      )
+    );
+
+    if (!isFormValid) return;
 
     onSave(formData).catch((err) => {
       setError(err.response?.data?.message || "Failed to save membership");
     });
+  };
+
+  const renderFieldError = (fieldName: string) => {
+    // Only show error if field has been touched and has an error
+    if (touchedFields[fieldName] && errors[fieldName]) {
+      return (
+        <div className="text-xs text-red-600 mt-1 flex items-center">
+          <FaExclamationCircle className="mr-1" />
+          {errors[fieldName]}
+        </div>
+      );
+    }
+    return null;
   };
 
   if (!isOpen) return null;
@@ -146,15 +200,27 @@ export default function EditMembershipTypeModal({
             >
               Name <span className="text-red-500">*</span>
             </label>
-            <input
-              type="text"
-              id="name"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full p-2 border dark:border-gray-600 rounded shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              required
-            />
+            <div className="relative">
+              <input
+                type="text"
+                id="name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className={`w-full p-2 border rounded shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
+                  touchedFields.name && !errors.name
+                    ? "border-green-500"
+                    : touchedFields.name && errors.name
+                    ? "border-red-500"
+                    : "dark:border-gray-600"
+                }`}
+                required
+              />
+              {touchedFields.name && !errors.name && (
+                <FaCheckCircle className="absolute right-3 top-3 text-green-500" />
+              )}
+            </div>
+            {renderFieldError("name")}
           </div>
 
           {/* Tagline */}
@@ -164,16 +230,35 @@ export default function EditMembershipTypeModal({
               className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2"
             >
               Tagline
+              <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
+                (Optional, max 100 characters)
+              </span>
             </label>
-            <input
-              type="text"
-              id="tagline"
-              name="tagline"
-              value={formData.tagline}
-              onChange={handleChange}
-              className="w-full p-2 border dark:border-gray-600 rounded shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              placeholder="A short description of this membership"
-            />
+            <div className="relative">
+              <input
+                type="text"
+                id="tagline"
+                name="tagline"
+                value={formData.tagline}
+                onChange={handleChange}
+                maxLength={100}
+                className={`w-full p-2 border rounded shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
+                  touchedFields.tagline && !errors.tagline
+                    ? "border-green-500"
+                    : touchedFields.tagline && errors.tagline
+                    ? "border-red-500"
+                    : "dark:border-gray-600"
+                }`}
+                placeholder="A short description of this membership"
+              />
+              {touchedFields.tagline && !errors.tagline && formData.tagline && (
+                <FaCheckCircle className="absolute right-3 top-3 text-green-500" />
+              )}
+            </div>
+            {renderFieldError("tagline")}
+            <div className="text-xs text-gray-500 mt-1">
+              {formData.tagline.length}/100 characters
+            </div>
           </div>
 
           {/* Price */}
@@ -184,17 +269,29 @@ export default function EditMembershipTypeModal({
             >
               Price (LKR) <span className="text-red-500">*</span>
             </label>
-            <input
-              type="number"
-              id="price"
-              name="price"
-              value={formData.price}
-              onChange={handleChange}
-              className="w-full p-2 border dark:border-gray-600 rounded shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              min="0"
-              step="100"
-              required
-            />
+            <div className="relative">
+              <input
+                type="number"
+                id="price"
+                name="price"
+                value={formData.price}
+                onChange={handleChange}
+                className={`w-full p-2 border rounded shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
+                  touchedFields.price && !errors.price
+                    ? "border-green-500"
+                    : touchedFields.price && errors.price
+                    ? "border-red-500"
+                    : "dark:border-gray-600"
+                }`}
+                min="0"
+                step="100"
+                required
+              />
+              {touchedFields.price && !errors.price && (
+                <FaCheckCircle className="absolute right-3 top-3 text-green-500" />
+              )}
+            </div>
+            {renderFieldError("price")}
           </div>
 
           {/* XP Rate */}
@@ -203,21 +300,37 @@ export default function EditMembershipTypeModal({
               htmlFor="xpRate"
               className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2"
             >
-              XP Rate
+              Monthly XP Points
               <span className="ml-1 text-xs text-gray-500 dark:text-gray-400">
-                (XP earned per LKR1000 spent)
+                (In-app currency allocated monthly)
               </span>
             </label>
-            <input
-              type="number"
-              id="xpRate"
-              name="xpRate"
-              value={formData.xpRate}
-              onChange={handleChange}
-              className="w-full p-2 border dark:border-gray-600 rounded shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
-              min="0"
-              step="1"
-            />
+            <div className="relative">
+              <input
+                type="number"
+                id="xpRate"
+                name="xpRate"
+                value={formData.xpRate}
+                onChange={handleChange}
+                className={`w-full p-2 border rounded shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
+                  touchedFields.xpRate && !errors.xpRate
+                    ? "border-green-500"
+                    : touchedFields.xpRate && errors.xpRate
+                    ? "border-red-500"
+                    : "dark:border-gray-600"
+                }`}
+                min="0"
+                max="5000"
+                step="50"
+              />
+              {touchedFields.xpRate && !errors.xpRate && (
+                <FaCheckCircle className="absolute right-3 top-3 text-green-500" />
+              )}
+            </div>
+            {renderFieldError("xpRate")}
+            <div className="text-xs text-gray-500 mt-1">
+              Recommended range: 100-1000 XP points per month
+            </div>
           </div>
 
           {/* Benefits */}
@@ -232,7 +345,13 @@ export default function EditMembershipTypeModal({
                     type="text"
                     value={benefit}
                     onChange={(e) => handleBenefitChange(index, e.target.value)}
-                    className="flex-grow p-2 border dark:border-gray-600 rounded-l shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100"
+                    className={`flex-grow p-2 border rounded-l shadow-sm bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 ${
+                      touchedFields.benefits && !errors.benefits
+                        ? "border-green-500"
+                        : touchedFields.benefits && errors.benefits
+                        ? "border-red-500"
+                        : "dark:border-gray-600"
+                    }`}
                     placeholder="e.g., 50 hours gaming time"
                     required
                   />
@@ -247,6 +366,7 @@ export default function EditMembershipTypeModal({
                 </div>
               ))}
             </div>
+            {renderFieldError("benefits")}
             <button
               type="button"
               onClick={addBenefit}
@@ -256,34 +376,22 @@ export default function EditMembershipTypeModal({
             </button>
           </div>
 
-          {/* Active Status */}
-          <div className="flex items-center">
-            <input
-              type="checkbox"
-              id="isActive"
-              name="isActive"
-              checked={formData.isActive}
-              onChange={handleChange}
-              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-            />
-            <label
-              htmlFor="isActive"
-              className="ml-2 block text-sm text-gray-700 dark:text-gray-200"
-            >
-              Active
-            </label>
-          </div>
-
+          {/* Global Error */}
           {error && (
             <div className="p-2 text-sm text-red-800 bg-red-100 border border-red-200 rounded">
               {error}
             </div>
           )}
-          {/* Submit Button */}
 
+          {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+            disabled={!isFormValid}
+            className={`w-full py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium transition-colors ${
+              isFormValid
+                ? "bg-blue-600 hover:bg-blue-700 text-white"
+                : "bg-gray-300 text-gray-500 cursor-not-allowed"
+            }`}
           >
             {membershipType ? "Save Changes" : "Create Membership"}
           </button>

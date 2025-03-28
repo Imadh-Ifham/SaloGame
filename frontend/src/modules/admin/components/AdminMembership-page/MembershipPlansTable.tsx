@@ -3,12 +3,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { AppDispatch, RootState } from "@/store/store";
 import {
   fetchMembershipData,
-  deleteMembership,
   updateMembership,
   createMembership,
+  deprecateMembershipPlan,
 } from "@/store/slices/membershipSlice";
 import EditMembershipTypeModal from "./EditMembershipTypeModal";
-import { FiEdit, FiTrash, FiPlus } from "react-icons/fi";
+import DeprecatePlanModal from "./DeprecatePlanModal";
+import { FiEdit, FiPlus, FiAlertTriangle } from "react-icons/fi";
 import { toast } from "react-hot-toast";
 import axiosInstance from "@/axios.config";
 
@@ -19,6 +20,7 @@ interface MembershipPlan {
   xpRate: number;
   benefits: string[];
   subscriberCount: number;
+  isActive: boolean;
 }
 
 const MembershipPlansTable: React.FC = () => {
@@ -29,6 +31,10 @@ const MembershipPlansTable: React.FC = () => {
 
   const [currentPage, setCurrentPage] = useState(1);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeprecateModalOpen, setIsDeprecateModalOpen] = useState(false);
+  const [planToDeprecate, setPlanToDeprecate] = useState<MembershipPlan | null>(
+    null
+  );
   const [editingPlan, setEditingPlan] = useState<MembershipPlan | null>(null);
   const rowsPerPage = 5;
 
@@ -43,6 +49,7 @@ const MembershipPlansTable: React.FC = () => {
     currentPage * rowsPerPage
   );
 
+  // Event handlers
   const handleNextPage = () => {
     if (currentPage < totalPages) {
       setCurrentPage(currentPage + 1);
@@ -66,23 +73,35 @@ const MembershipPlansTable: React.FC = () => {
     }
   };
 
-  const handleDelete = async (planId: string) => {
-    if (
-      window.confirm("Are you sure you want to delete this membership plan?")
-    ) {
-      try {
-        await dispatch(deleteMembership(planId)).unwrap();
-        toast.success("Membership plan deleted successfully.");
-        dispatch(fetchMembershipData()); // Refresh data
-      } catch (error: any) {
-        toast.error(error.message || "Failed to delete membership plan.");
-      }
-    }
-  };
-
   const handleAddNew = () => {
     setEditingPlan(null);
     setIsModalOpen(true);
+  };
+
+  const handleDeprecateClick = (plan: MembershipPlan) => {
+    setPlanToDeprecate(plan);
+    setIsDeprecateModalOpen(true);
+  };
+
+  const handleDeprecatePlan = async (
+    planId: string,
+    migrationPlanId?: string
+  ) => {
+    try {
+      await dispatch(
+        deprecateMembershipPlan({
+          planId,
+          migrationPlanId,
+          disableAutoRenewal: true,
+        })
+      ).unwrap();
+
+      toast.success("Membership plan successfully deprecated");
+      dispatch(fetchMembershipData()); // Refresh data
+    } catch (error: any) {
+      toast.error(error.message || "Failed to deprecate membership plan");
+      throw error; // Re-throw to be caught by the modal
+    }
   };
 
   if (loading) {
@@ -148,6 +167,12 @@ const MembershipPlansTable: React.FC = () => {
                 scope="col"
                 className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
               >
+                Status
+              </th>
+              <th
+                scope="col"
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
                 Actions
               </th>
             </tr>
@@ -173,6 +198,19 @@ const MembershipPlansTable: React.FC = () => {
                       {plan.subscriberCount}
                     </span>
                   </td>
+                  {/*Status column */}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                    {plan.isActive ? (
+                      <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400">
+                        Active
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-orange-100 dark:bg-orange-900/30 text-orange-800 dark:text-orange-400">
+                        Deprecated
+                      </span>
+                    )}
+                  </td>
+
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     <div className="flex space-x-2">
                       <button
@@ -182,13 +220,15 @@ const MembershipPlansTable: React.FC = () => {
                       >
                         <FiEdit size={16} />
                       </button>
-                      <button
-                        onClick={() => handleDelete(plan._id)}
-                        className="p-1.5 rounded-full text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors"
-                        title="Delete Membership"
-                      >
-                        <FiTrash size={16} />
-                      </button>
+                      {plan.isActive && (
+                        <button
+                          onClick={() => handleDeprecateClick(plan)}
+                          className="p-1.5 rounded-full text-orange-600 dark:text-orange-400 hover:bg-orange-100 dark:hover:bg-orange-900/30 transition-colors"
+                          title="Deprecate Membership Plan"
+                        >
+                          <FiAlertTriangle size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -196,7 +236,7 @@ const MembershipPlansTable: React.FC = () => {
             ) : (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-6 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
                 >
                   No membership plans found.
@@ -273,12 +313,30 @@ const MembershipPlansTable: React.FC = () => {
                   name: editingPlan.name,
                   price: editingPlan.price,
                   xpRate: editingPlan.xpRate,
-                  tagline: "", // You should fetch the full membership data instead
-                  benefits: editingPlan.benefits, // These should come from your API
-                  isActive: true, // This should reflect the actual state
+                  tagline: "",
+                  benefits: editingPlan.benefits,
+                  isActive: true,
                 }
               : undefined
           }
+        />
+      )}
+
+      {/* Deprecate Membership Modal */}
+      {isDeprecateModalOpen && planToDeprecate && (
+        <DeprecatePlanModal
+          isOpen={isDeprecateModalOpen}
+          onClose={() => {
+            setIsDeprecateModalOpen(false);
+            setPlanToDeprecate(null);
+          }}
+          planId={planToDeprecate._id}
+          planName={planToDeprecate.name}
+          subscriberCount={planToDeprecate.subscriberCount}
+          onDeprecate={handleDeprecatePlan}
+          availablePlans={memberships.filter(
+            (m) => m.isActive && m._id !== planToDeprecate._id
+          )}
         />
       )}
     </div>

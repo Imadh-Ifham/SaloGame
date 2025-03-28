@@ -45,8 +45,6 @@ export class AutoRenewalService {
       }
 
       // Check for failed renewals that have expired and mark them
-      //await this.checkFailedRenewals();
-
       const now = new Date();
       const expiredSubscriptions = await Subscription.find({
         status: "active",
@@ -81,38 +79,6 @@ export class AutoRenewalService {
     }
   }
 
-  // Check for failed renewals that have expired and mark them
-  /*async checkFailedRenewals() {
-    const now = new Date();
-    // Find subscriptions that had renewal attempts, but failed and are now expired
-    const failedRenewals = await Subscription.find({
-      status: "active",
-      endDate: { $lt: now },
-      autoRenew: true,
-      paymentDetails: { $exists: true },
-      renewalAttempted: true,
-      renewalSuccessful: false,
-    });
-
-    console.log(
-      `Found ${failedRenewals.length} failed renewal subscriptions to mark as expired`
-    );
-
-    if (failedRenewals.length > 0) {
-      const updateResult = await Subscription.updateMany(
-        {
-          _id: { $in: failedRenewals.map((sub) => sub._id) },
-        },
-        {
-          $set: { status: "expired" },
-        }
-      );
-      console.log(
-        `Marked ${updateResult.modifiedCount} failed renewal subscriptions as expired`
-      );
-    }
-  }*/
-
   private async processRenewal(subscription: any) {
     const session = await mongoose.startSession();
     session.startTransaction();
@@ -122,29 +88,25 @@ export class AutoRenewalService {
         `Processing auto-renewal for subscription ${subscription._id}`
       );
 
+      // Simulate payment process (80% success rate as in the frontend)
+      const paymentSuccessful = Math.random() <= 0.8;
+
       // Record Renewal attempt
       await Subscription.findByIdAndUpdate(subscription._id, {
         renewalAttempted: true,
         lastRenewalAttempt: new Date(),
+        renewalSuccessful: paymentSuccessful,
+        renewalFailureReason: paymentSuccessful
+          ? null
+          : "Payment processing failed",
       });
 
       // Get the membership ID properly - ensure it's an ObjectId
       const membershipId =
         subscription.membershipId._id || subscription.membershipId;
 
-      // Simulate payment process (80% success rate as in the frontend)
-      const paymentSuccessful = Math.random() <= 0.8;
-
       if (!paymentSuccessful) {
         console.log(`Payment failed for subscription ${subscription._id}`);
-
-        // Record the failed renewal attempt
-        await Subscription.findByIdAndUpdate(subscription._id, {
-          renewalSuccessful: false,
-          renewalFailureReason: "Payment processing failed",
-        });
-
-        return;
       }
 
       // Calculate new dates
