@@ -5,6 +5,9 @@ import { FaCalendarAlt, FaUsers, FaChartBar, FaFileExport } from 'react-icons/fa
 import axiosInstance from '@/axios.config';
 import { format, subMonths, eachDayOfInterval } from 'date-fns';
 import { toast } from 'react-hot-toast';
+import EventSummaryReport from './EventSummaryReport';
+import { FiX } from 'react-icons/fi';
+
 
 interface EventAnalytics {
   totalEvents: number;
@@ -20,7 +23,7 @@ interface EventAnalytics {
   }[];
 }
 
-const ReportsAnalyticsTab: React.FC = () => {
+const ReportsAnalyticsTab: React.FC<{ teams: any[] }> = ({ teams }) => {
   const [analytics, setAnalytics] = useState<EventAnalytics>({
     totalEvents: 0,
     teamEvents: 0,
@@ -33,6 +36,10 @@ const ReportsAnalyticsTab: React.FC = () => {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [reportType, setReportType] = useState<string>('event-summary');
+  const [showReportModal, setShowReportModal] = useState(false);
+  const [events, setEvents] = useState([]);
+  const [isPdfLoading, setIsPdfLoading] = useState(true);
 
   useEffect(() => {
     fetchAnalytics();
@@ -46,6 +53,7 @@ const ReportsAnalyticsTab: React.FC = () => {
       ]);
 
       const events = eventsResponse.data.data;
+      setEvents(events);
       const teams = teamsResponse.data.data;
 
       // Calculate analytics
@@ -229,54 +237,108 @@ const ReportsAnalyticsTab: React.FC = () => {
     };
   };
 
-  const exportData = async (format: 'csv' | 'pdf') => {
+  const exportData = async (format: string, type?: string) => {
     try {
-      const response = await axiosInstance.get(`/events/export?format=${format}`);
-      // Handle download logic
-      toast.success(`Data exported successfully as ${format.toUpperCase()}`);
+      const reportTypeToUse = type || reportType;
+      const loadingToast = toast.loading(`Generating ${reportTypeToUse} report...`);
+      
+      if (format === 'pdf') {
+        // Show the PDF report in a modal for preview
+        setShowReportModal(true);
+        toast.dismiss(loadingToast);
+        return;
+      }
+      
+      // For CSV, make the API call
+      const response = await axiosInstance.get(
+        `/events/export?format=${format}&type=${reportTypeToUse}`, 
+        { responseType: 'blob' }
+      );
+      
+      // Create download
+      const blob = new Blob([response.data], { 
+        type: format === 'pdf' ? 'application/pdf' : 'text/csv' 
+      });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${reportTypeToUse}-report.${format}`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      toast.dismiss(loadingToast);
+      toast.success(`${reportTypeToUse.replace('-', ' ')} report exported successfully`);
     } catch (error) {
       toast.error('Failed to export data');
+      console.error('Export error:', error);
     }
   };
-
-  if (loading) {
-    return <div className="flex justify-center items-center h-64">
-      <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
-    </div>;
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-900/20 border border-red-800 rounded-lg p-6 text-center">
-        <p className="text-red-400">{error}</p>
-        <button 
-          onClick={fetchAnalytics}
-          className="mt-4 px-4 py-2 bg-gray-700 hover:bg-gray-600 rounded-md text-white"
-        >
-          Try Again
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Export Buttons */}
       <div className="flex justify-end space-x-4">
-        <button
-          onClick={() => exportData('csv')}
-          className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center space-x-2 hover:bg-green-700 transition-colors"
+      <div className="relative mr-2">
+        <select
+          value={reportType}
+          onChange={(e) => setReportType(e.target.value)}
+          className="bg-gray-700 border border-gray-600 text-white rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
         >
-          <FaFileExport /> <span>Export CSV</span>
-        </button>
-        <button
-          onClick={() => exportData('pdf')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors"
-        >
-          <FaFileExport /> <span>Export PDF</span>
-        </button>
+          <option value="event-summary">Event Summary Report</option>
+          <option value="participant">Participant Report</option>
+          <option value="team">Team Report</option>
+        </select>
       </div>
-
+      <button
+        onClick={() => exportData('csv')}
+        className="px-4 py-2 bg-green-600 text-white rounded-lg flex items-center space-x-2 hover:bg-green-700 transition-colors"
+      >
+        <FaFileExport /> <span>Export CSV</span>
+      </button>
+      <button
+        onClick={() => exportData('pdf')}
+        className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center space-x-2 hover:bg-blue-700 transition-colors"
+      >
+        <FaFileExport /> <span>Export PDF</span>
+      </button>
+    </div>
+    {/* Report Modal */}
+    {showReportModal && (
+      <div className="fixed inset-0 z-50 overflow-auto bg-black bg-opacity-50 flex items-center justify-center p-4">
+        <div className="bg-gray-800 rounded-lg w-full max-w-6xl h-[90vh] overflow-hidden shadow-2xl flex flex-col">
+          <div className="flex justify-between items-center p-4 border-b border-gray-700">
+            <h3 className="text-lg font-semibold text-white">
+              Event Summary Report
+            </h3>
+            <button
+              onClick={() => setShowReportModal(false)}
+              className="p-2 rounded-lg text-gray-400 hover:text-white hover:bg-gray-700"
+            >
+              <FiX size={20} />
+            </button>
+          </div>
+          <div className="flex-grow overflow-hidden relative">
+          {isPdfLoading && (
+            <div className="absolute inset-0 flex items-center justify-center z-10 bg-gray-800/80">
+              <div className="animate-spin mr-2 h-5 w-5 text-primary rounded-full border-2 border-t-transparent"></div>
+              <span className="text-white">Preparing PDF preview...</span>
+            </div>
+          )}
+          
+          {reportType === 'event-summary' && (
+            <EventSummaryReport 
+              events={events || []}
+              teams={teams || []} 
+              analytics={analytics}
+              onLoadComplete={() => setIsPdfLoading(false)}
+            />
+          )}
+        </div>
+        </div>
+        </div>
+       )}
       {/* Statistics Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <motion.div
