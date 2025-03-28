@@ -23,7 +23,7 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
 
   if (!allMachineStatus[machine._id]) {
     return (
-      <div className="w-full h-32 border border-gray-300 rounded-md bg-gray-300 animate-pulse" />
+      <div className="w-full h-32 border border-gray-300 dark:border-gray-500 rounded-md bg-gray-300 animate-pulse" />
     );
   }
 
@@ -53,7 +53,7 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
   return (
     <div
       onClick={handleMachineSelect}
-      className={`w-full h-32 border rounded-2xl border-gray-300 hover:bg-gray-200 hover:scale-105 shadow-xl
+      className={`w-full h-32 border rounded-2xl border-gray-300 dark:border-gray-500 hover:bg-gray-200 dark:bg-gray-700 hover:scale-105 shadow-xl
     transition-transform duration-300 ease-in-out overflow-hidden flex flex-col items-center cursor-pointer ${
       selectedMachine?.serialNumber === machine.serialNumber &&
       !isMoreMachineClicked
@@ -87,8 +87,8 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
       <div className="w-full flex items-center flex-grow gap-4">
         {/* Screen with slight depth */}
         <div id="screen" className="w-1/2 h-16 flex items-center relative">
-          <div className="w-1 h-10 bg-slate-700 rounded-l-lg shadow-md" />
-          <div className="w-1 h-full bg-slate-700 rounded-sm shadow-md" />
+          <div className="w-1 h-10 bg-slate-600 dark:bg-gray-500 rounded-l-lg shadow-md" />
+          <div className="w-1 h-full bg-slate-700 dark:bg-gray-400 rounded-sm shadow-md" />
         </div>
 
         {/* Sofa with better depth */}

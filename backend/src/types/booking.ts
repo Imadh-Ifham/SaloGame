@@ -16,3 +16,16 @@ export type CustomerBooking = {
   totalPrice?: number;
   status: "Booked" | "InUse" | "Completed" | "Cancelled";
 };
+
+export interface BookingReportData {
+  metrics: {
+    totalBookings: number;
+    completedBookings: number;
+    totalRevenue: number;
+    averageBookingValue: number;
+    bookingsByStatus: Record<string, number>;
+    bookingsByMachine: Record<string, number>;
+  };
+  startDate: Date;
+  endDate: Date;
+}

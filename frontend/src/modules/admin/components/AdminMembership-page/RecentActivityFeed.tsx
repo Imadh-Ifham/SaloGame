@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { FaUser, FaSyncAlt, FaExclamationCircle } from "react-icons/fa";
+import { FiUser, FiRefreshCw, FiAlertCircle } from "react-icons/fi";
 
 interface Activity {
   type: "new_subscription" | "auto_renewal" | "expiring_membership";
@@ -26,7 +26,7 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
   }, [activities]);
 
   const totalPages = Math.ceil(activities.length / rowsPerPage);
-  const paginatedActivities = activities.slice(
+  const paginatedActivities = sortedActivities.slice(
     (currentPage - 1) * rowsPerPage,
     currentPage * rowsPerPage
   );
@@ -34,11 +34,11 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
   const getActivityIcon = (type: string) => {
     switch (type) {
       case "new_subscription":
-        return <FaUser className="text-green-500" />;
+        return <FiUser className="text-emerald-600 dark:text-emerald-400" />;
       case "auto_renewal":
-        return <FaSyncAlt className="text-blue-500" />;
+        return <FiRefreshCw className="text-blue-600 dark:text-blue-400" />;
       case "expiring_membership":
-        return <FaExclamationCircle className="text-red-500" />;
+        return <FiAlertCircle className="text-red-600 dark:text-red-400" />;
       default:
         return null;
     }
@@ -47,13 +47,13 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
   const getActivityColor = (type: string) => {
     switch (type) {
       case "new_subscription":
-        return "bg-green-100 text-green-800";
+        return "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50";
       case "auto_renewal":
-        return "bg-blue-100 text-blue-800";
+        return "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50";
       case "expiring_membership":
-        return "bg-red-100 text-red-800";
+        return "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 border border-red-200 dark:border-red-900/50";
       default:
-        return "bg-gray-100 text-gray-800";
+        return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-400 border border-gray-200 dark:border-gray-700";
     }
   };
 
@@ -69,77 +69,114 @@ const RecentActivityFeed: React.FC<RecentActivityFeedProps> = ({
     }
   };
 
+  // Format date in a consistent way
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-      <h2 className="text-xl font-bold mb-4 text-gray-100">Recent Activity</h2>
-      <ul className="space-y-4">
-        {paginatedActivities.map((activity, index) => (
-          <li
-            key={index}
-            className={`flex items-center p-4 rounded-lg ${getActivityColor(
-              activity.type
-            )}`}
-          >
-            <div className="mr-4">{getActivityIcon(activity.type)}</div>
-            <div>
-              <p className="text-sm font-medium">
-                {activity.type === "new_subscription" && (
-                  <>
-                    <span className="font-bold">{activity.user.name}</span>{" "}
-                    subscribed to{" "}
-                    <span className="font-bold">
-                      {activity.membership.name}
-                    </span>
-                  </>
-                )}
-                {activity.type === "auto_renewal" && (
-                  <>
-                    <span className="font-bold">{activity.user.name}</span>'s
-                    membership{" "}
-                    <span className="font-bold">
-                      {activity.membership.name}
-                    </span>{" "}
-                    auto-renewed
-                  </>
-                )}
-                {activity.type === "expiring_membership" && (
-                  <>
-                    <span className="font-bold">{activity.user.email}</span>'s
-                    membership{" "}
-                    <span className="font-bold">
-                      {activity.membership.name}
-                    </span>{" "}
-                    is expiring soon
-                  </>
-                )}
-              </p>
-              <p className="text-xs text-gray-500">
-                {new Date(activity.date).toLocaleString()}
-              </p>
-            </div>
-          </li>
-        ))}
-      </ul>
-      {/* Pagination Controls */}
-      <div className="flex justify-between items-center mt-4">
-        <button
-          onClick={handlePreviousPage}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50"
-        >
-          Previous
-        </button>
-        <span className="text-gray-300">
-          Page {currentPage} of {totalPages}
-        </span>
-        <button
-          onClick={handleNextPage}
-          disabled={currentPage === totalPages}
-          className="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50"
-        >
-          Next
-        </button>
+    <div className="h-full">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+          Recent Activity
+        </h2>
       </div>
+
+      {activities.length === 0 ? (
+        <div className="flex flex-col items-center justify-center h-64 text-gray-500 dark:text-gray-400">
+          <FiAlertCircle size={24} className="mb-2" />
+          <p>No recent activities found</p>
+        </div>
+      ) : (
+        <>
+          <ul className="space-y-3">
+            {paginatedActivities.map((activity, index) => (
+              <li
+                key={index}
+                className={`flex items-start p-3 rounded-lg transition-colors ${getActivityColor(
+                  activity.type
+                )}`}
+              >
+                <div className="p-2 rounded-full bg-white dark:bg-gray-700 mr-3">
+                  {getActivityIcon(activity.type)}
+                </div>
+                <div className="flex-1">
+                  <p className="text-sm font-medium">
+                    {activity.type === "new_subscription" && (
+                      <>
+                        <span className="font-bold">
+                          {activity.user.name || activity.user.email}
+                        </span>{" "}
+                        subscribed to{" "}
+                        <span className="font-bold">
+                          {activity.membership.name}
+                        </span>
+                      </>
+                    )}
+                    {activity.type === "auto_renewal" && (
+                      <>
+                        <span className="font-bold">
+                          {activity.user.name || activity.user.email}
+                        </span>
+                        's membership{" "}
+                        <span className="font-bold">
+                          {activity.membership.name}
+                        </span>{" "}
+                        auto-renewed
+                      </>
+                    )}
+                    {activity.type === "expiring_membership" && (
+                      <>
+                        <span className="font-bold">
+                          {activity.user.name || activity.user.email}
+                        </span>
+                        's membership{" "}
+                        <span className="font-bold">
+                          {activity.membership.name}
+                        </span>{" "}
+                        is expiring soon
+                      </>
+                    )}
+                  </p>
+                  <p className="text-xs mt-1 text-gray-500 dark:text-gray-400">
+                    {formatDate(activity.date)}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
+
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-between items-center mt-6 text-sm">
+              <button
+                onClick={handlePreviousPage}
+                disabled={currentPage === 1}
+                className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Previous
+              </button>
+              <span className="text-gray-600 dark:text-gray-400">
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={handleNextPage}
+                disabled={currentPage === totalPages}
+                className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                Next
+              </button>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 };

@@ -143,11 +143,11 @@ const SingleBattle: React.FC = () => {
         ) : (
           <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {events.map(event => (
-              <div key={event._id} className="relative">
+              <div key={event._id} className="relative flex flex-col items-center">
                 <EventCard event={event} />
                 <button
                   onClick={() => handleEventSelect(event)}
-                  className="px-6 py-2 bg-primary/90 hover:bg-primary text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 font-poppins text-sm font-medium"
+                  className="mt-4 px-6 py-2 bg-primary/90 hover:bg-primary text-white rounded-lg shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 font-poppins text-sm font-medium"
                 >
                   Register
                 </button>

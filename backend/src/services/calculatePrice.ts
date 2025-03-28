@@ -44,7 +44,6 @@ const calculateTotalPrice = async (
         );
 
       const userCount = machineBooking.userCount || 1; // Default to 1 user
-      console.log(machineType);
       // Fetch rate per hour based on the number of users (use bracket notation)
       // Convert MongoDB's Map to an object if necessary
       const rateByPlayers =

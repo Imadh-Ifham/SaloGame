@@ -1,36 +1,35 @@
+import React from "react";
+import { FiGift } from "react-icons/fi";
 import DashboardSummary from "../components/AdminOffer-page/DashboardSummary";
 import QuickActions from "../components/AdminOffer-page/QuickActions";
 import OfferManagement from "../components/AdminOffer-page/OfferManagement/OfferManagement";
 
-const AdminOfferPage = () => {
+const AdminOfferPage: React.FC = () => {
   return (
-    <div className="flex-1 h-screen overflow-y-auto bg-gradient-to-b from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="p-6 md:p-8 max-w-7xl mx-auto">
-        <div className="flex items-center mb-8">
-          <div className="w-10 h-10 bg-purple-600 rounded-lg flex items-center justify-center mr-4">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-6 w-6 text-white"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-              />
-            </svg>
-          </div>
-          <h1 className="text-3xl font-bold text-gray-800 dark:text-gray-100">
-            Gaming Cafe Offers
+    <div className="h-full w-full bg-gray-50 dark:bg-gray-900">
+      <div className="px-4 sm:px-6 lg:px-8 py-6 w-full space-y-6">
+        <div className="mb-4">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Offers Management
           </h1>
         </div>
 
+        {/* Stats Cards Row */}
         <DashboardSummary />
-        <QuickActions />
-        <div className="mt-8">
+
+        {/* Quick Actions */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            Quick Actions
+          </h2>
+          <QuickActions />
+        </div>
+
+        {/* Offers Management Section */}
+        <div className="bg-white dark:bg-gray-800 rounded-lg shadow p-6 border border-gray-200 dark:border-gray-700">
+          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+            All Offers
+          </h2>
           <OfferManagement />
         </div>
       </div>

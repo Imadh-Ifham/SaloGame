@@ -1,8 +1,20 @@
 import React, { useState, useEffect } from "react";
+import { Tab } from "@headlessui/react";
+import { 
+  CalendarIcon, 
+  UserGroupIcon, 
+  PlayIcon, 
+  ChartBarIcon 
+} from "@heroicons/react/24/outline";
 import AdminEventCard from "../components/AdminEvent-page/AdminEventCard";
 import EventForm from "../components/AdminEvent-page/EventForm";
 import Modal from "@/components/Modal";
 import axiosInstance from "@/axios.config";
+import { motion } from "framer-motion";
+import UpcomingEventsSection from '../components/AdminEvent-page/UpcomingEventSection';
+import ParticipantsTab  from '../components/AdminEvent-page/ParticipantsTab';
+import ReportsAnalyticsTab  from '../components/AdminEvent-page/ReportsAnalyticsTab';
+import LiveEventsTab  from '../components/AdminEvent-page/LiveEventsTab';
 
 const AdminEventPage: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -14,6 +26,7 @@ const AdminEventPage: React.FC = () => {
     endDateTime: string;
     description: string;
     participationType: string; // Added participationType property
+    category: string; // Added category property
     numberOfTeams?: number;
     participationPerTeam?: number;
     totalSpots?: number;
@@ -112,51 +125,145 @@ const AdminEventPage: React.FC = () => {
   console.log("Events to render:", events);
 
   return (
-    <div className="flex-1 h-screen overflow-y-auto bg-white dark:bg-background-dark">
-      <div className="p-6">
-        {error && ( // display error message if there is an error
-          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4" role="alert">
-            <strong className="font-bold">Error!</strong>
-            <span className="block sm:inline">{error}</span>
-          </div>
-        )}
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-semibold">Manage Events</h2>
-          <button
-            onClick={handleCreateEvent}
-            className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600"
+    <div className="container mx-auto px-4 py-8">
+      <motion.div
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-center sm:text-left mb-8"
+      >
+        <h2 className="text-3xl sm:text-2xl font-press font-semibold text-primary">
+          Manage Our <span className="text-gray-900 dark:text-white">Events</span>
+        </h2>
+        <div className="w-16 sm:w-24 h-1 bg-primary mx-auto sm:mx-0 rounded-full mt-4" />
+      </motion.div>
+      
+      <Tab.Group>
+        <Tab.List className="flex space-x-4 border-b border-gray-200 dark:border-gray-700 mb-6">
+          <Tab
+            className={({ selected }) =>
+              `px-4 py-2 font-medium text-sm focus:outline-none ${
+                selected
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`
+            }
           >
-            Create Event
-          </button>
-        </div>
+            <div className="flex items-center space-x-2">
+              <CalendarIcon className="w-5 h-5" />
+              <span>Event Management</span>
+            </div>
+          </Tab>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-          {events.map((event, index) => (
+          <Tab
+            className={({ selected }) =>
+              `px-4 py-2 font-medium text-sm focus:outline-none ${
+                selected
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`
+            }
+          >
+            <div className="flex items-center space-x-2">
+              <UserGroupIcon className="w-5 h-5" />
+              <span>Participants</span>
+            </div>
+          </Tab>
+
+          <Tab
+            className={({ selected }) =>
+              `px-4 py-2 font-medium text-sm focus:outline-none ${
+                selected
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`
+            }
+          >
+            <div className="flex items-center space-x-2">
+              <PlayIcon className="w-5 h-5" />
+              <span>Live Events</span>
+            </div>
+          </Tab>
+
+          <Tab
+            className={({ selected }) =>
+              `px-4 py-2 font-medium text-sm focus:outline-none ${
+                selected
+                  ? "text-primary border-b-2 border-primary"
+                  : "text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+              }`
+            }
+          >
+            <div className="flex items-center space-x-2">
+              <ChartBarIcon className="w-5 h-5" />
+              <span>Reports & Analytics</span>
+            </div>
+          </Tab>
+        </Tab.List>
+
+        <Tab.Panels>
+          {/* Event Management Panel */}
+          <Tab.Panel>
+          <UpcomingEventsSection events={events} />
             <AdminEventCard
-              key={index}
-              event={event}
+              events={events}
               onEdit={handleEditEvent}
               onDelete={handleDeleteEvent}
+              onCreateEvent={() => setIsModalOpen(true)}
             />
-          ))}
-        </div>
+          </Tab.Panel>
 
-        <Modal
-          isOpen={isModalOpen}
-          onClose={() => {
-            setIsModalOpen(false);
-            setEditingEvent(null);
-          }}
-          title={editingEvent ? "Edit Event" : "Create New Event"}
-        >
-          <EventForm
-            onSubmit={handleSubmit}
-            initialData={editingEvent || undefined}
-          />
-        </Modal>
+          {/* Participants Panel */}
+          <Tab.Panel>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-4">Event Participants</h2>
+              <ParticipantsTab />
+            </div>
+          </Tab.Panel>
 
-        {/* Delete Confirmation Modal */}
-        {isDeleteConfirmOpen && (
+          {/* Live Events Panel */}
+          <Tab.Panel>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+              <h2 className="text-xl font-semibold mb-4">Live Events</h2>
+              <LiveEventsTab />
+            </div>
+          </Tab.Panel>
+
+          {/* Reports & Analytics Panel */}
+          <Tab.Panel>
+            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+
+              <ReportsAnalyticsTab />
+            </div>
+          </Tab.Panel>
+        </Tab.Panels>
+      </Tab.Group>
+
+      {/* Existing Modals */}
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => {
+          setIsModalOpen(false);
+          setEditingEvent(null);
+        }}
+        title={editingEvent ? "Edit Event" : "Create New Event"}
+      >
+        <EventForm
+          onSubmit={handleSubmit}
+          initialData={
+            editingEvent
+              ? {
+                  ...editingEvent,
+                  category: editingEvent.category as "team-battle" | "single-battle" | undefined,
+                }
+              : undefined
+          }
+          onCancel={() => setIsModalOpen(false)}
+        />
+      </Modal>
+
+      {/* Delete Confirmation Modal */}
+      {isDeleteConfirmOpen && (
           <Modal isOpen={isDeleteConfirmOpen} onClose={() => setIsDeleteConfirmOpen(false)} title="Confirm Delete">
             <div className="p-4">
               <p>Are you sure you want to delete this event?</p>
@@ -178,7 +285,7 @@ const AdminEventPage: React.FC = () => {
           </Modal>
         )}
       </div>
-    </div>
+    
   );
 };
 

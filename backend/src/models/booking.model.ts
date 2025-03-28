@@ -2,7 +2,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 // Interface for machine booking details
 export interface IMachineBooking {
-  machineID: String;
+  machineID: Schema.Types.ObjectId;
   userCount: number | null;
 }
 
@@ -15,7 +15,6 @@ export interface IBooking extends Document {
   startTime: Date;
   endTime: Date;
   machines: IMachineBooking[];
-  totalPrice?: number;
   transactionID?: Schema.Types.ObjectId;
   reservedAt?: Date;
   isBooked?: boolean;
@@ -62,9 +61,6 @@ const bookingSchema: Schema<IBooking> = new Schema(
       required: true,
     },
     machines: [userPerMachine],
-    totalPrice: {
-      type: Number,
-    },
     transactionID: {
       type: Schema.Types.ObjectId,
       ref: "Transaction",

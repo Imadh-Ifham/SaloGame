@@ -24,6 +24,15 @@ interface IEvent extends Document {
     verified: boolean;
     token: string;
   }>;
+  winner?: string; // For single-battle
+  winnerTeamId?: mongoose.Types.ObjectId; // For team-battle
+  placements: Array<{
+    teamId: string;
+    teamName: string;
+    teamLogo: string;
+    placement: number;
+    awardedAt: Date;
+  }>
 }
 
 // Create the Event schema
@@ -63,7 +72,18 @@ const eventSchema = new Schema<IEvent>({
     verified: { type: Boolean, default: false },
     token: { type: String, required: true }
   }],
+  placements: {
+    type: [{
+      teamId: { type: String, required: true },
+      teamName: { type: String, required: true },
+      teamLogo: { type: String },
+      placement: { type: Number, required: true, enum: [1, 2, 3] },
+      awardedAt: { type: Date, default: Date.now }
+    }],
+    default: []
+  }
 }, { timestamps: true });
+
 // Create the Event model
 const Event: Model<IEvent> =
   mongoose.models.Event || mongoose.model<IEvent>("Event", eventSchema);

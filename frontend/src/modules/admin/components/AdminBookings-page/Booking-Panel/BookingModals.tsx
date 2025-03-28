@@ -34,8 +34,12 @@ const BookingModals: React.FC<{ bookingID: string }> = ({ bookingID }) => {
         <CancelBookingModal bookingID={bookingID} />
       )}
       {bookingModalString === "extend" && <ExtendBookingModal />}
-      {bookingModalString === "start" && <StartBookingModal />}
-      {bookingModalString === "end" && <EndBookingModal />}
+      {bookingModalString === "start" && (
+        <StartBookingModal bookingID={bookingID} />
+      )}
+      {bookingModalString === "end" && (
+        <EndBookingModal bookingID={bookingID} />
+      )}
     </Modal>
   );
 };
@@ -134,15 +138,18 @@ const ExtendBookingModal: React.FC = () => {
 };
 
 // Start Booking Modal - Changes status to "In Use"
-const StartBookingModal: React.FC = () => {
+const StartBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
   const { error } = useSelector(selectBookingStatus);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [isConfirming, setIsConfirming] = useState(false);
 
   const handleStart = async () => {
     setIsConfirming(true);
     try {
       // API call to start booking (Change status to "In Use")
+      const data = { bookingID, status: "InUse" };
+      // API call to cancel booking
+      await dispatch(updateBookingStatus(data));
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
       dispatch(resetBookingModal());
     } catch (error) {
@@ -183,9 +190,9 @@ const StartBookingModal: React.FC = () => {
 };
 
 // End Booking Modal - Shows summary before ending the booking
-const EndBookingModal: React.FC = () => {
+const EndBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
   const { error } = useSelector(selectBookingStatus);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const [isConfirming, setIsConfirming] = useState(false);
 
   // Dummy Data (Replace these with real values from backend later)
@@ -201,6 +208,9 @@ const EndBookingModal: React.FC = () => {
     setIsConfirming(true);
     try {
       // API call to end booking (Change status to "Completed")
+      const data = { bookingID, status: "Completed" };
+      // API call to cancel booking
+      await dispatch(updateBookingStatus(data));
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
       dispatch(resetBookingModal());
     } catch (error) {

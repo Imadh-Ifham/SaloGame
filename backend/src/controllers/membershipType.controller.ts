@@ -59,6 +59,25 @@ export const createMembership = async (
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.body.name || typeof req.body.name !== "string") {
+      res.status(400).json({ success: false, message: "Name is required" });
+      return;
+    }
+
+    if (isNaN(req.body.price) || req.body.price < 0) {
+      res
+        .status(400)
+        .json({ success: false, message: "Price must be a positive number" });
+      return;
+    }
+
+    if (!Array.isArray(req.body.benefits) || req.body.benefits.length === 0) {
+      res
+        .status(400)
+        .json({ success: false, message: "At least one benefit is required" });
+      return;
+    }
+
     const membership = new MembershipType(req.body);
     const savedMembership = await membership.save();
     res.status(201).json(savedMembership);
