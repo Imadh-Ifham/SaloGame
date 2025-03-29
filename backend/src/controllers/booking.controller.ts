@@ -604,3 +604,44 @@ export const endBooking = async (
       .json({ error: "An error occurred while ending the booking" });
   }
 };
+
+export const startBooking = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const { bookingID, endTime, startTime } = req.body;
+
+  const session = await Booking.startSession();
+  session.startTransaction();
+
+  try {
+    // Validate input
+    if (!bookingID || !endTime || !startTime) {
+      throw new Error("Missing required fields");
+    }
+
+    // Fetch the booking
+    const booking = await Booking.findById(bookingID).session(session);
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    // Update the booking details
+    booking.startTime = startTime;
+    booking.endTime = endTime;
+    booking.status = "InUse";
+    await booking.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Booking started successfully", booking });
+  } catch (error) {
+    console.error("Error ending booking:", error);
+    await session.abortTransaction();
+    session.endSession();
+    res
+      .status(500)
+      .json({ error: "An error occurred while ending the booking" });
+  }
+};

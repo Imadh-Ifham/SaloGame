@@ -7,6 +7,7 @@ import {
   getBookingLog,
   getBookingStatusForAllMachines,
   getFirstAndNextBooking,
+  startBooking,
   updateBookingStatus,
 } from "../controllers/booking.controller";
 import { authMiddleware } from "../middleware/authMiddleware";
@@ -21,5 +22,6 @@ router.post("/get-booking/:bookingID", getBookingByID);
 router.post("/get-log", getBookingLog);
 router.get("/report", generateReport);
 router.put("/end-booking", endBooking);
+router.put("/start-booking", startBooking);
 
 export default router;

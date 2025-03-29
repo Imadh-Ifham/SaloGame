@@ -202,13 +202,36 @@ const StartBookingModal: React.FC<ModalProps> = ({
 
   const currentBooking = selectedMachineBookings!.firstBooking!;
 
+  const previousStartTime = new Date(currentBooking.booking.startTime);
+  const previousEndTime = new Date(currentBooking.booking.endTime!);
+
+  const durationMinutes = Math.round(
+    (previousEndTime.getTime() - previousStartTime.getTime()) / (1000 * 60)
+  ); // Calculate duration in minutes
+
+  const startTime = new Date(); // Current Time (Start Time)const startTime = new Date(); // Current Time (Start Time)
+  const endTime = new Date(startTime); // Clone startTime to avoid modifying original
+
+  endTime.setMinutes(endTime.getMinutes() + durationMinutes); // Add duration in minutes
+  const price = currentBooking.transaction.amount; // Example price
+
+  const handleSubmit = async () => {
+    try {
+      const data = { bookingID, startTime, endTime };
+
+      // API call to start booking
+      const response = await axiosInstance.put("bookings/start-booking", data);
+
+      alert(response.data.message); // Show success message
+    } catch (error) {
+      console.error("Error starting booking:", error);
+    }
+  };
+
   const handleStart = async () => {
     setIsConfirming(true);
     try {
-      // API call to start booking (Change status to "In Use")
-      const data = { bookingID, status: "InUse" };
-      // API call to cancel booking
-      await dispatch(updateBookingStatus(data));
+      await handleSubmit(); // Update Booking
       await dispatch(fetchMachineStatus(statusData));
       await dispatch(fetchFirstAndNextBooking(bookingData)); // Fetch first and next booking after cancellation
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
@@ -219,10 +242,6 @@ const StartBookingModal: React.FC<ModalProps> = ({
       setIsConfirming(false);
     }
   };
-
-  const startTime = new Date(); // Current Time (Start Time)
-  const endTime = new Date(); // Current Time (End Time)
-  const price = 600; // Example price
 
   return (
     <div className="space-y-4">
@@ -243,6 +262,15 @@ const StartBookingModal: React.FC<ModalProps> = ({
           <p className="text-sm text-gray-500 dark:text-gray-300">End Time</p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
             {formatTo12Hour(endTime)}
+          </p>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500 dark:text-gray-300">
+            Total Duration
+          </p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {Math.floor(durationMinutes / 60)}h {durationMinutes % 60}min
           </p>
         </div>
 
@@ -340,7 +368,9 @@ const EndBookingModal: React.FC<ModalProps> = ({
         endTime: endTime,
       };
       // API call to create a transaction
-      await axiosInstance.put("bookings/end-booking", data);
+      const response = await axiosInstance.put("bookings/end-booking", data);
+
+      alert(response.data.message); // Show success message
     } catch (error) {
       console.error("Error creating transaction:", error);
     }
