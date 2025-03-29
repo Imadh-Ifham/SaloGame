@@ -57,7 +57,7 @@ const PC: React.FC<PCProps> = ({ machine, rotate }) => {
       className={`w-20 h-20 border border-gray-300 dark:border-gray-500 rounded-md hover:bg-gray-200 dark:bg-gray-700 hover:scale-105 shadow-lg transition-transform duration-300 ease-in-out flex flex-col items-center cursor-pointer ${
         selectedMachine?.serialNumber === machine.serialNumber &&
         !isMoreMachineClicked
-          ? "bg-gray-300 scale-105"
+          ? "bg-gray-300 dark:bg-gray-800 scale-105"
           : ""
       } ${isSelected ? "bg-gray-300 dark:bg-gray-500" : ""} ${
         !isAvailable && isMoreMachineClicked
@@ -98,7 +98,7 @@ const PC: React.FC<PCProps> = ({ machine, rotate }) => {
       >
         <div
           id="pc"
-          className={`w-1/2 h-full flex justify-center items-center bg-gray-200 rounded-md`}
+          className={`w-1/2 h-full flex justify-center items-center bg-gray-200 dark:bg-gray-500 rounded-md`}
         >
           <div className="w-[2px] h-3 bg-slate-700 " />
           <div className="w-1 h-10 bg-slate-700 rounded-l-lg" />

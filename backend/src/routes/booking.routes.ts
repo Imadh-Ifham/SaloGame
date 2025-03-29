@@ -1,6 +1,7 @@
 import express from "express";
 import {
   createBooking,
+  endBooking,
   generateReport,
   getBookingByID,
   getBookingLog,
@@ -19,5 +20,6 @@ router.patch("/update-status", updateBookingStatus);
 router.post("/get-booking/:bookingID", getBookingByID);
 router.post("/get-log", getBookingLog);
 router.get("/report", generateReport);
+router.put("/end-booking", endBooking);
 
 export default router;

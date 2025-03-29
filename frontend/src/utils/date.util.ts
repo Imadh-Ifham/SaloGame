@@ -63,3 +63,19 @@ export const calculateEndTime = (
 ): string => {
   return dayjs(startTime).add(duration, "minute").utc().format();
 };
+
+export const formatTo12Hour = (date: Date): string => {
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+
+  // Convert hours to 12-hour format
+  hours = hours % 12;
+  hours = hours ? hours : 12; // Hour '0' should be '12'
+
+  // Format minutes to always have two digits
+  const minutesFormatted = minutes < 10 ? `0${minutes}` : minutes;
+
+  // Return the formatted string
+  return `${hours}:${minutesFormatted} ${ampm}`;
+};

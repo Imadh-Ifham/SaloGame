@@ -8,6 +8,8 @@ import { getBookingStatus } from "../services/getBookingStatus";
 import { createTransaction } from "./transaction.controller";
 import { AuthRequest } from "../middleware/types";
 import { BookingReportData } from "../types/booking";
+import { calculateStartDate } from "../services/bookingReportService";
+import Transaction from "../models/transaction.model";
 
 // Define controller for fetching booking status for all the machines
 export const getBookingStatusForAllMachines = async (
@@ -203,6 +205,12 @@ export const createBooking = async (
       }
     }
 
+    // Set status to "Booked" if the startTime is in the future
+    let finalStatus = status;
+    if (start > new Date()) {
+      finalStatus = "Booked"; // Change the status to "Booked" if the start time is greater than current time
+    }
+
     // Calculate total price securely
     let totalPrice: number;
     try {
@@ -229,7 +237,7 @@ export const createBooking = async (
         startTime: start,
         endTime: end,
         isBooked: true,
-        status,
+        status: finalStatus,
       });
 
       await newBooking.save({ session });
@@ -458,31 +466,6 @@ export const getBookingLog = async (
   }
 };
 
-// Function to calculate the start date based on the given period
-const calculateStartDate = (period: string): Date => {
-  const endDate = new Date();
-  let startDate = new Date();
-
-  switch (period) {
-    case "previous-month":
-      startDate.setMonth(endDate.getMonth() - 1);
-      break;
-    case "last-3-months":
-      startDate.setMonth(endDate.getMonth() - 3);
-      break;
-    case "last-6-months":
-      startDate.setMonth(endDate.getMonth() - 6);
-      break;
-    case "last-year":
-      startDate.setFullYear(endDate.getFullYear() - 1);
-      break;
-    default:
-      throw new Error("Invalid period specified");
-  }
-
-  return startDate;
-};
-
 // Function to generate booking report
 export const generateReport = async (
   req: Request,
@@ -555,5 +538,69 @@ export const generateReport = async (
       message: "Unexpected server error",
       error: (error as Error).message,
     });
+  }
+};
+
+export const endBooking = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const { bookingID, endTime, paymentType } = req.body;
+
+  const session = await Booking.startSession();
+  session.startTransaction();
+
+  try {
+    // Validate input
+    if (!bookingID || !endTime || !paymentType) {
+      throw new Error("Missing required fields");
+    }
+
+    // Fetch the booking
+    const booking = await Booking.findById(bookingID).session(session);
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    const newEndTime = new Date(endTime);
+    const newStartTime = new Date(booking.startTime);
+
+    // Calculate the total price
+    const totalPrice = await calculateTotalPrice(
+      newStartTime,
+      newEndTime,
+      booking.machines
+    );
+
+    // Fetch the transaction
+    const transaction = await Transaction.findById(
+      booking.transactionID
+    ).session(session);
+    if (!transaction) {
+      throw new Error("Transaction not found");
+    }
+
+    // Update the transaction details
+    transaction.paymentType = paymentType;
+    transaction.amount = totalPrice;
+    transaction.status = "completed";
+    await transaction.save({ session });
+
+    // Update the booking details
+    booking.endTime = endTime;
+    booking.status = "Completed";
+    await booking.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Booking ended successfully", booking });
+  } catch (error) {
+    console.error("Error ending booking:", error);
+    await session.abortTransaction();
+    session.endSession();
+    res
+      .status(500)
+      .json({ error: "An error occurred while ending the booking" });
   }
 };

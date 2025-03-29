@@ -11,6 +11,7 @@ import {
   setShowBookingForm,
   updateBookingForm,
   setInitialMachines,
+  selectBookingStatus,
 } from "@/store/slices/bookingSlice";
 import { AppDispatch } from "@/store/store";
 import dayjs from "dayjs";
@@ -27,6 +28,7 @@ import {
 import {
   createBooking,
   fetchFirstAndNextBooking,
+  fetchMachineStatus,
 } from "@/store/thunks/bookingThunk";
 
 const NewBookingForm: React.FC = () => {
@@ -35,6 +37,7 @@ const NewBookingForm: React.FC = () => {
   const selectedMachine = useSelector(selectSelectedMachine);
   const machines = useSelector(selectMachines);
   const isPlusButtonSelected = useSelector(selectIsMoreMachineClicked);
+  const { error } = useSelector(selectBookingStatus);
   const userTimezone = dayjs.tz.guess(); // Automatically detect user's timezone
 
   useEffect(() => {
@@ -42,6 +45,12 @@ const NewBookingForm: React.FC = () => {
       dispatch(setInitialMachines(selectedMachine._id));
     }
   }, [selectedMachine, dispatch]);
+
+  useEffect(() => {
+    if (error) {
+      alert(error);
+    }
+  }, [error]);
 
   const handleStartBooking = async () => {
     dispatch(resetMoreMachine());
@@ -60,6 +69,14 @@ const NewBookingForm: React.FC = () => {
             })
           );
         }
+      })
+      .then(() => {
+        dispatch(
+          fetchMachineStatus({
+            startTime: formData.startTime,
+            duration: formData.duration,
+          })
+        );
       })
       .catch((error) => {
         console.error("Booking failed:", error);
@@ -108,7 +125,9 @@ const NewBookingForm: React.FC = () => {
 
   return (
     <div className="text-gray-700 dark:text-gray-50 p-6 w-full max-w-md mx-auto">
-      <h3 className="text-lg font-semibold mb-4">New Booking</h3>
+      <h3 className="text-lg font-semibold mb-4 dark:text-primary">
+        New Booking
+      </h3>
 
       <div className="mb-4 flex justify-between">
         <div className="text-gray-700 dark:text-gray-300 text-sm">
@@ -182,6 +201,7 @@ const NewBookingForm: React.FC = () => {
           <input
             type="text"
             placeholder="Customer Name"
+            required
             className="w-full pl-10 pr-4 py-2 border dark:border-gray-500 dark:bg-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.customerName}
             onChange={(e) =>
@@ -195,9 +215,25 @@ const NewBookingForm: React.FC = () => {
           <PhoneOutlined className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500" />
           <input
             type="tel"
+            maxLength={10}
+            minLength={10}
+            pattern="[0-9]{10}"
             placeholder="Contact Number"
+            required
             className="w-full pl-10 pr-4 py-2 border dark:border-gray-500 dark:bg-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={formData.phoneNumber ? formData.phoneNumber : ""}
+            onKeyDown={(e) => {
+              // Only allow number keys, backspace, delete, arrow keys, and tab
+              if (
+                !/[0-9]/.test(e.key) && // Allow numbers only
+                e.key !== "Backspace" && // Allow backspace
+                e.key !== "Delete" && // Allow delete
+                e.key !== "ArrowLeft" && // Allow left arrow
+                e.key !== "ArrowRight" // Allow right arrow
+              ) {
+                e.preventDefault(); // Block the input if it's not a number
+              }
+            }}
             onChange={(e) =>
               dispatch(updateBookingForm({ phoneNumber: e.target.value }))
             }
@@ -221,10 +257,16 @@ const NewBookingForm: React.FC = () => {
         {/* Start Booking Button */}
         <button
           onClick={handleStartBooking}
-          disabled={!formData.customerName}
-          className={`w-full py-2 text-white rounded-lg transition duration-300 ${
-            formData.customerName
-              ? "bg-blue-600 hover:bg-blue-700"
+          disabled={
+            !formData.customerName ||
+            !formData.phoneNumber ||
+            !/^[0-9]{10}$/.test(formData.phoneNumber) // Ensure phone number is in the correct format
+          }
+          className={`w-full py-2 text-white dark:text-black font-semibold rounded-lg transition duration-300 ${
+            formData.customerName &&
+            formData.phoneNumber &&
+            /^[0-9]{10}$/.test(formData.phoneNumber)
+              ? "bg-blue-600 dark:bg-primary hover:bg-blue-700 dark:hover:bg-primary-dark"
               : "bg-gray-400 cursor-not-allowed"
           }`}
         >

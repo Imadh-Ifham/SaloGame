@@ -4,7 +4,7 @@ import BookingCard from "./BookingCard";
 const UpcomingBooking: React.FC = () => {
   return (
     <>
-      <div className="text-sm font-poppins font-semibold my-2">
+      <div className="text-sm font-poppins font-semibold my-2 dark:text-primary">
         Upcoming Bookings
       </div>
       <div className="border dark:border-gray-700 rounded-lg h-[calc(100%-2rem)] p-2 w-full flex flex-col gap-2 overflow-y-auto scrollbar-hide shadow-lg">
