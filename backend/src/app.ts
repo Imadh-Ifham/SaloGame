@@ -19,6 +19,7 @@ import machineGameRoutes from "./routes/machineGame.routes";
 import eventRoutes from "./routes/event.routes/event.routes";
 import teamRoutes from "./routes/event.routes/team.routes";
 import transactionRoutes from "./routes/transaction.routes";
+import chatbotRoutes from "./routes/event.routes/chatbot";
 
 //google analytics route
 import analyticsRoutes from "./routes/analytics.routes";
@@ -49,6 +50,7 @@ app.use("/api/machinegames", machineGameRoutes);
 app.use("/api/events", eventRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/transactions", transactionRoutes);
+app.use("/api/chatbot", chatbotRoutes);
 
 //google analytics route
 app.use("/api/analytics", analyticsRoutes);

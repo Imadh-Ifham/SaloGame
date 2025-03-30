@@ -18,15 +18,6 @@ interface EventRegistration {
   registrationDate: Date;
 }
 
-interface LeaderboardEntry {
-  id: string;
-  name: string;
-  logo?: string;
-  score: number;
-  rank: number;
-  isTeam: boolean;
-}
-
 interface LiveEvent {
   _id: string;
   eventName: string;
@@ -40,7 +31,7 @@ interface LiveEvent {
     teamLogo: string;
     score?: number;
     isWinner?: boolean;
-    members?: TeamMember[]; // Added members to show in the UI
+    members?: TeamMember[]; 
   }[];
   participants?: {
     email: string;
@@ -56,9 +47,7 @@ const LiveEventsTab = () => {
   const [selectedEvent, setSelectedEvent] = useState<LiveEvent | null>(null);
   const [showWinnerModal, setShowWinnerModal] = useState(false);
   const [selectedTeam, setSelectedTeam] = useState<string>('');
-  const [showLeaderboard, setShowLeaderboard] = useState(false);
   const [showRefereeModal, setShowRefereeModal] = useState(false);
-  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [refereeEmail, setRefereeEmail] = useState('');
   const [selectedPlacement, setSelectedPlacement] = useState<1 | 2 | 3>(1);
 
