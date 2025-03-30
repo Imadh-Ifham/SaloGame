@@ -5,7 +5,6 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
 import { useDispatch as useReduxDispatch } from "react-redux";
 import type { AppDispatch } from "../../../store/store";
-
 import { fetchXpBalance } from "@/store/slices/XPslice";
 import Payment from "payment";
 
