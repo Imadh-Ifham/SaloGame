@@ -109,6 +109,8 @@ const AuthPage: React.FC = () => {
       // Get Firebase token
       const token = await firebaseUser.user.getIdToken();
 
+      
+
       // Send both user data and token to backend
       const response = await axiosInstance.post("/users/auth/firebase", {
         firebaseUser: {

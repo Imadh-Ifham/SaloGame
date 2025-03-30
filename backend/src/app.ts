@@ -20,8 +20,7 @@ import eventRoutes from "./routes/event.routes/event.routes";
 import teamRoutes from "./routes/event.routes/team.routes";
 import transactionRoutes from "./routes/transaction.routes";
 
-//google analytics route
-import analyticsRoutes from "./routes/analytics.routes";
+
 
 const app: Express = express();
 
@@ -50,8 +49,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/transactions", transactionRoutes);
 
-//google analytics route
-app.use("/api/analytics", analyticsRoutes);
+
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

@@ -17,7 +17,7 @@ interface UserProfile {
     price: number;
     benefits: string[];
   };
-  profileImage?: string;
+  googlePhotoUrl?: string;
 }
 
 const ProfilePage: React.FC = () => {
@@ -37,20 +37,16 @@ const ProfilePage: React.FC = () => {
         if (!token) {
           throw new Error("No authentication token found");
         }
-        axiosInstance.defaults.headers.common[
-          "Authorization"
-        ] = `Bearer ${token}`;
+        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
         const response = await axiosInstance.get("/users/profile");
         const userProfile = response.data as UserProfile;
         setProfile(userProfile);
-        // Set preview from profile image if exists
-        if (userProfile.profileImage) {
-          setPreviewImage(userProfile.profileImage);
+        // Set preview from googlePhotoUrl if exists
+        if (userProfile.googlePhotoUrl) {
+          setPreviewImage(userProfile.googlePhotoUrl);
         }
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Failed to fetch profile"
-        );
+        setError(err instanceof Error ? err.message : "Failed to fetch profile");
         console.error("Profile fetch error:", err);
       } finally {
         setLoading(false);
@@ -78,52 +74,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  //image uploading
-  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      // Preview file
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result as string);
-      };
-      reader.readAsDataURL(file);
-
-      // Create a form data to upload image
-      const formData = new FormData();
-      formData.append("profileImage", file);
-      try {
-        const response = await axiosInstance.post(
-          "/users/profile/upload-image",
-          formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
-        );
-
-        if (profile) {
-          setProfile({ ...profile, profileImage: response.data.imageUrl });
-        }
-      } catch (error) {
-        console.error("Image upload error:", error);
-      }
-    }
-  };
-
-  //delete image
-  const handleDeleteImage = async () => {
-    if (!window.confirm("Do you want to delete the image?")) return;
-
-    try {
-      await axiosInstance.delete("/users/profile/delete-image");
-      setPreviewImage(null);
-      if (profile) {
-        setProfile({ ...profile, profileImage: undefined });
-      }
-    } catch (error) {
-      console.error("Error deleting image:", error);
-    }
-  };
+ 
 
   if (loading || authLoading) {
     return (
@@ -178,45 +129,24 @@ const ProfilePage: React.FC = () => {
           <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-8 border border-gray-700/50 shadow-2xl">
             <div className="flex flex-col md:flex-row gap-8 items-center">
               {/* Avatar Section */}
-              <div className="relative group">
-                <div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 p-1.5">
-                  <div className="w-full h-full rounded-xl bg-gray-900 flex items-center justify-center overflow-hidden">
-                    {previewImage ? (
-                      <img
-                        src={previewImage}
-                        alt="Profile"
-                        className="w-full h-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-5xl font-bold text-emerald-400">
-                        {profile?.email.charAt(0).toUpperCase()}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                {/* Upload Label */}
-                <label className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleImageUpload}
-                    className="hidden"
-                  />
-                  <span className="text-sm text-white">Upload Image</span>
-                </label>
-              </div>
+              
+<div className="w-32 h-32 rounded-2xl bg-gradient-to-br from-emerald-500/30 to-cyan-500/30 p-1.5">
+  <div className="w-full h-full rounded-xl bg-gray-900 flex items-center justify-center overflow-hidden">
+    {profile?.googlePhotoUrl ? (
+      <img
+        src={profile.googlePhotoUrl}
+        alt="Profile"
+        className="w-full h-full object-cover"
+      />
+    ) : (
+      <span className="text-5xl font-bold text-emerald-400">
+        {profile?.email.charAt(0).toUpperCase()}
+      </span>
+    )}
+  </div>
+</div>
 
-              {/* If image exists, show Delete button */}
-              {previewImage && (
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  onClick={handleDeleteImage}
-                  className="px-3 py-1 bg-red-500/20 rounded text-red-400 text-sm hover:bg-red-500/30 transition-colors"
-                >
-                  Delete Image
-                </motion.button>
-              )}
+             
 
               {/* Profile Info */}
               <div className="flex-1 space-y-3 text-center md:text-left">

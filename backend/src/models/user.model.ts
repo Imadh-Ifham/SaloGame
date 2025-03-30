@@ -8,12 +8,30 @@ export interface IUser extends Document {
   defaultMembershipId?: mongoose.Types.ObjectId;
   xp: number;
   subscription?: mongoose.Types.ObjectId;
+  googlePhotoUrl?: string;
+
 }
 
 const userSchema = new Schema<IUser>({
-  email: { type: String, required: true, unique: true },
-  role: { type: String, enum: ["user", "manager", "owner"], default: "user" },
-  firebaseUid: { type: String, unique: true },
+
+  email: { type: String,
+           required: true, 
+           unique: true },
+
+  role: { type: String,
+         enum: ["user", "manager", "owner"], 
+         default: "user" },
+
+  firebaseUid: { type: String, 
+                 unique: true ,
+                 required: true, },
+
+  googlePhotoUrl: { 
+    type: String,
+    required: true
+  },
+
+
   defaultMembershipId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "MembershipType",
@@ -25,6 +43,8 @@ const userSchema = new Schema<IUser>({
       message: "Only users with role 'user' can have a membership"
     }
   },
+
+  
   xp: { 
     type: Number, 
     default: 0,
