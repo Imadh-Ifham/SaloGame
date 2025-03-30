@@ -31,10 +31,26 @@ const Header: React.FC = () => {
     if (token) {
       dispatch(fetchXpBalance());
     }
+
+    // Add this interval to periodically refresh XP balance
+    const refreshInterval = setInterval(() => {
+      if (localStorage.getItem("token")) {
+        dispatch(fetchXpBalance());
+      }
+    }, 60000);
+
+    return () => clearInterval(refreshInterval);
   }, [theme, dispatch]);
 
   const toggleTheme = (theme: string) => {
     setTheme(theme);
+  };
+
+  //  manually refresh XP
+  const refreshXPBalance = () => {
+    if (localStorage.getItem("token")) {
+      dispatch(fetchXpBalance());
+    }
   };
 
   // Update navLinks to include conditional dashboard link

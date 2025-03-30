@@ -1,6 +1,6 @@
 // Create a test script you can run to insert test data
 import mongoose from "mongoose";
-import Subscription from "./models/subscription.model";
+import Subscription from "../models/subscription.model";
 import dotenv from "dotenv";
 
 dotenv.config();
@@ -23,8 +23,8 @@ async function createTestFailedRenewal() {
 
     // Create test failed renewal
     const testSubscription = await Subscription.create({
-      userId: "USER_ID_HERE", // Replace with an actual user ID
-      membershipId: "MEMBERSHIP_ID_HERE", // Replace with an actual membership ID
+      userId: "67d7b6dd109df816a1e813a1", // Replace with an actual user ID
+      membershipId: "679b34787e7184a67ae4bbfc", // Replace with an actual membership ID
       startDate: new Date(pastDate.getTime() - 30 * 24 * 60 * 60 * 1000), // 30 days before end date
       endDate: pastDate,
       duration: 1,

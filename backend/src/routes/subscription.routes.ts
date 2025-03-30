@@ -8,6 +8,10 @@ import {
   getRecentActivities,
   getFailedRenewals,
   manuallyRenewSubscription,
+  changeSubscriptionPlan,
+  updatePaymentMethod,
+  deletePaymentMethod,
+  toggleAutoRenew,
 } from "../controllers/subscription.controller";
 import { authMiddleware, managerOrOwner } from "../middleware/authMiddleware";
 
@@ -23,4 +27,9 @@ router.get("/growth", getSubscriptionGrowth);
 router.get("/recentActivities", getRecentActivities);
 router.get("/failed-renewals", getFailedRenewals);
 router.post("/manual-renew", manuallyRenewSubscription);
+router.post("/change-plan", changeSubscriptionPlan);
+router.patch("/:id/payment-method", updatePaymentMethod);
+router.delete("/:id/payment-method", deletePaymentMethod);
+router.patch("/:id/auto-renew", toggleAutoRenew);
+
 export default router;

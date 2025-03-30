@@ -8,6 +8,11 @@ import { signOut } from "firebase/auth";
 import { useAuth } from "../../../hooks/useAuth";
 import { FiLogOut } from "react-icons/fi";
 import NotificationArea from "../../../components/notifications/NotificationArea";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SubscriptionDetails from "../components/subscription/SubscriptionDetails";
+import PaymentHistory from "../components/subscription/PaymentHistory";
+import PaymentMethodsManager from "../components/subscription/PaymentMethodsManager";
+import PlanOptions from "../components/subscription/PlanOptions"; // Added missing import
 
 interface UserProfile {
   email: string;
@@ -21,14 +26,24 @@ interface UserProfile {
 }
 
 const ProfilePage: React.FC = () => {
-  const { user, loading: authLoading } = useAuth();
+  interface User {
+    _id: string;
+    email: string;
+    role?: string;
+  }
+
+  const { user, loading: authLoading } = useAuth() as {
+    user: User | null;
+    loading: boolean;
+  };
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  const [userSubscription, setUserSubscription] = useState(null); // Added state for subscription
   const navigate = useNavigate();
 
-  //profile fetching
+  // Profile fetching
   useEffect(() => {
     const fetchProfile = async () => {
       try {
@@ -60,7 +75,56 @@ const ProfilePage: React.FC = () => {
     fetchProfile();
   }, []);
 
-  //lgout handling
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) return;
+
+        axiosInstance.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${token}`;
+        const response = await axiosInstance.get("/subscriptions/user");
+
+        // Find active subscription if any
+        const activeSubscription = response.data.data.find(
+          (sub: any) => sub.status === "active"
+        );
+
+        if (activeSubscription) {
+          setUserSubscription(activeSubscription);
+        }
+      } catch (error) {
+        console.error("Error fetching subscription:", error);
+      }
+    };
+
+    if (!loading && !error) {
+      fetchSubscription();
+    }
+  }, [loading, error]);
+
+  // Refetch user data function (added to resolve the reference in TabsContent)
+  const refetchUserData = async () => {
+    try {
+      const response = await axiosInstance.get("/subscriptions/user");
+
+      // Find active subscription if any
+      const activeSubscription = response.data.data.find(
+        (sub: any) => sub.status === "active"
+      );
+
+      if (activeSubscription) {
+        setUserSubscription(activeSubscription);
+      } else {
+        setUserSubscription(null);
+      }
+    } catch (error) {
+      console.error("Error refetching user data:", error);
+    }
+  };
+
+  // Logout handling
   const handleLogout = async () => {
     try {
       await signOut(auth);
@@ -78,7 +142,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  //image uploading
+  // Image uploading
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -110,7 +174,7 @@ const ProfilePage: React.FC = () => {
     }
   };
 
-  //delete image
+  // Delete image
   const handleDeleteImage = async () => {
     if (!window.confirm("Do you want to delete the image?")) return;
 
@@ -240,67 +304,61 @@ const ProfilePage: React.FC = () => {
             </div>
           </div>
 
-          {/* Membership Card */}
-          <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-8 border border-gray-700/50 shadow-2xl space-y-6">
-            <div className="flex items-center justify-between">
-              <h3 className="text-xl font-semibold text-gray-100">
-                Membership Details
-              </h3>
-              <motion.button
-                whileHover={{ scale: 1.05 }}
-                onClick={() => navigate("/memberships")}
-                className="px-4 py-2 bg-emerald-500/20 rounded-lg text-emerald-400 text-sm hover:bg-emerald-500/30 transition-colors"
-              >
-                {profile?.defaultMembershipId
-                  ? "Change Plan"
-                  : "Get Membership"}
-              </motion.button>
-            </div>
+          {/* Membership Section */}
+          {userSubscription ? (
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.2 }}
+              className="bg-gray-800/30 backdrop-blur-sm rounded-xl shadow-xl overflow-hidden"
+            >
+              <div className="p-6">
+                <h2 className="text-xl font-bold text-white mb-4">
+                  Your Membership
+                </h2>
 
-            {profile?.defaultMembershipId ? (
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-400">Plan Name</p>
-                  <p className="text-lg font-medium text-emerald-400">
-                    {profile.defaultMembershipId.name}
-                  </p>
-                </div>
-                <div className="space-y-2">
-                  <p className="text-sm text-gray-400">Price</p>
-                  <p className="text-lg font-medium text-cyan-400">
-                    ${profile.defaultMembershipId.price}/month
-                  </p>
-                </div>
-                <div className="md:col-span-2 space-y-4">
-                  <p className="text-sm text-gray-400">Benefits</p>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {profile.defaultMembershipId.benefits.map(
-                      (benefit, index) => (
-                        <div
-                          key={index}
-                          className="flex items-center gap-3 p-3 bg-gray-900/30 rounded-lg"
-                        >
-                          <div className="flex-shrink-0 w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                            <span className="text-emerald-400">✓</span>
-                          </div>
-                          <span className="text-sm text-gray-300">
-                            {benefit}
-                          </span>
-                        </div>
-                      )
-                    )}
-                  </div>
-                </div>
+                <Tabs defaultValue="details" className="w-full">
+                  <TabsList className="grid grid-cols-4 mb-6">
+                    <TabsTrigger value="details">Details</TabsTrigger>
+                    <TabsTrigger value="history">Payment History</TabsTrigger>
+                    <TabsTrigger value="payment-methods">
+                      Payment Methods
+                    </TabsTrigger>
+                    <TabsTrigger value="plan-options">Change Plan</TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="details">
+                    <SubscriptionDetails subscription={userSubscription} />
+                  </TabsContent>
+
+                  <TabsContent value="history">
+                    {user && <PaymentHistory userId={user._id || ""} />}
+                  </TabsContent>
+
+                  <TabsContent value="payment-methods">
+                    <PaymentMethodsManager
+                      subscription={userSubscription}
+                      onUpdate={refetchUserData}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="plan-options">
+                    <PlanOptions
+                      currentSubscription={userSubscription}
+                      onChangePlan={refetchUserData}
+                    />
+                  </TabsContent>
+                </Tabs>
               </div>
-            ) : (
-              <div className="py-8 text-center space-y-4">
-                <div className="text-4xl">🔒</div>
-                <p className="text-gray-400">
-                  No active membership. Subscribe to unlock exclusive features!
-                </p>
-              </div>
-            )}
-          </div>
+            </motion.div>
+          ) : (
+            <div className="py-8 text-center space-y-4">
+              <div className="text-4xl">🔒</div>
+              <p className="text-gray-400">
+                No active membership. Subscribe to unlock exclusive features!
+              </p>
+            </div>
+          )}
         </motion.div>
       </div>
     </HomeLayout>
