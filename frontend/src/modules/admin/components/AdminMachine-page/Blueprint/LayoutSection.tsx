@@ -11,8 +11,12 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css"; // Import skeleton styles
 import { MinusCircle, PlusCircle } from "lucide-react";
 import MachineModal from "../MachineManagement/MachineModal";
-import { setMachineModalCommand } from "@/store/slices/machineSlice";
+import {
+  setMachineModalCommand,
+  resetFetched,
+} from "@/store/slices/machineSlice";
 import { AppDispatch } from "@/store/store";
+import { fetchMachines } from "@/store/thunks/machineThunks";
 
 const LayoutSection: React.FC = () => {
   // Access the machines array from the Redux store
@@ -38,6 +42,20 @@ const LayoutSection: React.FC = () => {
     }
   };
 
+  // Function to handle machine addtion
+  const handleAddMachine = () => {
+    dispatch(setMachineModalCommand("add"));
+  };
+
+  const handleRemoveMachine = () => {
+    dispatch(setMachineModalCommand("remove"));
+  };
+
+  const refreshMachines = () => {
+    dispatch(resetFetched());
+    dispatch(fetchMachines());
+  };
+
   useEffect(() => {
     if (error) {
       alert(error);
@@ -54,13 +72,13 @@ const LayoutSection: React.FC = () => {
           </div>
           <div className="flex gap-4">
             <button
-              onClick={() => dispatch(setMachineModalCommand("add"))}
+              onClick={handleAddMachine}
               className="text-primary hover:text-blue-500"
             >
               <PlusCircle size={24} />
             </button>
             <button
-              onClick={() => dispatch(setMachineModalCommand("remove"))}
+              onClick={handleRemoveMachine}
               className="text-primary hover:text-red-500"
             >
               <MinusCircle size={24} />
@@ -140,7 +158,7 @@ const LayoutSection: React.FC = () => {
         </div>
         <div className=""></div>
       </div>
-      <MachineModal />
+      <MachineModal onSuccess={refreshMachines} />
     </>
   );
 };
