@@ -4,7 +4,7 @@ import MachineManage from "../components/AdminMachine-page/MachineManagement/Mac
 
 const AdminMachinePage: React.FC = () => {
   return (
-    <section className="relative grid grid-cols-1 md:grid-cols-5 gap-4 h-screen">
+    <section className="relative grid grid-cols-1 md:grid-cols-5 gap-4 p-4 h-screen">
       <div className="col-span-2 h-[calc(100vh-2rem)]">
         <LayoutSection />
       </div>
