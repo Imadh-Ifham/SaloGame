@@ -10,3 +10,18 @@ export interface Machine {
   serialNumber: string;
   machineCategory: string;
 }
+
+interface IRateByPlayers {
+  [key: number]: number;
+}
+
+// Interface for the MachineType document
+export interface IMachineType {
+  _id?: string;
+  name: string;
+  description?: string;
+  supportedGames: string[];
+  specifications?: string;
+  rateByPlayers: IRateByPlayers; // Hourly rate
+  imageUrl?: string;
+}
