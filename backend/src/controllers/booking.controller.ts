@@ -645,3 +645,130 @@ export const startBooking = async (
       .json({ error: "An error occurred while ending the booking" });
   }
 };
+
+export const getUpcomingBookings = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    // Get current date at start of day
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get tomorrow date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get day after tomorrow
+    const dayAfterTomorrow = new Date(tomorrow);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+
+    // Find upcoming bookings that are today or tomorrow
+    // Only get bookings with status "Booked" or "InUse"
+    const bookings = await Booking.find({
+      startTime: { $gte: today, $lt: dayAfterTomorrow },
+      status: { $in: ["Booked", "InUse"] }
+    })
+      .populate({
+        path: "machines.machineID",
+        select: "machineCategory serialNumber",
+      })
+      .populate({
+        path: "transactionID",
+        select: "amount paymentType status",
+      })
+      .sort({ startTime: 1 })
+      .lean();
+
+    // Group bookings by day (today or tomorrow)
+    const todayBookings = bookings.filter(booking => 
+      booking.startTime >= today && booking.startTime < tomorrow
+    );
+
+    const tomorrowBookings = bookings.filter(booking => 
+      booking.startTime >= tomorrow && booking.startTime < dayAfterTomorrow
+    );
+
+    // Format bookings for frontend consumption
+    const formatBooking = (booking: any) => {
+      // Calculate duration in minutes
+      const startTime = new Date(booking.startTime);
+      const endTime = new Date(booking.endTime);
+      const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+      
+      // Format duration as string (e.g., "30 mins")
+      const duration = `${durationMinutes} mins`;
+      
+      // Format machines array for frontend
+      const machines = booking.machines.map((machine: any) => {
+        // Ensure machine type is either 'pc' or 'console'
+        const machineCategory = (machine.machineID.machineCategory || "").toLowerCase();
+        const type = machineCategory === 'console' ? 'console' : 'pc';
+        
+        return {
+          name: machine.machineID.serialNumber,
+          type
+        };
+      });
+
+      // Format start time (e.g., "14:00")
+      const formattedStartTime = startTime.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+
+      // Map booking status to UI status
+      let uiStatus: "Confirmed" | "Pending" | "In Use";
+      switch(booking.status) {
+        case "InUse":
+          uiStatus = "In Use";
+          break;
+        case "Booked":
+          uiStatus = "Confirmed";
+          break;
+        default:
+          uiStatus = "Pending";
+      }
+
+      // Get payment status from transaction
+      const paymentStatus: "Paid" | "Unpaid" = booking.transactionID && 
+        booking.transactionID.status === "completed" ? "Paid" : "Unpaid";
+
+      // Get price from transaction
+      const price = booking.transactionID ? booking.transactionID.amount.toString() : "0";
+
+      return {
+        id: booking._id,
+        customerName: booking.customerName,
+        machines,
+        startTime: formattedStartTime,
+        duration,
+        status: uiStatus,
+        description: booking.notes || "",
+        price,
+        paymentStatus
+      };
+    };
+
+    // Structure response
+    const response = {
+      today: todayBookings.map(formatBooking),
+      tomorrow: tomorrowBookings.map(formatBooking)
+    };
+
+    res.json({ success: true, data: response });
+  } catch (error) {
+    console.error("Error fetching upcoming bookings:", error);
+    res.status(500).json({
+      success: false,
+      error: "Error fetching upcoming bookings",
+      message: (error as Error).message || "Something went wrong."
+    });
+  }
+};

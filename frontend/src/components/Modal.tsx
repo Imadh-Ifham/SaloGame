@@ -1,10 +1,10 @@
 import React, { Fragment } from "react";
 import {
-    Dialog,
-    DialogTitle,
-    Transition,
-    TransitionChild,
-  } from "@headlessui/react";
+  Dialog,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm" />
           </TransitionChild>
 
           {/* This element is to center the modal contents */}
