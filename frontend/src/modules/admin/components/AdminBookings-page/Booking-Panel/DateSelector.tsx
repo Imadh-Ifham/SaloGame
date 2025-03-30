@@ -43,8 +43,8 @@ const DateSelector: React.FC<DatePickerProps> = ({ activeNav }) => {
   return (
     <>
       {activeNav === "Later" && (
-        <div className="flex-1 min-w-[250px]">
-          <div className="relative flex items-center border border-gray-300 rounded-lg px-3 py-2 bg-white">
+        <div className="flex-1 w-full">
+          <div className="relative flex items-center border dark:border-gray-500 rounded-lg px-3 py-2">
             <CalendarOutlined className="text-gray-500 mr-2" />
             <DatePicker
               selected={
@@ -67,8 +67,8 @@ const DateSelector: React.FC<DatePickerProps> = ({ activeNav }) => {
               }
               dateFormat="MMMM d, yyyy h:mm aa"
               placeholderText="Select date & time"
-              className="bg-transparent outline-none text-sm w-[200px]"
-              popperClassName="w-[350px]"
+              className="bg-transparent outline-none text-sm w-full"
+              popperClassName="custom-date-picker-popper" // Add custom class
             />
           </div>
         </div>

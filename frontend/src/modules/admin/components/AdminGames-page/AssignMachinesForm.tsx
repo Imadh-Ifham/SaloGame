@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { Button } from "@headlessui/react";
 import axiosInstance from "../../../../axios.config";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Label } from "@/components/ui/label";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { Check, X, Loader2 } from "lucide-react";
 
 interface Game {
   _id: string;
@@ -32,6 +37,7 @@ const AssignMachinesForm: React.FC<AssignMachinesFormProps> = ({
   const [initiallyAssigned, setInitiallyAssigned] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [categories, setCategories] = useState<string[]>([]);
 
   // Fetch all machines
   useEffect(() => {
@@ -39,7 +45,12 @@ const AssignMachinesForm: React.FC<AssignMachinesFormProps> = ({
       try {
         const response = await axiosInstance.get("/machine/get-all");
         if (response.data.success && Array.isArray(response.data.data)) {
-          setMachines(response.data.data);
+          const machinesData = response.data.data as Machine[];
+          setMachines(machinesData);
+          
+          // Extract unique categories
+          const uniqueCategories = [...new Set(machinesData.map(machine => machine.machineCategory))];
+          setCategories(uniqueCategories);
         } else {
           setError("Invalid response format while fetching machines");
         }
@@ -145,53 +156,106 @@ const AssignMachinesForm: React.FC<AssignMachinesFormProps> = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-200">
-          Select Machines
-        </label>
-        <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
-          {machines.map((machine) => (
-            <div key={machine._id} className="flex items-center">
-              <input
-                type="checkbox"
-                id={machine._id}
-                checked={selectedMachines.includes(machine._id)}
-                onChange={() => handleMachineSelect(machine._id)}
-                className="h-4 w-4 text-gamer-green border-gray-300 rounded focus:ring-gamer-green"
-              />
-              <label
-                htmlFor={machine._id}
-                className="ml-2 block text-sm font-medium text-gray-700 dark:text-gray-200"
-              >
-                {machine.serialNumber} ({machine.machineCategory})
-              </label>
+    <Card className="w-full max-w-[1200px] mx-auto bg-card shadow-lg border-0 dark:bg-gray-800/60">
+      <CardHeader className="pb-2">
+        <CardTitle className="text-xl font-medium text-gamer-green flex items-center">
+          <span>Assign Machines to {game.name}</span>
+        </CardTitle>
+      </CardHeader>
+      <Separator className="mb-0" />
+      <CardContent className="pt-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {categories.map((category) => {
+              const categoryMachines = machines.filter(
+                (machine) => machine.machineCategory === category
+              );
+              
+              return categoryMachines.length > 0 ? (
+                <div key={category} className="space-y-2">
+                  <h3 className="text-sm font-medium text-gamer-green mb-2">{category}</h3>
+                  <div className="space-y-2 max-h-[250px] overflow-y-auto pr-1">
+                    {categoryMachines.map((machine) => (
+                      <div
+                        key={machine._id}
+                        className={`
+                          flex items-center space-x-2 rounded-md border p-2
+                          ${selectedMachines.includes(machine._id) 
+                            ? 'border-transparent bg-gamer-green/5 shadow-sm' 
+                            : 'border-input bg-gray-50/5'}
+                          transition-all duration-200 hover:shadow-md hover:scale-[1.01]
+                        `}
+                      >
+                        <Checkbox
+                          id={machine._id}
+                          checked={selectedMachines.includes(machine._id)}
+                          onCheckedChange={() => handleMachineSelect(machine._id)}
+                          className="data-[state=checked]:bg-gamer-green data-[state=checked]:text-white"
+                        />
+                        <Label
+                          htmlFor={machine._id}
+                          className="flex-1 cursor-pointer font-medium text-sm"
+                        >
+                          {machine.serialNumber}
+                        </Label>
+                        <span 
+                          className={`text-xs px-2 py-0.5 rounded-full ${
+                            machine.status === 'online' 
+                              ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                              : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                          }`}
+                        >
+                          {machine.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null;
+            })}
+          </div>
+
+          {error && (
+            <div className="bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-400 p-2 rounded-md text-xs flex items-start space-x-2">
+              <X className="h-4 w-4 flex-shrink-0 mt-0.5" />
+              <span>{error}</span>
             </div>
-          ))}
-        </div>
-      </div>
+          )}
 
-      {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-
-      <div className="flex justify-end space-x-2">
-        <Button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 bg-gray-300 dark:bg-gray-700 text-gray-700 dark:text-gray-200 rounded hover:bg-gray-400 dark:hover:bg-gray-600 transition"
-        >
-          Cancel
-        </Button>
-        <Button
-          type="submit"
-          disabled={loading}
-          className={`px-4 py-2 bg-gamer-green text-white rounded hover:bg-gamer-green-dark transition ${
-            loading ? "opacity-50 cursor-not-allowed" : ""
-          }`}
-        >
-          {loading ? "Saving..." : "Save Changes"}
-        </Button>
-      </div>
-    </form>
+          <div className="flex justify-end space-x-2 pt-2">
+            <Button
+              type="button"
+              onClick={onCancel}
+              variant="cancel"
+              className="flex items-center"
+              disabled={loading}
+              size="sm"
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="gamer"
+              className="flex items-center"
+              disabled={loading}
+              size="sm"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Check className="mr-2 h-3 w-3" />
+                  Save Changes
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,0 +1,162 @@
+import { StyleSheet } from "@react-pdf/renderer";
+
+const styles = StyleSheet.create({
+  page: {
+    flexDirection: "column",
+    backgroundColor: "#ffffff",
+    padding: 30,
+  },
+  header: {
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#6a0dad",
+    borderBottomStyle: "solid",
+    paddingBottom: 10,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  title: {
+    fontSize: 24,
+    marginBottom: 5,
+    color: "#6a0dad",
+    fontWeight: "bold",
+  },
+  subtitle: {
+    fontSize: 14,
+    color: "#777777",
+  },
+  section: {
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+    borderStyle: "solid",
+    borderRadius: 4,
+    padding: 15,
+  },
+  sectionTitle: {
+    fontSize: 16,
+    marginBottom: 10,
+    color: "#6a0dad",
+    fontWeight: "bold",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+    borderBottomStyle: "solid",
+    paddingBottom: 5,
+  },
+  metricsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 10,
+  },
+  metricCard: {
+    width: "31%",
+    margin: "1%",
+    padding: 10,
+    backgroundColor: "#f9f7ff",
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: "#6a0dad",
+    borderLeftStyle: "solid",
+  },
+  metricTitle: {
+    fontSize: 10,
+    color: "#555555",
+    marginBottom: 4,
+  },
+  metricValue: {
+    fontSize: 16,
+    color: "#111827",
+    fontWeight: "bold",
+  },
+  trendGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    marginBottom: 20,
+  },
+  trendCard: {
+    width: "48%",
+    margin: "1%",
+    padding: 10,
+    backgroundColor: "#f3f4f6",
+    borderRadius: 4,
+    borderLeftWidth: 3,
+    borderLeftColor: "#34d399", // Success green
+    borderLeftStyle: "solid",
+  },
+  trendNegative: {
+    borderLeftColor: "#f87171", // Failure red
+  },
+  trendTitle: {
+    fontSize: 12,
+    marginBottom: 5,
+    color: "#6a0dad",
+    fontWeight: "bold",
+  },
+  trendValue: {
+    fontSize: 16,
+    color: "#111827",
+    fontWeight: "bold",
+  },
+  chartContainer: {
+    width: "100%",
+    height: 200,
+    padding: 10,
+    backgroundColor: "#f9f7ff",
+    borderRadius: 4,
+    marginBottom: 20,
+  },
+  table: {
+    width: "auto",
+    borderStyle: "solid",
+    borderColor: "#e5e7eb",
+    borderWidth: 1,
+    borderRightWidth: 0,
+    borderBottomWidth: 0,
+    marginBottom: 20,
+  },
+  tableRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+    borderBottomStyle: "solid",
+    minHeight: 25,
+    alignItems: "center",
+  },
+  tableHeader: {
+    backgroundColor: "#f3f4f6",
+  },
+  tableCell: {
+    width: "20%",
+    borderStyle: "solid",
+    borderColor: "#e5e7eb",
+    borderWidth: 1,
+    borderLeftWidth: 0,
+    borderTopWidth: 0,
+    padding: 5,
+  },
+  tableHeaderCell: {
+    fontSize: 10,
+    fontWeight: "bold",
+    color: "#374151",
+  },
+  tableCellText: {
+    fontSize: 10,
+    color: "#111827",
+  },
+  footer: {
+    position: "absolute",
+    bottom: 30,
+    left: 30,
+    right: 30,
+    fontSize: 10,
+    color: "#6b7280",
+    textAlign: "center",
+    borderTopWidth: 1,
+    borderTopStyle: "solid",
+    paddingTop: 10,
+    borderTopColor: "#e5e7eb",
+  },
+});
+
+export default styles;

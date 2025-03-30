@@ -43,8 +43,8 @@ const Header: React.FC = () => {
     { to: "/", label: "Home" },
     { to: "/games", label: "Games" },
     { to: "/bookings", label: "Bookings" },
-    { to: "/packages", label: "Packages" },
-    { to: "/about", label: "About" },
+    { to: "/memberships", label: "Memberships" },
+    //{ to: "/about", label: "About" },
     { to: "/offers", label: "Offers" },
     { to: "/events", label: "Events" },
     // Add conditional dashboard link for managers and owners

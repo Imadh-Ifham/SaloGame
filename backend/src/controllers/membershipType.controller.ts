@@ -3,6 +3,8 @@ interface AuthenticatedRequest extends Request {
   user?: { id: string };
 }
 import MembershipType from "../models/membershipType.model";
+import mongoose from "mongoose";
+import Subscription from "../models/subscription.model"; // Ensure the correct path to the Subscription model
 
 /**
  * Get all memberships with an optional isActive filter.
@@ -59,6 +61,25 @@ export const createMembership = async (
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.body.name || typeof req.body.name !== "string") {
+      res.status(400).json({ success: false, message: "Name is required" });
+      return;
+    }
+
+    if (isNaN(req.body.price) || req.body.price < 0) {
+      res
+        .status(400)
+        .json({ success: false, message: "Price must be a positive number" });
+      return;
+    }
+
+    if (!Array.isArray(req.body.benefits) || req.body.benefits.length === 0) {
+      res
+        .status(400)
+        .json({ success: false, message: "At least one benefit is required" });
+      return;
+    }
+
     const membership = new MembershipType(req.body);
     const savedMembership = await membership.save();
     res.status(201).json(savedMembership);
@@ -113,7 +134,7 @@ export const updateMembership = async (
 
 /**
  * Delete a membership by its ID.
- */
+ 
 export const deleteMembership = async (
   req: Request,
   res: Response,
@@ -130,39 +151,77 @@ export const deleteMembership = async (
     console.error("Error deleting membership:", error);
     res.status(500).json({ error: "Failed to delete membership" });
   }
-};
+};*/
 
 /**
- * Toggle the active status of a membership by its ID.
+ * Deprecate a membership plan by its ID.(SOFT DELETE)
  */
-export const toggleActiveMembership = async (
+export const deprecateMembershipPlan = async (
   req: Request,
   res: Response,
   next: NextFunction
 ): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const { id } = req.params;
-    const { isActive } = req.body;
+    const { migrationPlanId, disableAutoRenewal = true } = req.body;
 
-    if (typeof isActive !== "boolean") {
-      res.status(400).json({ error: "isActive must be a boolean." });
-      return;
-    }
-
+    // 1. Mark the plan as inactive
     const updatedMembership = await MembershipType.findByIdAndUpdate(
       id,
-      { isActive },
-      { new: true, runValidators: true }
+      { isActive: false },
+      { new: true, runValidators: true, session }
     );
 
     if (!updatedMembership) {
-      res.status(404).json({ error: "MembershipType not found." });
+      res.status(404).json({ error: "Membership plan Not found" });
+      await session.abortTransaction();
       return;
     }
 
+    // 2. Handle auto renewal users if any
+    if (disableAutoRenewal) {
+      await Subscription.updateMany(
+        {
+          membershipId: id,
+          status: "active",
+          autoRenew: true,
+        },
+        {
+          autoRenew: false,
+          // Add an internal note about why auto-renewal was disabled
+          $set: {
+            "metadata.autoRenewDisabledReason": "Plan deprecated by admin",
+            "metadata.autoRenewDisabledDate": new Date(),
+          },
+        },
+        { session }
+      );
+    }
+
+    // 3. If migration plan is provided, set up migration path for users
+    if (migrationPlanId) {
+      await Subscription.updateMany(
+        { membershipId: id, status: "active" },
+        {
+          $set: {
+            "metadata.migrationPlanId": migrationPlanId,
+            "metadata.originalPlanId": id,
+          },
+        },
+        { session }
+      );
+    }
+
+    await session.commitTransaction();
     res.json(updatedMembership);
   } catch (error) {
-    console.error("Error toggling active status:", error);
-    res.status(500).json({ error: "Failed to toggle active status." });
+    await session.abortTransaction();
+    console.error("Error deprecating membership plan:", error);
+    res.status(500).json({ error: "Failed to deprecate membership plan" });
+  } finally {
+    session.endSession();
   }
 };

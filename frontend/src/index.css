@@ -92,3 +92,8 @@
 .scrollbar-hide {
   scrollbar-width: none;
 }
+
+.custom-date-picker-popper {
+  width: auto !important;
+  min-width: 350px; /* Set a minimum width for the popper */
+}

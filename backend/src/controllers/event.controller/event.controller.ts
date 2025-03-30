@@ -1,8 +1,12 @@
 import express, { Request, Response, NextFunction } from "express";
 import mongoose from "mongoose";
 import Event from "../../models/event.model/event.model";
+import Team from "../../models/event.model/team.model";
 import sgMail from '@sendgrid/mail';
 
+declare global {
+  var io: any;
+}
 // Route to get all events
 export const getAllEvents = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -267,3 +271,150 @@ export const getEventsByCategory = async (req: Request, res: Response, next: Nex
       });
     }
   };
+
+export const updateEventPlacement = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { eventId } = req.params;
+    const { teamId, placement } = req.body; // placement is 1, 2, or 3
+
+    // Validate placement value
+    if (![1, 2, 3].includes(placement)) {
+      res.status(400).json({
+        success: false,
+        message: "Placement must be 1, 2, or 3"
+      });
+      return;
+    }
+
+    // Get event and team
+    const event = await Event.findById(eventId);
+    const team = await Team.findOne({ teamId });
+
+    if (!event) {
+      res.status(404).json({
+        success: false,
+        message: "Event not found"
+      });
+      return;
+    }
+
+    if (!team) {
+      res.status(404).json({
+        success: false,
+        message: "Team not found"
+      });
+      return;
+    }
+
+    // Store placements in event
+    if (!event.placements) {
+      event.placements = [];
+    }
+
+    // Remove team from placements if already exists
+    event.placements = event.placements.filter(p => p.teamId !== teamId);
+    
+    // Add new placement
+    event.placements.push({
+      teamId,
+      teamName: team.teamName,
+      teamLogo: team.teamLogo,
+      placement,
+      awardedAt: new Date()
+    });
+
+    await event.save();
+
+    // Emit socket event with updated leaderboard data
+    if (global.io) {
+      global.io.emit('leaderboard:update', {
+        eventId: event._id,
+        eventName: event.eventName,
+        placements: event.placements,
+        category: event.category,
+        timestamp: new Date()
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: `Team placed at position ${placement} successfully`,
+      data: event.placements
+    });
+  } catch (error: any) {
+    console.error("Error updating event placement:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error updating event placement",
+      error: error.message
+    });
+  }
+};
+
+// Add this function to your controller
+export const getLeaderboard = async (req: Request, res: Response): Promise<void> => {
+  try {
+    // Fetch all events with placements
+    const events = await Event.find({ "placements.0": { $exists: true } })
+      .select('_id eventName category placements')
+      .sort({ 'placements.awardedAt': -1 });
+    
+    res.status(200).json({
+      success: true,
+      data: events
+    });
+  } catch (error: any) {
+    console.error("Error fetching leaderboard:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error fetching leaderboard",
+      error: error.message
+    });
+  }
+};
+  
+/*  export const declareWinner = async (req: Request, res: Response) => {
+    try {
+      const { eventId, winnerEmail, winnerTeamId } = req.body;
+  
+      const event = await Event.findById(eventId);
+      if (!event) return res.status(404).json({ message: "Event not found" });
+  
+      if (event.category === "single-battle") {
+        event.winner = winnerEmail; // Update winner for single battles
+      } else if (event.category === "team-battle") {
+        const team = await Team.findById(winnerTeamId);
+        if (!team) return res.status(404).json({ message: "Team not found" });
+  
+        event.winnerTeamId = team._id as mongoose.Types.ObjectId; // Update winner for team battles
+      }
+  
+      await event.save();
+  
+      // Emit leaderboard update to all connected clients
+      io.emit("leaderboardUpdate", {
+        eventId,
+        winnerEmail: event.winner,
+        winnerTeamId: event.winnerTeamId,
+      });
+  
+      return res.status(200).json({ message: "Winner updated successfully", event });
+    } catch (error) {
+      console.error("Error updating winner:", error);
+      return res.status(500).json({ message: "Internal Server Error" });
+    }
+  };
+  export const getLeaderboard = async (req: Request, res: Response) => {
+  try {
+    const leaderboard = await Event.find()
+      .populate("winnerTeamId", "teamName teamLogo") // Populate team details if it's a team battle
+      .select("eventName category winner winnerTeamId");
+
+    return res.status(200).json(leaderboard);
+  } catch (error) {
+    console.error("Error fetching leaderboard:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+ */ 

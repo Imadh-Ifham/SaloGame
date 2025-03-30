@@ -5,6 +5,11 @@ import isSlotAvailable from "../services/isSlotAvailable";
 import Booking from "../models/booking.model";
 import calculateTotalPrice from "../services/calculatePrice";
 import { getBookingStatus } from "../services/getBookingStatus";
+import { createTransaction } from "./transaction.controller";
+import { AuthRequest } from "../middleware/types";
+import { BookingReportData } from "../types/booking";
+import { calculateStartDate } from "../services/bookingReportService";
+import Transaction from "../models/transaction.model";
 
 // Define controller for fetching booking status for all the machines
 export const getBookingStatusForAllMachines = async (
@@ -66,10 +71,14 @@ export const getBookingStatusForAllMachines = async (
 };
 
 export const getFirstAndNextBooking = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
     const {
       inputStartTime,
       duration,
@@ -93,7 +102,7 @@ export const getFirstAndNextBooking = async (
     // Get the status of the first booking (if it exists)
     let status = "Available"; // Default status
     if (firstBooking) {
-      status = firstBooking.status; // Adjust logic as needed
+      status = firstBooking.booking.status; // Adjust logic as needed
     }
 
     const bookingDetails = {
@@ -122,10 +131,14 @@ export const getFirstAndNextBooking = async (
 };
 
 export const createBooking = async (
-  req: Request,
+  req: AuthRequest,
   res: Response
 ): Promise<void> => {
   try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
     const {
       machines,
       startTime,
@@ -192,6 +205,12 @@ export const createBooking = async (
       }
     }
 
+    // Set status to "Booked" if the startTime is in the future
+    let finalStatus = status;
+    if (start > new Date()) {
+      finalStatus = "Booked"; // Change the status to "Booked" if the start time is greater than current time
+    }
+
     // Calculate total price securely
     let totalPrice: number;
     try {
@@ -218,10 +237,56 @@ export const createBooking = async (
         startTime: start,
         endTime: end,
         isBooked: true,
-        status,
+        status: finalStatus,
       });
 
       await newBooking.save({ session });
+
+      let transactionType;
+
+      mode === "admin"
+        ? (transactionType = "walk-in-booking")
+        : (transactionType = "online-booking");
+
+      // Create transaction
+      const transactionReq = {
+        user: req.user,
+        body: {
+          paymentType: "cash", // or other payment type as required
+          amount: totalPrice,
+          transactionType: transactionType, // set the transaction type based on mode
+        },
+      };
+
+      // Create a proper mock response that captures the transaction data
+      let capturedTransactionData: any = null;
+      const transactionRes = {
+        status: (code: number) => ({
+          json: (data: any) => {
+            if (code !== 201) {
+              throw new Error(data.message || "Transaction creation failed");
+            }
+            capturedTransactionData = data;
+            return data;
+          },
+        }),
+      } as Response;
+
+      await createTransaction(
+        transactionReq as AuthRequest,
+        transactionRes as Response
+      );
+
+      // Update booking with transaction ID
+      if (
+        capturedTransactionData &&
+        capturedTransactionData.transaction &&
+        capturedTransactionData.transaction._id
+      ) {
+        newBooking.transactionID = capturedTransactionData.transaction._id;
+        await newBooking.save({ session });
+      }
+
       await session.commitTransaction();
       session.endSession();
 
@@ -278,5 +343,305 @@ export const updateBookingStatus = async (
       message: "Unexpected server error",
       error: (error as Error).message,
     });
+  }
+};
+
+export const getBookingByID = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+    const { bookingID } = req.params;
+
+    if (!bookingID) {
+      res.status(400).json({ message: "Booking ID is required." });
+      return;
+    }
+
+    const booking = await Booking.findById(bookingID)
+      .select("-isBooked -reservedAt -createdAt -updatedAt -__v")
+      .populate({
+        path: "transactionID",
+        select: "-userID -__v -createdAt", // Exclude userID
+      })
+      .populate({
+        path: "machines.machineID", // Populate machine details
+        select: "machineCategory serialNumber", // Exclude unnecessary fields
+      })
+      .lean();
+    if (!booking) {
+      res.status(404).json({ message: "Booking not found." });
+      return;
+    }
+
+    // Extract transaction details separately
+    const { transactionID, ...bookingData } = booking; // Convert Mongoose document to plain object
+
+    // Separate booking and transaction
+    const structuredResponse = {
+      booking: bookingData,
+      transaction: transactionID || null, // Ensure transaction is explicitly null if not present
+    };
+
+    res.json({ status: "Success", data: structuredResponse });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unexpected server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getBookingLog = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const { status, date, filterType, count } = req.body;
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    let query: any = {};
+
+    if (status) {
+      query.status = status;
+    }
+
+    if (date && filterType) {
+      const selectedDate = new Date(date);
+      if (filterType === "day") {
+        query.startTime = {
+          $gte: selectedDate.setHours(0, 0, 0, 0),
+          $lt: selectedDate.setHours(23, 59, 59, 999),
+        };
+      } else if (filterType === "month") {
+        query.startTime = {
+          $gte: new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth(),
+            1
+          ),
+          $lt: new Date(
+            selectedDate.getFullYear(),
+            selectedDate.getMonth() + 1,
+            1
+          ),
+        };
+      }
+    }
+
+    const limit = count || 20; // Default to 20 if count is not provided
+
+    const bookings = await Booking.find(query)
+      .select("customerName startTime status transactionID") // Include transactionID for population
+      .populate({
+        path: "transactionID",
+        select: "transactionType -_id",
+      })
+      .sort({ startTime: -1 }) // Sort by startTime in descending order
+      .limit(limit) // Limit the number of results based on the count
+      .lean(); // Converts Mongoose documents to plain objects
+    const structuredResponse = bookings.map((booking) => ({
+      _id: booking._id,
+      customerName: booking.customerName,
+      startTime: booking.startTime,
+      status: booking.status,
+      transactionType:
+        (booking.transactionID as { transactionType?: string })
+          ?.transactionType || null,
+    }));
+
+    res.json({ status: "Success", data: structuredResponse });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unexpected server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+// Function to generate booking report
+export const generateReport = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const period: string = req.query.period as string;
+    const startDate = calculateStartDate(period);
+    const endDate = new Date();
+
+    const bookings = await Booking.find({
+      startTime: { $gte: startDate, $lte: endDate },
+    })
+      .populate<{ transactionID: { amount: number } }>("transactionID")
+      .populate("userID")
+      .populate("machines.machineID")
+      .lean();
+
+    const totalBookings = bookings.length;
+    const completedBookings = bookings.filter(
+      (booking) => booking.status === "Completed"
+    ).length;
+    const totalRevenue = bookings.reduce((acc, booking) => {
+      if (booking.transactionID?.amount) {
+        return acc + booking.transactionID.amount;
+      }
+      return acc;
+    }, 0);
+    const averageBookingValue = totalRevenue / totalBookings;
+
+    const bookingsByStatus: Record<string, number> = bookings.reduce(
+      (acc, booking) => {
+        acc[booking.status] = (acc[booking.status] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
+
+    const bookingsByMachine: Record<string, number> = await bookings.reduce(
+      async (accPromise, booking) => {
+        const acc = await accPromise;
+        for (const machine of booking.machines) {
+          const machineDoc = await Machine.findById(machine.machineID);
+          if (machineDoc) {
+            const serialNumber = machineDoc.serialNumber;
+            acc[serialNumber] = (acc[serialNumber] || 0) + 1;
+          }
+        }
+        return acc;
+      },
+      Promise.resolve({} as Record<string, number>)
+    );
+
+    const reportData: BookingReportData = {
+      metrics: {
+        totalBookings,
+        completedBookings,
+        totalRevenue,
+        averageBookingValue,
+        bookingsByStatus,
+        bookingsByMachine,
+      },
+      startDate,
+      endDate,
+    };
+
+    res.status(200).json(reportData);
+  } catch (error) {
+    res.status(500).json({
+      message: "Unexpected server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const endBooking = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const { bookingID, endTime, paymentType } = req.body;
+
+  const session = await Booking.startSession();
+  session.startTransaction();
+
+  try {
+    // Validate input
+    if (!bookingID || !endTime || !paymentType) {
+      throw new Error("Missing required fields");
+    }
+
+    // Fetch the booking
+    const booking = await Booking.findById(bookingID).session(session);
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    const newEndTime = new Date(endTime);
+    const newStartTime = new Date(booking.startTime);
+
+    // Calculate the total price
+    const totalPrice = await calculateTotalPrice(
+      newStartTime,
+      newEndTime,
+      booking.machines
+    );
+
+    // Fetch the transaction
+    const transaction = await Transaction.findById(
+      booking.transactionID
+    ).session(session);
+    if (!transaction) {
+      throw new Error("Transaction not found");
+    }
+
+    // Update the transaction details
+    transaction.paymentType = paymentType;
+    transaction.amount = totalPrice;
+    transaction.status = "completed";
+    await transaction.save({ session });
+
+    // Update the booking details
+    booking.endTime = endTime;
+    booking.status = "Completed";
+    await booking.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Booking ended successfully", booking });
+  } catch (error) {
+    console.error("Error ending booking:", error);
+    await session.abortTransaction();
+    session.endSession();
+    res
+      .status(500)
+      .json({ error: "An error occurred while ending the booking" });
+  }
+};
+
+export const startBooking = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const { bookingID, endTime, startTime } = req.body;
+
+  const session = await Booking.startSession();
+  session.startTransaction();
+
+  try {
+    // Validate input
+    if (!bookingID || !endTime || !startTime) {
+      throw new Error("Missing required fields");
+    }
+
+    // Fetch the booking
+    const booking = await Booking.findById(bookingID).session(session);
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    // Update the booking details
+    booking.startTime = startTime;
+    booking.endTime = endTime;
+    booking.status = "InUse";
+    await booking.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Booking started successfully", booking });
+  } catch (error) {
+    console.error("Error ending booking:", error);
+    await session.abortTransaction();
+    session.endSession();
+    res
+      .status(500)
+      .json({ error: "An error occurred while ending the booking" });
   }
 };

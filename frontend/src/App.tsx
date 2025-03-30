@@ -22,6 +22,8 @@ import MembershipBased from "./modules/users/pages/OfferPages/MembershipBased";
 import General from "./modules/users/pages/OfferPages/General";
 import EventPage from "./modules/users/pages/EventPage";
 import VerifyEmail from "./modules/users/pages/EventPages/VerifyEmail";
+import VerifyTeamMember from "./modules/users/pages/EventPages/VerifyTeamMember";
+import Leaderboard from "./modules/users/pages/EventPages/Leaderboard";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import MembershipPage from "./modules/users/pages/MembershipPage";
@@ -39,6 +41,8 @@ import AdminEventPage from "./modules/admin/pages/AdminEventPage";
 import OverviewPage from "./modules/admin/pages/OverviewPage";
 import SingleBattle from "./modules/users/pages/EventPages/SingleBattle";
 import TeamBattle from "./modules/users/pages/EventPages/TeamBattle";
+import BookingReportPage from "./modules/admin/components/AdminBookings-page/BookingReport/BookingReportPage";
+import AdminMachinePage from "./modules/admin/pages/AdminMachinePage";
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -54,7 +58,6 @@ const App: React.FC = () => {
         {/* User Routes */}
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/admin/auth" element={<AdminAuthPage />} />
-        
 
         <Route path="/" element={<HomePage />} />
         <Route path="/games" element={<GamesPage />} />
@@ -72,10 +75,12 @@ const App: React.FC = () => {
         <Route path="/offers/time-based" element={<TimeBased />} />
         <Route path="/offers/membership-based" element={<MembershipBased />} />
         <Route path="/offers/general" element={<General />} />
-
+        {/* Events Routes */}
         <Route path="/single-battle" element={<SingleBattle />} />
         <Route path="/team-battle" element={<TeamBattle />} />
         <Route path="/verify/:token" element={<VerifyEmail />} />
+        <Route path="/verify-member/:token" element={<VerifyTeamMember />} />
+        <Route path="/events/leaderboard" element={<Leaderboard />} />
 
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="overview" />} />
@@ -85,11 +90,15 @@ const App: React.FC = () => {
           <Route path="offers" element={<AdminOfferPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="memberships" element={<AdminMembershipPage />} />
+          <Route path="machines" element={<AdminMachinePage />} />
           <Route path="packages" element={<AdminPackagePage />} />
           <Route path="booking" element={<AdminBookingManager />} />
           <Route path="events" element={<AdminEventPage />} />
           <Route path="settings" element={<SettingsPage />} />
         </Route>
+
+        {/* Report Routes */}
+        <Route path="/booking-report" element={<BookingReportPage />} />
       </Routes>
     </Router>
   );

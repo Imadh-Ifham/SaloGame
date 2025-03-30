@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { Offer } from "@/types/offer";
-import { FaEdit, FaTrash, FaToggleOn, FaToggleOff } from "react-icons/fa";
+import { FiEdit, FiTrash, FiToggleLeft, FiToggleRight } from "react-icons/fi";
 
 interface OfferRowProps {
   offer: Offer;
@@ -37,71 +37,71 @@ export const OfferRow: React.FC<OfferRowProps> = ({
       : `$${offer.discountValue}`;
 
   return (
-    <tr className="hover:bg-purple-50 dark:hover:bg-gray-750 transition-colors">
-      <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-900 dark:text-gray-100 font-medium">
+    <tr className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
         {offer.title}
       </td>
-      <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <span className="bg-purple-100 dark:bg-purple-900 text-purple-800 dark:text-purple-200 text-xs font-medium px-2.5 py-1 rounded">
+      <td className="px-4 py-4 whitespace-nowrap">
+        <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
           {offer.code}
         </span>
       </td>
-      <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300">
-        <span className="bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium px-2.5 py-1 rounded">
+      <td className="px-4 py-4 whitespace-nowrap">
+        <span className="px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-900/50">
           {offer.category}
         </span>
       </td>
-      <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 text-gray-700 dark:text-gray-300 font-medium">
+      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
         {formattedDiscount}
       </td>
-      <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+      <td className="px-4 py-4 whitespace-nowrap">
         <span
-          className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+          className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${
             offer.isActive
-              ? "bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200"
-              : "bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200"
+              ? "bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 border border-green-200 dark:border-green-900/50"
+              : "bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 border border-red-200 dark:border-red-900/50"
           }`}
         >
           {offer.isActive ? "Active" : "Inactive"}
         </span>
       </td>
-      <td className="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
-        <div className="flex space-x-3">
+      <td className="px-4 py-4 whitespace-nowrap">
+        <div className="flex items-center space-x-2">
           <button
-            onClick={() => toggleActive(offer._id, !offer.isActive)}
-            className={`p-1 rounded-full ${
+            onClick={() => toggleActive(offer._id, offer.isActive)}
+            className={`p-1.5 rounded-full transition-colors ${
               offer.isActive
-                ? "text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20"
-                : "text-gray-400 dark:text-gray-500 hover:bg-gray-50 dark:hover:bg-gray-700/20"
+                ? "text-green-600 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/30"
+                : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700/50"
             }`}
             title={offer.isActive ? "Deactivate Offer" : "Activate Offer"}
           >
             {offer.isActive ? (
-              <FaToggleOn size={18} />
+              <FiToggleRight size={20} />
             ) : (
-              <FaToggleOff size={18} />
+              <FiToggleLeft size={20} />
             )}
           </button>
 
           <button
             onClick={() => openModal(offer)}
-            className="p-1 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20"
+            className="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
             title="Edit Offer"
           >
-            <FaEdit size={16} />
+            <FiEdit size={16} />
           </button>
 
           <button
             onClick={handleDelete}
             disabled={isDeleting}
-            className={`p-1 rounded-full ${
+            className={`p-1.5 rounded-full transition-colors ${
               isDeleting
                 ? "text-gray-400 dark:text-gray-600 cursor-not-allowed"
-                : "text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                : "text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/30"
             }`}
             title="Delete Offer"
           >
-            <FaTrash size={16} />
+            <FiTrash size={16} />
           </button>
         </div>
       </td>

@@ -44,6 +44,7 @@ export class AutoRenewalService {
         await this.processRenewal(subscription);
       }
 
+      // Check for failed renewals that have expired and mark them
       const now = new Date();
       const expiredSubscriptions = await Subscription.find({
         status: "active",
@@ -59,10 +60,19 @@ export class AutoRenewalService {
         `Found ${expiredSubscriptions.length} subscriptions to mark as expired`
       );
 
-      for (const subscription of expiredSubscriptions) {
-        subscription.status = "expired";
-        await subscription.save();
-        console.log(`Marked subscription ${subscription._id} as expired`);
+      // Use bulk update for efficiency
+      if (expiredSubscriptions.length > 0) {
+        const updateResult = await Subscription.updateMany(
+          {
+            _id: { $in: expiredSubscriptions.map((sub) => sub._id) },
+          },
+          {
+            $set: { status: "expired" },
+          }
+        );
+        console.log(
+          `Marked ${updateResult.modifiedCount} subscriptions as expired`
+        );
       }
     } catch (error) {
       console.error("Error in auto renewal check:", error);
@@ -78,17 +88,25 @@ export class AutoRenewalService {
         `Processing auto-renewal for subscription ${subscription._id}`
       );
 
+      // Simulate payment process (80% success rate as in the frontend)
+      const paymentSuccessful = Math.random() <= 0.8;
+
+      // Record Renewal attempt
+      await Subscription.findByIdAndUpdate(subscription._id, {
+        renewalAttempted: true,
+        lastRenewalAttempt: new Date(),
+        renewalSuccessful: paymentSuccessful,
+        renewalFailureReason: paymentSuccessful
+          ? null
+          : "Payment processing failed",
+      });
+
       // Get the membership ID properly - ensure it's an ObjectId
       const membershipId =
         subscription.membershipId._id || subscription.membershipId;
 
-      // Simulate payment process (80% success rate as in the frontend)
-      const paymentSuccessful = Math.random() <= 0.8;
-
       if (!paymentSuccessful) {
         console.log(`Payment failed for subscription ${subscription._id}`);
-        // Could implement notification system to alert user about failed payment
-        return;
       }
 
       // Calculate new dates
@@ -108,6 +126,9 @@ export class AutoRenewalService {
         paymentStatus: "completed",
         autoRenew: subscription.autoRenew,
         paymentDetails: subscription.paymentDetails,
+        renewedFromSubscription: subscription._id, // Track parent subscription
+        renewalCompleted: true,
+        renewalCompletedAt: new Date(),
       });
 
       await newSubscription.save({ session });
@@ -122,17 +143,29 @@ export class AutoRenewalService {
       // Mark old subscription as expired
       await Subscription.findByIdAndUpdate(
         subscription._id,
-        { status: "expired" },
+        {
+          status: "expired",
+          renewalSuccessful: true,
+          renewalCompletedAt: new Date(),
+        },
         { session }
       );
 
       await session.commitTransaction();
       console.log(`Successfully renewed subscription ${subscription._id}`);
 
-      // Could implement a notification system to inform the user about successful renewal
+      // ***TASK ** -  implement a notification system to inform the user about successful renewal
     } catch (error) {
       await session.abortTransaction();
       console.error(`Error renewing subscription ${subscription._id}:`, error);
+
+      // Record the error
+      await Subscription.findByIdAndUpdate(subscription._id, {
+        renewalSuccessful: false,
+        renewalFailureReason: `Error: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`,
+      });
     } finally {
       session.endSession();
     }

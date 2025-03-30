@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { FaDownload, FaFilter, FaSearch, FaTimes } from "react-icons/fa";
+import { FiDownload, FiFilter, FiSearch, FiX } from "react-icons/fi";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
 import axiosInstance from "@/axios.config";
 import { toast } from "react-hot-toast";
+import SubscriptionInvoiceReport from "./SubscriptionInvoiceReport";
 
 // Define subscription interface to match backend structure
 interface Subscription {
@@ -32,6 +33,9 @@ const InvoiceManagementTable: React.FC = () => {
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [selectedSubscription, setSelectedSubscription] =
+    useState<Subscription | null>(null);
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -69,7 +73,6 @@ const InvoiceManagementTable: React.FC = () => {
         const response = await axiosInstance.get("/users");
         const members = response.data || [];
 
-        // Extract subscription data from members
         // Extract subscription data from members
         const subscriptionsData = members
           .filter((member) => member.subscription)
@@ -134,35 +137,19 @@ const InvoiceManagementTable: React.FC = () => {
     fetchSubscriptions();
   }, [startDate, endDate]);
 
-  const handleDownloadInvoice = async (subscriptionId: string) => {
-    try {
-      // This would need a proper invoice PDF generation endpoint
-      // For now we'll just show a message
-      toast.success("Invoice download functionality requires backend support");
-
-      /* Uncomment this when you have the proper backend endpoint
-      const response = await axiosInstance.get(
-        `/subscriptions/${subscriptionId}/invoice/download`,
-        {
-          responseType: "blob",
-        }
-      );
-
-      // Create a URL for the blob
-      const url = window.URL.createObjectURL(new Blob([response.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `invoice-${subscriptionId}.pdf`);
-      document.body.appendChild(link);
-      link.click();
-
-      // Clean up
-      link.parentNode?.removeChild(link);
-      window.URL.revokeObjectURL(url);
-      */
-    } catch (error) {
-      toast.error("Failed to download invoice");
+  const handleDownloadInvoice = (subscription: Subscription) => {
+    if (subscription.paymentStatus !== "completed") {
+      toast.error("Only completed invoices can be downloaded");
+      return;
     }
+
+    setSelectedSubscription(subscription);
+    setShowInvoice(true);
+  };
+
+  const handleCloseInvoice = () => {
+    setShowInvoice(false);
+    setSelectedSubscription(null);
   };
 
   const filteredSubscriptions = useMemo(() => {
@@ -231,9 +218,9 @@ const InvoiceManagementTable: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border border-gray-200 dark:border-gray-700">
         <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-500"></div>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
         </div>
       </div>
     );
@@ -241,63 +228,87 @@ const InvoiceManagementTable: React.FC = () => {
 
   if (error) {
     return (
-      <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
-        <div className="text-center text-red-500 py-8">
-          <p>{error}</p>
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+        <div className="p-6 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg">
+          {error}
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-800 p-6 rounded-lg shadow-lg">
+    <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow border border-gray-200 dark:border-gray-700">
+      {/* Invoice Modal */}
+      {showInvoice && selectedSubscription && (
+        <div className="fixed inset-0 z-50 overflow-hidden flex items-center justify-center p-4 bg-black bg-opacity-75">
+          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-4xl h-[90vh] overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Invoice - {selectedSubscription.membershipId.name} Membership
+              </h3>
+              <button
+                onClick={handleCloseInvoice}
+                className="p-2 rounded-lg text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              >
+                <FiX size={20} />
+              </button>
+            </div>
+            <div className="h-[calc(90vh-4rem)]">
+              <SubscriptionInvoiceReport subscription={selectedSubscription} />
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
-        <h2 className="text-xl font-bold text-gray-100">
+        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
           Invoice & Payment Management
         </h2>
         <div className="flex space-x-2">
           <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <FiSearch className="text-gray-400 dark:text-gray-500" />
+            </div>
             <input
               type="text"
               placeholder="Search invoices..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10 pr-4 py-2 rounded-lg bg-gray-700 text-gray-100 border border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="pl-10 pr-4 py-2 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-colors"
             />
-            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
 
           <div className="relative">
             <button
               onClick={() => setShowDatePicker(!showDatePicker)}
-              className="px-4 py-2 rounded-lg bg-gray-700 text-gray-100 border border-gray-600 hover:bg-gray-600 flex items-center"
+              className="px-4 py-2 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors flex items-center"
             >
-              <FaFilter className="mr-2" />
+              <FiFilter className="mr-2" />
               <span>Filter</span>
             </button>
 
             {showDatePicker && (
-              <div className="absolute right-0 mt-2 p-4 bg-gray-700 rounded-lg shadow-lg z-10 w-72">
+              <div className="absolute right-0 mt-2 p-4 bg-white dark:bg-gray-700 rounded-lg shadow-lg z-10 w-72 border border-gray-200 dark:border-gray-600">
                 <div className="flex justify-between items-center mb-3">
-                  <h3 className="text-gray-100 font-semibold">
+                  <h3 className="text-gray-900 dark:text-white font-semibold">
                     Filter Invoices
                   </h3>
                   <button
                     onClick={() => setShowDatePicker(false)}
-                    className="text-gray-400 hover:text-gray-200"
+                    className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors"
                   >
-                    <FaTimes />
+                    <FiX />
                   </button>
                 </div>
 
                 <div className="mb-3">
-                  <label className="block text-gray-300 mb-1">
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
                     Payment Status
                   </label>
                   <select
                     value={statusFilter}
                     onChange={(e) => setStatusFilter(e.target.value as any)}
-                    className="w-full px-3 py-2 bg-gray-800 text-gray-100 rounded-md border border-gray-600"
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md border border-gray-300 dark:border-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
                     <option value="all">All Statuses</option>
                     <option value="completed">Completed</option>
@@ -307,21 +318,25 @@ const InvoiceManagementTable: React.FC = () => {
                 </div>
 
                 <div className="mb-3">
-                  <label className="block text-gray-300 mb-1">Start Date</label>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    Start Date
+                  </label>
                   <DatePicker
                     selected={startDate}
                     onChange={setStartDate}
                     selectsStart
                     startDate={startDate}
                     endDate={endDate}
-                    className="w-full px-3 py-2 bg-gray-800 text-gray-100 rounded-md border border-gray-600"
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md border border-gray-300 dark:border-gray-600"
                     placeholderText="Select start date"
                     dateFormat="MMM d, yyyy"
                   />
                 </div>
 
                 <div className="mb-4">
-                  <label className="block text-gray-300 mb-1">End Date</label>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-1">
+                    End Date
+                  </label>
                   <DatePicker
                     selected={endDate}
                     onChange={setEndDate}
@@ -329,7 +344,7 @@ const InvoiceManagementTable: React.FC = () => {
                     startDate={startDate}
                     endDate={endDate}
                     minDate={startDate}
-                    className="w-full px-3 py-2 bg-gray-800 text-gray-100 rounded-md border border-gray-600"
+                    className="w-full px-3 py-2 bg-white dark:bg-gray-800 text-gray-900 dark:text-white rounded-md border border-gray-300 dark:border-gray-600"
                     placeholderText="Select end date"
                     dateFormat="MMM d, yyyy"
                   />
@@ -338,13 +353,13 @@ const InvoiceManagementTable: React.FC = () => {
                 <div className="flex justify-between">
                   <button
                     onClick={handleClearDateFilter}
-                    className="px-3 py-1 bg-gray-600 text-gray-200 rounded hover:bg-gray-500"
+                    className="px-3 py-1.5 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded border border-gray-300 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
                   >
                     Clear
                   </button>
                   <button
                     onClick={() => setShowDatePicker(false)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-500"
+                    className="px-3 py-1.5 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
                   >
                     Apply
                   </button>
@@ -359,37 +374,37 @@ const InvoiceManagementTable: React.FC = () => {
       {(statusFilter !== "all" || startDate || endDate) && (
         <div className="flex flex-wrap gap-2 mb-4">
           {statusFilter !== "all" && (
-            <div className="px-3 py-1 bg-blue-900/50 text-blue-300 rounded-full text-sm flex items-center">
+            <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full text-sm flex items-center border border-blue-200 dark:border-blue-900/50">
               <span>Status: {statusFilter}</span>
               <button
                 onClick={() => setStatusFilter("all")}
-                className="ml-2 text-blue-300 hover:text-blue-100"
+                className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
               >
-                <FaTimes size={12} />
+                <FiX size={14} />
               </button>
             </div>
           )}
 
           {startDate && (
-            <div className="px-3 py-1 bg-blue-900/50 text-blue-300 rounded-full text-sm flex items-center">
+            <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full text-sm flex items-center border border-blue-200 dark:border-blue-900/50">
               <span>From: {startDate.toLocaleDateString()}</span>
               <button
                 onClick={() => setStartDate(null)}
-                className="ml-2 text-blue-300 hover:text-blue-100"
+                className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
               >
-                <FaTimes size={12} />
+                <FiX size={14} />
               </button>
             </div>
           )}
 
           {endDate && (
-            <div className="px-3 py-1 bg-blue-900/50 text-blue-300 rounded-full text-sm flex items-center">
+            <div className="px-3 py-1 bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-400 rounded-full text-sm flex items-center border border-blue-200 dark:border-blue-900/50">
               <span>To: {endDate.toLocaleDateString()}</span>
               <button
                 onClick={() => setEndDate(null)}
-                className="ml-2 text-blue-300 hover:text-blue-100"
+                className="ml-2 text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
               >
-                <FaTimes size={12} />
+                <FiX size={14} />
               </button>
             </div>
           )}
@@ -400,7 +415,7 @@ const InvoiceManagementTable: React.FC = () => {
               setStartDate(null);
               setEndDate(null);
             }}
-            className="px-3 py-1 bg-gray-700 text-gray-300 rounded-full text-sm hover:bg-gray-600"
+            className="px-3 py-1 bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 rounded-full text-sm hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700 transition-colors"
           >
             Clear All
           </button>
@@ -408,51 +423,89 @@ const InvoiceManagementTable: React.FC = () => {
       )}
 
       {/* Invoice Table */}
-      <div className="overflow-x-auto">
-        <table className="w-full text-left text-gray-300">
-          <thead>
-            <tr className="bg-gray-700">
-              <th className="px-4 py-3">Invoice ID</th>
-              <th className="px-4 py-3">User Email</th>
-              <th className="px-4 py-3">Membership Type</th>
-              <th className="px-4 py-3">Amount</th>
-              <th className="px-4 py-3">Payment Status</th>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Actions</th>
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-700">
+            <tr>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Invoice ID
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                User Email
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Membership Type
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Amount
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Payment Status
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Date
+              </th>
+              <th
+                scope="col"
+                className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+              >
+                Actions
+              </th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-gray-700">
+          <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
             {paginatedSubscriptions.length > 0 ? (
               paginatedSubscriptions.map((subscription) => (
-                <tr key={subscription._id} className="hover:bg-gray-700/50">
-                  <td className="px-4 py-3 font-mono text-gray-400">
+                <tr
+                  key={subscription._id}
+                  className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors"
+                >
+                  <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                     {subscription._id.substring(0, 8)}...
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     {subscription.userId?.email || "N/A"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     {subscription.membershipId?.name || "N/A"}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     LKR {subscription.totalAmount.toFixed(2)}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <span
-                      className={`px-2.5 py-1 rounded-full text-xs ${getStatusBadgeClass(
+                      className={`px-2.5 py-1 inline-flex text-xs leading-5 font-medium rounded-full ${getStatusBadgeClass(
                         subscription.paymentStatus
                       )}`}
                     >
                       {subscription.paymentStatus.toUpperCase()}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     {formatDate(subscription.createdAt)}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 whitespace-nowrap">
                     <button
-                      onClick={() => handleDownloadInvoice(subscription._id)}
-                      className="p-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors flex items-center"
+                      onClick={() => handleDownloadInvoice(subscription)}
+                      className="p-1.5 rounded-full text-blue-600 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/30 transition-colors"
                       disabled={subscription.paymentStatus !== "completed"}
                       title={
                         subscription.paymentStatus !== "completed"
@@ -460,7 +513,8 @@ const InvoiceManagementTable: React.FC = () => {
                           : "Download Invoice"
                       }
                     >
-                      <FaDownload
+                      <FiDownload
+                        size={16}
                         className={
                           subscription.paymentStatus !== "completed"
                             ? "opacity-50"
@@ -473,7 +527,10 @@ const InvoiceManagementTable: React.FC = () => {
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-gray-400">
+                <td
+                  colSpan={7}
+                  className="px-4 py-8 text-center text-sm text-gray-500 dark:text-gray-400"
+                >
                   No invoices found matching your filters.
                 </td>
               </tr>
@@ -485,7 +542,7 @@ const InvoiceManagementTable: React.FC = () => {
       {/* Pagination Controls */}
       {filteredSubscriptions.length > 0 && (
         <div className="flex justify-between items-center mt-4">
-          <div className="text-gray-400 text-sm">
+          <div className="text-sm text-gray-600 dark:text-gray-400">
             Showing {paginatedSubscriptions.length} of{" "}
             {filteredSubscriptions.length} invoices
           </div>
@@ -493,17 +550,17 @@ const InvoiceManagementTable: React.FC = () => {
             <button
               onClick={handlePreviousPage}
               disabled={currentPage === 1}
-              className="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Previous
             </button>
-            <div className="px-4 py-2 bg-gray-700 text-gray-300 rounded">
+            <div className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600">
               Page {currentPage} of {totalPages}
             </div>
             <button
               onClick={handleNextPage}
               disabled={currentPage === totalPages}
-              className="px-4 py-2 bg-gray-700 text-gray-300 rounded hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-3 py-1.5 bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded border border-gray-200 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               Next
             </button>

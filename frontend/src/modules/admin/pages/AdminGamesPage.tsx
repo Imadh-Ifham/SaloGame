@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { PlusIcon, MagnifyingGlassIcon } from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
 import axiosInstance from "../../../axios.config";
-
 import Modal from "../../../components/Modal";
 import AdminGameCard from "../components/AdminGames-page/AdminGameCard";
 import GameForm from "../components/AdminGames-page/GameForm";

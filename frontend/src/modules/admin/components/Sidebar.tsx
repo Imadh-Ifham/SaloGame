@@ -4,7 +4,6 @@ import {
   FiMenu,
   FiHome,
   FiCalendar,
-  FiShoppingBag,
   FiGift,
   FiStar,
   FiTarget,
@@ -13,6 +12,7 @@ import {
   FiSun,
   FiMoon,
 } from "react-icons/fi";
+import { FaGamepad } from "react-icons/fa";
 import { applyTheme, getInitialTheme } from "@/utils/themeChange.util";
 
 interface User {
@@ -118,11 +118,11 @@ const Sidebar = ({ user }: { user: User }) => {
             "Bookings",
             <FiCalendar size={18} />
           )}
-          {renderNavLink("/admin/games", "Games", <FiMonitor size={18} />)}
+          {renderNavLink("/admin/games", "Games", <FaGamepad size={18} />)}
           {renderNavLink(
-            "/admin/packages",
-            "Packages",
-            <FiShoppingBag size={18} />
+            "/admin/machines",
+            "Machines",
+            <FiMonitor size={18} />
           )}
           {renderNavLink("/admin/offers", "Offers", <FiGift size={18} />)}
           {renderNavLink(

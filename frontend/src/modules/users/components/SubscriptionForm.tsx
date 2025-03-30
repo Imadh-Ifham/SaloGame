@@ -57,7 +57,6 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   const [saveCardDetails, setSaveCardDetails] = useState(false);
 
   const handlePaymentSubmit = () => {
-    // Validate payment fields
     if (!cardNumber || !expiryDate || !cvv) {
       toast.error("Please fill in all payment details");
       return;
@@ -92,9 +91,8 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
         toast.error(
           "Payment failed. Please try again or use a different payment method."
         );
-        // Don't close payment portal, let user try again
       }
-    }, 2000); // Simulate 2-second payment processing
+    }, 2000);
   };
 
   const handleSubmit = async () => {
@@ -140,7 +138,6 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
           ? {
               cardNumber,
               expiryDate,
-              // Don't include CVV for security reasons
             }
           : undefined,
       });
