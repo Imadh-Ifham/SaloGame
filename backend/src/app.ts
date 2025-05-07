@@ -20,6 +20,7 @@ import eventRoutes from "./routes/event.routes/event.routes";
 import teamRoutes from "./routes/event.routes/team.routes";
 import transactionRoutes from "./routes/transaction.routes";
 import visitRoutes from "./routes/visit.routes";
+import analyticsRoutes from "./routes/analytics.routes";
 
 
 
@@ -50,7 +51,7 @@ app.use("/api/events", eventRoutes);
 app.use("/api/teams", teamRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/visits", visitRoutes);
-
+app.use("/api/analytics", analyticsRoutes);
 
 
 // Error handling
