@@ -132,7 +132,9 @@ const ProfilePage: React.FC = () => {
               </div>
             )}
 
+
             {activeTab === "membership" && <UserMembershipDashboard profile={profile} />}
+           
             {activeTab === "events" && <UserEventDashboard />}
             {activeTab === "support" && <UserSupportDashboard />}
           </div>
