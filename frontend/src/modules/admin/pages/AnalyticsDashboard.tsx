@@ -3,6 +3,27 @@ import { ArrowUpIcon, MagnifyingGlassIcon, ArrowDownIcon, ArrowPathIcon } from "
 import { CheckCircleIcon } from "@heroicons/react/24/solid";
 import { FirebaseAnalytics } from "@/config/firebase";
 import axiosInstance from "@/axios.config";
+import { Line } from "react-chartjs-2";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from "chart.js";
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
 interface EventData {
   name: string;
@@ -21,18 +42,12 @@ interface UserActivityData {
 const AnalyticsDashboard: React.FC = () => {
   const [isKeyEvent, setIsKeyEvent] = useState<Record<string, boolean>>({});
   const [eventsData, setEventsData] = useState<EventData[]>([]);
-  const [activeUsers, setActiveUsers] = useState<number>(0);
-  const [userActivity, setUserActivity] = useState<UserActivityData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activityData, setActivityData] = useState<any>(null);
 
   useEffect(() => {
-    // Track page view when dashboard loads
-    FirebaseAnalytics.trackPageView('AnalyticsDashboard', {
-      userType: 'admin'
-    });
-
     fetchData();
-    const interval = setInterval(fetchData, 60000); // Refresh every minute
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, []);
 
@@ -40,24 +55,14 @@ const AnalyticsDashboard: React.FC = () => {
     try {
       setLoading(true);
 
-      // Track user activity
-      FirebaseAnalytics.trackUserActivity({
-        activityType: 'dashboard_view',
-        page: 'analytics'
-      });
+      // Fetch analytics data
+      const [eventsRes, activityRes] = await Promise.all([
+        axiosInstance.get('/analytics/events'),
+        FirebaseAnalytics.getUserActivityData()
+      ]);
 
-      // Fetch events data
-      const eventsRes = await axiosInstance.get('/analytics/events');
       setEventsData(eventsRes.data.data);
-
-      // Track event interaction for each event
-      eventsRes.data.data.forEach((event: EventData) => {
-        FirebaseAnalytics.trackEventInteraction({
-          eventName: event.name,
-          interactionType: 'view',
-          count: event.count
-        });
-      });
+      setActivityData(activityRes);
 
       setLoading(false);
     } catch (error) {
@@ -84,6 +89,67 @@ const AnalyticsDashboard: React.FC = () => {
     });
   };
 
+  const chartData = {
+    labels: activityData?.thirtyDays?.data.map((item: any) => 
+      new Date(item.timestamp).toLocaleDateString()
+    ) || [],
+    datasets: [
+      {
+        label: '30 Days',
+        data: activityData?.thirtyDays?.data.map((item: any) => item.count) || [],
+        borderColor: '#3B82F6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.4
+      },
+      {
+        label: '7 Days',
+        data: activityData?.sevenDays?.data.map((item: any) => item.count) || [],
+        borderColor: '#8B5CF6',
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        tension: 0.4
+      },
+      {
+        label: '24 Hours',
+        data: activityData?.oneDay?.data.map((item: any) => item.count) || [],
+        borderColor: '#EC4899',
+        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+        tension: 0.4
+      }
+    ]
+  };
+
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(75, 85, 99, 0.1)'
+        },
+        ticks: {
+          color: '#9CA3AF'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: '#9CA3AF'
+        }
+      }
+    },
+    plugins: {
+      legend: {
+        position: 'top' as const,
+        labels: {
+          color: '#9CA3AF'
+        }
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-screen">
@@ -94,6 +160,28 @@ const AnalyticsDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
+      {/* User Activity Chart */}
+      <div className="bg-gray-900 rounded-lg overflow-hidden shadow p-4">
+        <h2 className="text-lg font-medium text-white mb-4">User Activity</h2>
+        <div className="h-96">
+          <Line data={chartData} options={chartOptions} />
+        </div>
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          <div className="bg-gray-800 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">30 Days Active</h3>
+            <p className="text-2xl text-white">{activityData?.thirtyDays?.total || 0}</p>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">7 Days Active</h3>
+            <p className="text-2xl text-white">{activityData?.sevenDays?.total || 0}</p>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">24 Hours Active</h3>
+            <p className="text-2xl text-white">{activityData?.oneDay?.total || 0}</p>
+          </div>
+        </div>
+      </div>
+
       {/* Events Table Section */}
       <div className="bg-gray-900 rounded-lg overflow-hidden shadow">
         <div className="flex justify-between items-center p-4 border-b border-gray-800">
@@ -146,14 +234,17 @@ const AnalyticsDashboard: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className={`flex items-center text-sm ${
-                      event.countChange && event.countChange > 0 ? 'text-green-500' : 'text-red-500'
+                      (event.countChange === undefined || event.countChange === 0) ? 'text-gray-300' :
+                      event.countChange > 0 ? 'text-green-500' : 'text-red-500'
                     }`}>
-                      {event.countChange && event.countChange > 0 ? (
-                        <ArrowUpIcon className="h-4 w-4 mr-1" />
-                      ) : (
-                        <ArrowDownIcon className="h-4 w-4 mr-1" />
+                      {event.countChange !== undefined && (
+                        event.countChange > 0 ? (
+                          <ArrowUpIcon className="h-4 w-4 mr-1" />
+                        ) : event.countChange < 0 ? (
+                          <ArrowDownIcon className="h-4 w-4 mr-1" />
+                        ) : null
                       )}
-                      {Math.abs(event.countChange || 0)}%
+                      {event.countChange !== undefined ? `${Math.abs(event.countChange)}%` : '-'}
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
@@ -164,7 +255,7 @@ const AnalyticsDashboard: React.FC = () => {
                       <input
                         type="checkbox"
                         className="sr-only peer"
-                        checked={isKeyEvent[event.name]}
+                        checked={!!isKeyEvent[event.name]}
                         onChange={() => handleKeyEventToggle(event.name)}
                       />
                       <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>

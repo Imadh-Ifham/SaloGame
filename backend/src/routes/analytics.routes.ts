@@ -7,4 +7,5 @@ const router = express.Router();
 router.use(authMiddleware);
 router.get('/summary', getAnalyticsSummary);
 
+
 export default router;

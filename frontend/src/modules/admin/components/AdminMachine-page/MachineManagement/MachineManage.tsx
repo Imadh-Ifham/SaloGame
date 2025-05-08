@@ -24,9 +24,9 @@ const dummyMachineTypes = [
 
 const MachineManage: React.FC = () => {
   return (
-    <div className="w-full h-screen overflow-y-auto px-4">
+    <div className="w-full h-screen overflow-y-auto scrollbar-hide px-4">
       <div className="text-base font-poppins font-semibold ml-20 mb-8 mt-1 dark:text-primary">
-        Louge Layout
+        Manage Machine
       </div>
       {dummyMachineTypes.map((machineType) => (
         <div className="mb-6 mx-20 bg-white dark:bg-gray-800 shadow-lg rounded-2xl overflow-hidden transition-transform transform hover:scale-[0.99]">

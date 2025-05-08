@@ -5,6 +5,7 @@ import { fetchMachines } from "../thunks/machineThunks";
 type MachineState = {
   machines: Machine[];
   selectedMachine: Machine | null;
+  machineModalCommand: "add" | "remove" | null;
   fetched: boolean;
   loading: boolean;
   error: string | null;
@@ -13,6 +14,7 @@ type MachineState = {
 const initialState: MachineState = {
   machines: [],
   selectedMachine: null,
+  machineModalCommand: null,
   fetched: false,
   loading: false,
   error: null,
@@ -31,6 +33,14 @@ const machineSlice = createSlice({
 
     resetFetched: (state) => {
       state.fetched = false;
+    },
+
+    resetMachineModalCommand(state) {
+      state.machineModalCommand = null;
+    },
+
+    setMachineModalCommand(state, action) {
+      state.machineModalCommand = action.payload;
     },
   },
   extraReducers: (builder) => {
@@ -52,6 +62,11 @@ const machineSlice = createSlice({
   },
 });
 
-export const { selectMachine, resetFetched } = machineSlice.actions;
+export const {
+  selectMachine,
+  resetFetched,
+  resetMachineModalCommand,
+  setMachineModalCommand,
+} = machineSlice.actions;
 
 export default machineSlice.reducer;

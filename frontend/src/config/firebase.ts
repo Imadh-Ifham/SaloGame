@@ -7,7 +7,7 @@ import {
   setUserId,
   Analytics,
   isSupported,
-  AnalyticsCallOptions
+  getAnalytics as getFirebaseAnalytics
 } from "firebase/analytics";
 
 // Firebase configuration
@@ -126,7 +126,50 @@ export const FirebaseAnalytics = {
       ...properties,
       last_active: new Date().toISOString()
     });
+  },
+
+  getUserActivityData: async () => {
+    if (!analytics) return null;
+    
+    const now = new Date();
+    const thirtyDaysAgo = new Date(now.setDate(now.getDate() - 30));
+    const sevenDaysAgo = new Date(now.setDate(now.getDate() - 7));
+    const oneDayAgo = new Date(now.setDate(now.getDate() - 1));
+
+    try {
+      // Since Firebase Analytics doesn't provide direct access to historical data,
+      // we'll return the time periods for custom implementation
+      return {
+        thirtyDays: {
+          startDate: thirtyDaysAgo,
+          endDate: now
+        },
+        sevenDays: {
+          startDate: sevenDaysAgo,
+          endDate: now
+        },
+        oneDay: {
+          startDate: oneDayAgo,
+          endDate: now
+        }
+      };
+    } catch (error) {
+      console.error('Error with activity data:', error);
+      return null;
+    }
   }
+};
+
+// Helper function to process activity data
+const processActivityData = (data: any) => {
+  const activeUsers = data?.activeUsers || [];
+  return {
+    data: activeUsers.map((user: any) => ({
+      timestamp: user.timestamp,
+      count: user.count
+    })),
+    total: activeUsers.reduce((sum: number, user: any) => sum + user.count, 0)
+  };
 };
 
 export { auth, analytics, AnalyticsEvents };
