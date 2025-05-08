@@ -1,42 +1,58 @@
-import type React from "react"
-import { useEffect, useState } from "react"
-import { useDispatch, useSelector } from "react-redux"
-import { NavLink, useNavigate } from "react-router-dom"
-import { applyTheme, getInitialTheme } from "../../../utils/themeChange.util"
-import { useAuth } from "../../../hooks/useAuth"
-import { fetchXpBalance } from "@/store/slices/XPslice"
-import XPDisplay from "./XPDisplay"
-import type { AppDispatch, RootState } from "@/store/store"
+import type React from "react";
+import { useEffect, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { NavLink, useNavigate } from "react-router-dom";
+import { applyTheme, getInitialTheme } from "../../../utils/themeChange.util";
+import { useAuth } from "../../../hooks/useAuth";
+import { fetchXpBalance } from "@/store/slices/XPslice";
+import XPDisplay from "./XPDisplay";
+import type { AppDispatch, RootState } from "@/store/store";
 
 const Header: React.FC = () => {
-  const [navOpen, setNavOpen] = useState(false)
-  const [isAuthenticated, setIsAuthenticated] = useState(false)
-  const navigate = useNavigate()
-  const { user } = useAuth() // To get user info
-  const dispatch = useDispatch<AppDispatch>()
-  const xpBalance = useSelector((state: RootState) => state.xp.xpBalance)
+  const [navOpen, setNavOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
+  const { user } = useAuth(); // To get user info
+  const dispatch = useDispatch<AppDispatch>();
+  const xpBalance = useSelector((state: RootState) => state.xp.xpBalance);
   const handleToggle = () => {
-    setNavOpen(!navOpen)
-  }
+    setNavOpen(!navOpen);
+  };
 
   // Dark/Light theme management
-  const [theme, setTheme] = useState<string>(getInitialTheme())
+  const [theme, setTheme] = useState<string>(getInitialTheme());
 
   useEffect(() => {
-    applyTheme(theme)
+    applyTheme(theme);
     // Check if user is authenticated
-    const token = localStorage.getItem("token")
-    setIsAuthenticated(!!token)
+    const token = localStorage.getItem("token");
+    setIsAuthenticated(!!token);
 
     // Fetch XP balance if authenticated
     if (token) {
-      dispatch(fetchXpBalance())
+      dispatch(fetchXpBalance());
     }
-  }, [theme, dispatch])
+
+    // Add this interval to periodically refresh XP balance
+    const refreshInterval = setInterval(() => {
+      if (localStorage.getItem("token")) {
+        dispatch(fetchXpBalance());
+      }
+    }, 60000);
+
+    return () => clearInterval(refreshInterval);
+  }, [theme, dispatch]);
 
   const toggleTheme = (theme: string) => {
-    setTheme(theme)
-  }
+    setTheme(theme);
+  };
+
+  //  manually refresh XP
+  const refreshXPBalance = () => {
+    if (localStorage.getItem("token")) {
+      dispatch(fetchXpBalance());
+    }
+  };
 
   // Update navLinks to include conditional dashboard link
   const navLinks = [
@@ -48,8 +64,10 @@ const Header: React.FC = () => {
     { to: "/offers", label: "Offers" },
     { to: "/events", label: "Events" },
     // Add conditional dashboard link for managers and owners
-    ...(user?.role === "manager" || user?.role === "owner" ? [{ to: "/admin", label: "Dashboard" }] : []),
-  ]
+    ...(user?.role === "manager" || user?.role === "owner"
+      ? [{ to: "/admin", label: "Dashboard" }]
+      : []),
+  ];
 
   const renderNavLink = (to: string, label: string) => (
     <NavLink
@@ -63,7 +81,7 @@ const Header: React.FC = () => {
     >
       {label}
     </NavLink>
-  )
+  );
 
   return (
     <header className="sticky top-0 inset-x-0 flex flex-wrap md:justify-start md:flex-nowrap z-50 w-full text-sm">
@@ -207,7 +225,13 @@ const Header: React.FC = () => {
 
       {/* Authentication Buttons and XP Balance */}
       <div className="flex items-center justify-end mt-4 mx-4 space-x-2">
-        {isAuthenticated && <XPDisplay xpBalance={xpBalance} showTooltip={true} className="w-40" />}
+        {isAuthenticated && (
+          <XPDisplay
+            xpBalance={xpBalance}
+            showTooltip={true}
+            className="w-40"
+          />
+        )}
         {!isAuthenticated ? (
           <>
             <NavLink
@@ -221,8 +245,8 @@ const Header: React.FC = () => {
               to="/auth"
               className="px-4 py-2 text-sm font-medium text-white bg-primary rounded-md hover:bg-primary-dark transition-colors duration-200"
               onClick={() => {
-                localStorage.setItem("isSignUp", "true")
-                navigate("/auth")
+                localStorage.setItem("isSignUp", "true");
+                navigate("/auth");
               }}
             >
               Sign Up
@@ -260,8 +284,7 @@ const Header: React.FC = () => {
         )}
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default Header
-
+export default Header;

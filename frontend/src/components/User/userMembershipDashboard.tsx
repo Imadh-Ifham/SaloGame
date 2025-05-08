@@ -1,207 +1,224 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { useNavigate } from "react-router-dom";
-import { FiStar, FiChevronDown, FiChevronUp, FiRefreshCw } from "react-icons/fi";
-import NotificationArea from "../notifications/NotificationArea";
-import axiosInstance from "@/axios.config";
-import { toast } from "react-hot-toast";
+import axiosInstance from "../../axios.config";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SubscriptionDetails from "../../modules/users/components/subscription/SubscriptionDetails";
+import PaymentHistory from "../../modules/users/components/subscription/PaymentHistory";
+import PaymentMethodsManager from "../../modules/users/components/subscription/PaymentMethodsManager";
+import PlanOptions from "../../modules/users/components/subscription/PlanOptions";
+import NotificationArea from "../../components/notifications/NotificationArea";
+
+interface UserProfile {
+  email: string;
+  role?: string;
+  defaultMembershipId?: {
+    name: string;
+    price: number;
+    benefits: string[];
+  };
+  profileImage?: string;
+  _id?: string;
+}
 
 interface UserMembershipDashboardProps {
-  profile: {
-    defaultMembershipId?: {
-      name: string;
-      price: number;
-      benefits: string[];
-    };
-  } | null;
+  profile: UserProfile | null;
 }
 
-interface Subscription {
-  _id: string;
-  startDate: string;
-  endDate: string;
-  status: string;
-  autoRenew: boolean;
-  totalAmount: number;
-}
+const UserMembershipDashboard: React.FC<UserMembershipDashboardProps> = ({
+  profile,
+}) => {
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [userSubscription, setUserSubscription] = useState<any>(null);
 
-const UserMembershipDashboard: React.FC<UserMembershipDashboardProps> = ({ profile }) => {
-  const [showDetails, setShowDetails] = useState(false);
-  const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [loading, setLoading] = useState(false);
-  const navigate = useNavigate();
-
-  // Fetch subscription details when component mounts
   useEffect(() => {
     const fetchSubscription = async () => {
       try {
         setLoading(true);
-        const response = await axiosInstance.get('/subscriptions');
-        if (response.data.success && response.data.data.length > 0) {
-          setSubscription(response.data.data[0]); // Get most recent subscription
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("No authentication token found");
         }
-      } catch (error) {
-        console.error('Error fetching subscription:', error);
-        toast.error('Failed to fetch subscription details');
+
+        axiosInstance.defaults.headers.common[
+          "Authorization"
+        ] = `Bearer ${token}`;
+        const response = await axiosInstance.get("/subscriptions/user");
+
+        // Find active subscription if any
+        const activeSubscription = response.data.data.find(
+          (sub: any) => sub.status === "active"
+        );
+
+        if (activeSubscription) {
+          setUserSubscription(activeSubscription);
+        }
+        setError(null);
+      } catch (err) {
+        setError(
+          err instanceof Error ? err.message : "Failed to fetch subscription"
+        );
+        console.error("Subscription fetch error:", err);
       } finally {
         setLoading(false);
       }
     };
 
-    if (profile?.defaultMembershipId) {
-      fetchSubscription();
-    }
-  }, [profile]);
+    fetchSubscription();
+  }, []);
 
-  const handleRenewSubscription = async () => {
+  const refetchUserData = async () => {
     try {
-      if (!subscription?._id) return;
-      setLoading(true);
-      await axiosInstance.post(`/subscriptions/${subscription._id}/renew`);
-      toast.success('Subscription renewed successfully');
-      // Refresh subscription data
-      const response = await axiosInstance.get('/subscriptions');
-      if (response.data.success && response.data.data.length > 0) {
-        setSubscription(response.data.data[0]);
+      const response = await axiosInstance.get("/subscriptions/user");
+
+      // Find active subscription if any
+      const activeSubscription = response.data.data.find(
+        (sub: any) => sub.status === "active"
+      );
+
+      if (activeSubscription) {
+        setUserSubscription(activeSubscription);
+      } else {
+        setUserSubscription(null);
       }
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Failed to renew subscription');
-    } finally {
-      setLoading(false);
+    } catch (error) {
+      console.error("Error refetching user data:", error);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      {/* Membership Card */}
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <div className="bg-red-500/10 text-red-500 p-4 rounded-lg border border-red-500/20">
+          {error}
+        </div>
+      </div>
+    );
+  }
+
+  if (!userSubscription) {
+    return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50"
+        className="space-y-6"
       >
-        <div className="flex items-center justify-between mb-2">
-          <h3 className="font-semibold text-gray-100 flex items-center gap-1.5">
-            <FiStar className="text-yellow-400" size={14} />
-            <span>Membership</span>
-          </h3>
-          <motion.button
-            whileHover={{ scale: 1.03 }}
-            whileTap={{ scale: 0.97 }}
-            onClick={() => navigate("/memberships")}
-            className="px-2 py-1 bg-emerald-500/20 rounded text-emerald-400 text-xs hover:bg-emerald-500/30 transition-colors"
-          >
-            {profile?.defaultMembershipId ? "Change" : "Get Plan"}
-          </motion.button>
-        </div>
+        <NotificationArea compact={true} />
 
-        {profile?.defaultMembershipId ? (
-          <div>
-            {/* Current Plan Details */}
-            <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-              <div className="bg-gray-900/30 rounded-lg p-2">
-                <p className="text-xs text-gray-400">Plan</p>
-                <p className="text-xs font-medium text-emerald-400 truncate">
-                  {profile.defaultMembershipId.name}
-                </p>
-              </div>
-              <div className="bg-gray-900/30 rounded-lg p-2">
-                <p className="text-xs text-gray-400">Price</p>
-                <p className="text-xs font-medium text-cyan-400">
-                  LKR {profile.defaultMembershipId.price}/mo
-                </p>
-              </div>
-            </div>
-
-            {/* Subscription Status */}
-            {subscription && (
-              <div className="grid grid-cols-2 gap-2 text-sm mb-2">
-                <div className="bg-gray-900/30 rounded-lg p-2">
-                  <p className="text-xs text-gray-400">Status</p>
-                  <p className={`text-xs font-medium ${subscription.status === 'active' ? 'text-green-400' : 'text-red-400'}`}>
-                    {subscription.status.charAt(0).toUpperCase() + subscription.status.slice(1)}
-                  </p>
-                </div>
-                <div className="bg-gray-900/30 rounded-lg p-2">
-                  <p className="text-xs text-gray-400">Expires</p>
-                  <p className="text-xs font-medium text-orange-400">
-                    {new Date(subscription.endDate).toLocaleDateString()}
-                  </p>
-                </div>
-              </div>
-            )}
-
-            {/* Auto-renewal and Actions */}
-            {subscription?.status === 'active' && (
-              <div className="flex justify-between items-center mt-2">
-                <p className="text-xs text-gray-400">
-                  Auto-renew: {subscription.autoRenew ? 'On' : 'Off'}
-                </p>
-                <button
-                  onClick={handleRenewSubscription}
-                  disabled={loading}
-                  className="flex items-center gap-1 text-xs text-blue-400 hover:text-blue-300 disabled:opacity-50"
-                >
-                  <FiRefreshCw size={12} className={loading ? 'animate-spin' : ''} />
-                  Renew Now
-                </button>
-              </div>
-            )}
-
-            {/* Benefits Toggle */}
-            <button
-              onClick={() => setShowDetails(!showDetails)}
-              className="mt-2 flex items-center gap-1 text-xs text-emerald-400 hover:text-emerald-300"
-            >
-              {showDetails ? (
-                <>
-                  <FiChevronUp size={12} /> Hide Benefits
-                </>
-              ) : (
-                <>
-                  <FiChevronDown size={12} /> Show Benefits
-                </>
-              )}
-            </button>
-
-            {/* Benefits List */}
-            {showDetails && (
-              <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: "auto" }}
-                exit={{ opacity: 0, height: 0 }}
-                className="mt-2 space-y-1"
-              >
-                {profile.defaultMembershipId.benefits.map((benefit, index) => (
-                  <div key={index} className="flex items-center gap-1.5 text-xs text-gray-300">
-                    <span className="text-emerald-400">✓</span>
-                    {benefit}
-                  </div>
-                ))}
-              </motion.div>
-            )}
-          </div>
-        ) : (
-          <div className="py-2 text-center space-y-1 bg-gray-900/30 rounded-lg">
-            <div className="text-xl">🔒</div>
-            <p className="text-xs text-gray-400">
-              No active membership
+        <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
+          <div className="py-12 text-center space-y-4">
+            <div className="text-4xl">🔒</div>
+            <h3 className="text-xl font-semibold text-white">
+              No Active Membership
+            </h3>
+            <p className="text-gray-400">
+              Subscribe to unlock exclusive features and benefits!
             </p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="mt-4 px-6 py-2 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-lg font-medium text-white"
+              onClick={() => refetchUserData()}
+            >
+              Explore Membership Options
+            </motion.button>
           </div>
-        )}
-      </motion.div>
+        </div>
 
-      {/* Notifications Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50"
-      >
-        <h3 className="font-semibold text-gray-100 mb-4">Notifications</h3>
-        <div className="max-h-48 overflow-y-auto">
-          <NotificationArea compact={true} />
+        <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
+          <h3 className="text-lg font-semibold text-white mb-4">
+            Available Plans
+          </h3>
+          <PlanOptions
+            currentSubscription={{
+              _id: "",
+              membershipId: {
+                _id: "",
+                name: "",
+              },
+            }}
+            onChangePlan={refetchUserData}
+          />
         </div>
       </motion.div>
-    </div>
+    );
+  }
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="space-y-6"
+    >
+      <NotificationArea compact={true} />
+
+      <div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Your Membership
+        </h3>
+
+        <Tabs defaultValue="details" className="w-full">
+          <TabsList className="grid grid-cols-4 mb-6">
+            <TabsTrigger value="details">Details</TabsTrigger>
+            <TabsTrigger value="history">Payment History</TabsTrigger>
+            <TabsTrigger value="payment-methods">Payment Methods</TabsTrigger>
+            <TabsTrigger value="plan-options">Change Plan</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="details">
+            <SubscriptionDetails subscription={userSubscription} />
+          </TabsContent>
+
+          <TabsContent value="history">
+            {profile && <PaymentHistory userId={profile._id || ""} />}
+          </TabsContent>
+
+          <TabsContent value="payment-methods">
+            <PaymentMethodsManager
+              subscription={userSubscription}
+              onUpdate={refetchUserData}
+            />
+          </TabsContent>
+
+          <TabsContent value="plan-options">
+            <PlanOptions
+              currentSubscription={userSubscription}
+              onChangePlan={refetchUserData}
+            />
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/*<div className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50">
+        <h3 className="text-lg font-semibold text-white mb-4">
+          Membership Benefits
+        </h3>
+        <div className="space-y-3">
+          {userSubscription?.plan?.benefits?.map(
+            (benefit: string, index: number) => (
+              <div key={index} className="flex items-center gap-3">
+                <div className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center">
+                  <span className="text-emerald-500 text-xs">✓</span>
+                </div>
+                <span className="text-gray-300">{benefit}</span>
+              </div>
+            )
+          ) || (
+            <p className="text-gray-400">
+              No specific benefits listed for this plan.
+            </p>
+          )}
+        </div>
+      </div> */}
+    </motion.div>
   );
 };
 
