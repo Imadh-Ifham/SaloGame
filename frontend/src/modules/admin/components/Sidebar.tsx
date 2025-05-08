@@ -11,6 +11,7 @@ import {
   FiMonitor,
   FiSun,
   FiMoon,
+  FiMessageSquare,
 } from "react-icons/fi";
 import { FaGamepad } from "react-icons/fa";
 import { applyTheme, getInitialTheme } from "@/utils/themeChange.util";
@@ -131,6 +132,8 @@ const Sidebar = ({ user }: { user: User }) => {
             <FiStar size={18} />
           )}
           {renderNavLink("/admin/events", "Events", <FiTarget size={18} />)}
+          {renderNavLink("/admin/feedback", "Feedback", <FiMessageSquare size={18} />)}
+
 
           {user?.role === "owner" && (
             <>

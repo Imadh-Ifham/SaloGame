@@ -1,7 +1,7 @@
 import express, { Express, Request, Response, NextFunction } from "express";
 import cors from "cors";
 import { AutoRenewalService } from "./services/autoRenewalService";
-
+import fileUpload from "express-fileupload";
 //google analytics
 import dotenv from "dotenv";
 dotenv.config();
@@ -21,6 +21,8 @@ import teamRoutes from "./routes/event.routes/team.routes";
 import transactionRoutes from "./routes/transaction.routes";
 import visitRoutes from "./routes/visit.routes";
 import analyticsRoutes from "./routes/analytics.routes";
+import feedbackRoutes from "./routes/feedback.routes";
+import statsRoutes from "./routes/stats.routes";
 
 
 
@@ -34,6 +36,13 @@ autoRenewalService.start();
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(fileUpload({
+  useTempFiles: true,
+  tempFileDir: '/tmp/',
+  limits: { fileSize: 10 * 1024 * 1024 }, 
+  abortOnLimit: true,
+  createParentPath: true,
+}));
 
 // Routes
 app.use("/api/users", userRoutes);
@@ -52,6 +61,8 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/visits", visitRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/stats", statsRoutes);
 
 
 // Error handling

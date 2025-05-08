@@ -93,6 +93,7 @@ const DashboardPage: React.FC = () => {
           <h1 className="text-2xl font-bold text-primary dark:text-white">
             User Management
           </h1>
+          
         </div>
 
         {error && (

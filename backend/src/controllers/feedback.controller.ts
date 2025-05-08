@@ -4,57 +4,194 @@ import { Feedback } from '../models/feedback.model';
 
 export const createFeedback = async (req: AuthRequest, res: Response) => {
   try {
-    const { message, category } = req.body;
+    const { type, message, rating, category, isAnonymous, email } = req.body;
     
-    if (!req.user) {
-      res.status(401).json({
+    // Validate required fields
+    if (!type || !message || !category) {
+      return res.status(400).json({
         success: false,
-        message: 'User not authenticated'
+        message: 'Missing required fields: type, message, and category are required'
       });
-      return;
+    }
+
+    // Validate type
+    if (!['feedback', 'suggestion'].includes(type)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid feedback type'
+      });
+    }
+
+    // Validate category
+    if (!['general', 'service', 'facility', 'games', 'events'].includes(category)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid category'
+      });
+    }
+
+    // Validate rating if type is feedback
+    if (type === 'feedback' && (rating < 1 || rating > 5)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be between 1 and 5'
+      });
     }
 
     const feedback = new Feedback({
-      userId: req.user.id, // Changed from _id to id
+      type,
       message,
-      category
+      rating: type === 'feedback' ? rating : undefined,
+      category,
+      isAnonymous: isAnonymous || false,
+      email: isAnonymous ? undefined : email,
+      user: isAnonymous ? undefined : req.user?.id,
+      status: 'pending'
     });
 
     await feedback.save();
+    
+    // Emit socket event for real-time updates
+    global.io?.emit('newFeedback', feedback);
 
     res.status(201).json({
       success: true,
       data: feedback
     });
   } catch (error) {
+    console.error('Create feedback error:', error);
     res.status(500).json({
       success: false,
-      message: 'Failed to submit feedback'
+      message: 'Failed to create feedback',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 };
 
 export const getFeedback = async (req: AuthRequest, res: Response) => {
   try {
-    if (!req.user) {
+    // Use lean() for better performance when you don't need Mongoose documents
+    const feedback = await Feedback.find()
+      .populate('user', 'name email googlePhotoUrl')
+      .populate('replies.repliedBy', 'name email role')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    if (!feedback) {
+      return res.status(404).json({
+        success: false,
+        message: 'No feedback found'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: feedback
+    });
+  } catch (error) {
+    console.error('Get feedback error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch feedback',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+export const replyToFeedback = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { feedbackId } = req.params;
+    const { message } = req.body;
+    const userId = req.user?.id;
+
+    if (!userId) {
       res.status(401).json({
         success: false,
-        message: 'User not authenticated'
+        message: 'Authentication required'
       });
       return;
     }
 
-    const feedback = await Feedback.find({ userId: req.user.id }) // Changed from _id to id
-      .sort({ createdAt: -1 });
+    if (!message?.trim()) {
+      res.status(400).json({
+        success: false,
+        message: 'Reply message is required'
+      });
+      return;
+    }
 
-    res.json({
+    const feedback = await Feedback.findById(feedbackId);
+    
+    if (!feedback) {
+      res.status(404).json({
+        success: false,
+        message: 'Feedback not found'
+      });
+      return;
+    }
+
+    const reply = {
+      message,
+      repliedBy: userId,
+      createdAt: new Date()
+    };
+
+    feedback.replies = feedback.replies || [];
+    feedback.replies.push(reply);
+    feedback.status = 'reviewed';
+    
+    await feedback.save();
+
+    res.status(200).json({
+      success: true,
+      data: feedback
+    });
+  } catch (error) {
+    console.error('Error replying to feedback:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to add reply',
+      error: error instanceof Error ? error.message : 'Unknown error'
+    });
+  }
+};
+
+export const updateFeedbackStatus = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { feedbackId } = req.params;
+    const { status } = req.body;
+
+    if (!['pending', 'reviewed', 'resolved'].includes(status)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid status'
+      });
+      return;
+    }
+
+    const feedback = await Feedback.findByIdAndUpdate(
+      feedbackId,
+      { status },
+      { new: true }
+    );
+
+    if (!feedback) {
+      res.status(404).json({
+        success: false,
+        message: 'Feedback not found'
+      });
+      return;
+    }
+
+    res.status(200).json({
       success: true,
       data: feedback
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: 'Failed to fetch feedback'
+      message: 'Failed to update status',
+      error: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 };

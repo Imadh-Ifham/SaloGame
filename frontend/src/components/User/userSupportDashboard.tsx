@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { motion } from "framer-motion";
-import { FiChevronDown, FiChevronUp, FiHelpCircle, FiMessageSquare } from "react-icons/fi";
+import { FiChevronDown, FiChevronUp, FiHelpCircle, FiMessageSquare, FiMessageCircle, FiChevronRight } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
-// Removed unused FeedbackForm import
 
 interface FAQItem {
   question: string;
@@ -29,17 +28,17 @@ const UserSupportDashboard: React.FC = () => {
       answer: "Your booking time will still end at the scheduled time. We recommend arriving at least 15 minutes early."
     }
   ];
-
+  
   const [openFaqs, setOpenFaqs] = useState<number[]>([]);
-
+  
   const toggleFaq = (index: number) => {
-    setOpenFaqs(prev => 
-      prev.includes(index) 
+    setOpenFaqs(prev =>
+      prev.includes(index)
         ? prev.filter(i => i !== index)
         : [...prev, index]
     );
   };
-
+  
   return (
     <div className="space-y-6">
       <motion.div
@@ -62,7 +61,7 @@ const UserSupportDashboard: React.FC = () => {
             Give Feedback
           </motion.button>
         </div>
-
+        
         <div className="space-y-2">
           {faqs.map((faq, index) => (
             <div key={index} className="border-b border-gray-700/50 last:border-0">
@@ -90,6 +89,34 @@ const UserSupportDashboard: React.FC = () => {
             </div>
           ))}
         </div>
+      </motion.div>
+      
+      {/* Reviews Link Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-4 border border-gray-700/50"
+      >
+        <motion.div
+          className="flex items-center justify-between"
+        >
+          <div className="flex items-center gap-2">
+            <FiMessageCircle className="text-purple-400" size={14} />
+            <span className="text-sm text-gray-200">Want to see what others are saying?</span>
+          </div>
+          <motion.a
+            href="/support/reviews"
+            onClick={(e) => {
+              e.preventDefault();
+              navigate('/support/reviews');
+            }}
+            className="text-purple-400 text-sm hover:text-purple-300 transition-colors flex items-center gap-1.5"
+            whileHover={{ x: 3 }}
+          >
+            View all reviews
+            <FiChevronRight size={14} />
+          </motion.a>
+        </motion.div>
       </motion.div>
     </div>
   );
