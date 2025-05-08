@@ -1,8 +1,7 @@
-// frontend/src/modules/admin/pages/DashboardPage.tsx
 import React, { useState, useEffect } from "react";
 import axiosInstance from "../../../axios.config";
 import { useAuth } from "../../../hooks/useAuth";
-import { ExclamationTriangleIcon } from "@heroicons/react/24/outline";
+import { ExclamationTriangleIcon, MagnifyingGlassIcon } from "@heroicons/react/24/outline";
 
 interface User {
   _id: string;
@@ -13,16 +12,20 @@ interface User {
 const DashboardPage: React.FC = () => {
   const { user: currentUser } = useAuth();
   const [users, setUsers] = useState<User[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [userToDelete, setUserToDelete] = useState<User | null>(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [roleFilter, setRoleFilter] = useState<"all" | "user" | "manager" | "owner">("all");
 
   const fetchUsers = async () => {
     try {
       const response = await axiosInstance.get("/users");
       setUsers(response.data as User[]);
+      setFilteredUsers(response.data as User[]);
     } catch (err) {
       setError("Failed to fetch users");
     } finally {
@@ -51,6 +54,26 @@ const DashboardPage: React.FC = () => {
     }
   };
 
+  // Filter users based on search term and role filter
+  useEffect(() => {
+    let result = users;
+    
+    // Apply role filter
+    if (roleFilter !== "all") {
+      result = result.filter(user => user.role === roleFilter);
+    }
+    
+    // Apply search filter
+    if (searchTerm) {
+      const lowerCaseSearch = searchTerm.toLowerCase();
+      result = result.filter(user => 
+        user.email.toLowerCase().includes(lowerCaseSearch)
+      );
+    }
+    
+    setFilteredUsers(result);
+  }, [users, searchTerm, roleFilter]);
+
   useEffect(() => {
     fetchUsers();
   }, []);
@@ -78,6 +101,35 @@ const DashboardPage: React.FC = () => {
           </div>
         )}
 
+        {/* Search and Filter Controls */}
+        <div className="mb-6 flex flex-col md:flex-row gap-4">
+          <div className="relative flex-grow">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <MagnifyingGlassIcon className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              placeholder="Search by email..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          
+          <div className="md:w-48">
+            <select
+              className="block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value as "all" | "user" | "manager" | "owner")}
+            >
+              <option value="all">All Roles</option>
+              <option value="user">Users</option>
+              <option value="manager">Managers</option>
+              <option value="owner">Owners</option>
+            </select>
+          </div>
+        </div>
+
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
             <thead className="bg-gray-50 dark:bg-gray-900">
@@ -94,56 +146,64 @@ const DashboardPage: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-              {users.map((user) => (
-                <tr
-                  key={user._id}
-                  className="hover:bg-gray-50 dark:hover:bg-gray-700"
-                >
-                  <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-200">
-                    {user.email}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold
-                      ${
-                        user.role === "owner"
-                          ? "bg-purple-100 text-purple-800"
-                          : user.role === "manager"
-                          ? "bg-blue-100 text-blue-800"
-                          : "bg-green-100 text-green-800"
-                      }`}
-                    >
-                      {user.role}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    {currentUser?.role === "owner" ||
-                    (currentUser?.role === "manager" &&
-                      user.role === "user") ? (
-                      <div className="flex space-x-2">
-                        <button
-                          onClick={() => setEditingUser(user)}
-                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                        >
-                          Edit
-                        </button>
-                        {currentUser?.role === "owner" &&
-                          user.role !== "owner" && (
-                            <button
-                              onClick={() => {
-                                setUserToDelete(user);
-                                setIsDeleteModalOpen(true);
-                              }}
-                              className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
-                            >
-                              Delete
-                            </button>
-                          )}
-                      </div>
-                    ) : null}
+              {filteredUsers.length > 0 ? (
+                filteredUsers.map((user) => (
+                  <tr
+                    key={user._id}
+                    className="hover:bg-gray-50 dark:hover:bg-gray-700"
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap text-gray-700 dark:text-gray-200">
+                      {user.email}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-semibold
+                        ${
+                          user.role === "owner"
+                            ? "bg-purple-100 text-purple-800"
+                            : user.role === "manager"
+                            ? "bg-blue-100 text-blue-800"
+                            : "bg-green-100 text-green-800"
+                        }`}
+                      >
+                        {user.role}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      {currentUser?.role === "owner" ||
+                      (currentUser?.role === "manager" &&
+                        user.role === "user") ? (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={() => setEditingUser(user)}
+                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                          >
+                            Edit
+                          </button>
+                          {currentUser?.role === "owner" &&
+                            user.role !== "owner" && (
+                              <button
+                                onClick={() => {
+                                  setUserToDelete(user);
+                                  setIsDeleteModalOpen(true);
+                                }}
+                                className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
+                              >
+                                Delete
+                              </button>
+                            )}
+                        </div>
+                      ) : null}
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={3} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                    No users found matching your search criteria
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>

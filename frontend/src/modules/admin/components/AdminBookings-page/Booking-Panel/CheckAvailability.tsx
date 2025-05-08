@@ -57,6 +57,14 @@ const CheckAvailability: React.FC = () => {
         })
       );
     }
+    dispatch(
+      fetchMachineStatus({
+        startTime: formData.startTime
+          ? toUTC(formData.startTime)
+          : getCurrentUTC(),
+        duration: formData.duration,
+      })
+    ); // Fetch machine status when selected machine changes
   }, [selectedMachine, formData.startTime, formData.duration]);
 
   const handleBookingNavChange = (nav: "Now" | "Later") => {
@@ -88,8 +96,8 @@ const CheckAvailability: React.FC = () => {
             onClick={() => handleBookingNavChange(item as "Now" | "Later")}
             className={`flex-1 py-2 rounded-lg text-base font-medium transition-all duration-300 ${
               activeNav === item
-                ? "bg-blue-600 text-white shadow-md"
-                : "bg-white dark:bg-gray-700 hover:bg-gray-200 hover:dark:bg-gray-600 text-gray-700 dark:text-gray-50"
+                ? "bg-blue-600 dark:bg-primary text-white shadow-md"
+                : "bg-white dark:bg-gray-700 hover:bg-gray-200 hover:dark:bg-gray-600 text-gray-700 dark:text-gray-50 dark:border-gray-600"
             }`}
           >
             {item}
@@ -98,18 +106,8 @@ const CheckAvailability: React.FC = () => {
       </div>
       <div className="flex flex-wrap items-center gap-2 w-full relative box-border">
         {/* Date Picker - Only for "Later" Mode */}
-        <div
-          className={`transition-all duration-700 ease-in-out transform w-full ${
-            activeNav === "Later"
-              ? "opacity-100 max-h-64 translate-y-0"
-              : "opacity-0 max-h-0 -translate-y-4"
-          } overflow-hidden`}
-          style={{
-            transitionDelay: activeNav === "Later" ? "0ms" : "200ms", // Delay hiding for smoother transition
-          }}
-        >
-          <DateSelector activeNav={activeNav} />
-        </div>
+
+        <DateSelector activeNav={activeNav} />
 
         {/* Duration Selector */}
         <div
@@ -125,7 +123,7 @@ const CheckAvailability: React.FC = () => {
           <Button
             type="primary"
             onClick={handleCheckAvailability}
-            className="w-full py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition shadow-lg"
+            className="w-full py-2 text-white bg-blue-600 dark:bg-primary rounded-lg hover:bg-blue-700 transition shadow-lg"
           >
             {loading ? "Checking..." : "Check Availability"}
           </Button>

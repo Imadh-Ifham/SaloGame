@@ -5,11 +5,14 @@ import {
   UsersIcon,
   ShieldCheckIcon,
   ClipboardDocumentListIcon,
+  ChartBarIcon,
 } from "@heroicons/react/24/outline";
 
 import { useAuth } from "../../../hooks/useAuth";
 import { Navigate } from "react-router-dom";
 import AnalyticsDashboard from "./AnalyticsDashboard";
+import DashboardPage from "./DashboardPage";
+import UserAccountSummary from "../components/UserAnalytics/userStats";
 
 const SettingsPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
@@ -65,8 +68,8 @@ const SettingsPage: React.FC = () => {
             }
           >
             <div className="flex items-center space-x-2">
-              <ShieldCheckIcon className="w-5 h-5" />
-              <span>Security</span>
+              <ChartBarIcon className="w-5 h-5" />
+              <span>User Analytics</span>
             </div>
           </Tab>
           <Tab
@@ -94,7 +97,7 @@ const SettingsPage: React.FC = () => {
           >
             <div className="flex items-center space-x-2">
               <ClipboardDocumentListIcon className="w-5 h-5" />
-              <span>User Payment Logs</span>
+              <span>User Logs</span>
             </div>
           </Tab>
         </Tab.List>
@@ -104,26 +107,15 @@ const SettingsPage: React.FC = () => {
           <Tab.Panel>
             <ManagerPanel />
           </Tab.Panel>
-          {/* Security Panel */}
-          <Tab.Panel>
-            <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-6">
-              <h2 className="text-xl font-semibold mb-4">Security Settings</h2>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h3 className="font-medium">Two-Factor Authentication</h3>
-                    <p className="text-sm text-gray-500">
-                      Add an extra layer of security to your account
-                    </p>
-                  </div>
-                  <button className="px-4 py-2 bg-primary text-white rounded-md">
-                    Enable
-                  </button>
-                </div>
-                
-              </div>
+        {/* Security Panel with UserStats */}
+        <Tab.Panel>
+          <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow space-y-6">
+            <div className="mb-8">
+              <h2 className="text-xl font-semibold mb-4">User Statistics</h2>
+              <UserAccountSummary />
             </div>
-          </Tab.Panel>
+          </div>
+        </Tab.Panel>
           {/* Activity Logs Panel */}
           <Tab.Panel>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
@@ -145,10 +137,11 @@ const SettingsPage: React.FC = () => {
           <Tab.Panel>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
               <h2 className="text-xl font-semibold mb-4">
-                User Payment Details
+                User Logs
               </h2>
               <div className="space-y-4">
-                {/* User Payment Details  */}
+                {/* User Logs */}
+                <DashboardPage />
               </div>
             </div>
           </Tab.Panel>

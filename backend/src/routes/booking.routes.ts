@@ -1,11 +1,14 @@
 import express from "express";
 import {
   createBooking,
+  endBooking,
   generateReport,
   getBookingByID,
   getBookingLog,
   getBookingStatusForAllMachines,
   getFirstAndNextBooking,
+  getUpcomingBookings,
+  startBooking,
   updateBookingStatus,
 } from "../controllers/booking.controller";
 import { authMiddleware } from "../middleware/authMiddleware";
@@ -19,5 +22,8 @@ router.patch("/update-status", updateBookingStatus);
 router.post("/get-booking/:bookingID", getBookingByID);
 router.post("/get-log", getBookingLog);
 router.get("/report", generateReport);
+router.get("/upcoming", getUpcomingBookings);
+router.put("/end-booking", endBooking);
+router.put("/start-booking", startBooking);
 
 export default router;

@@ -95,13 +95,13 @@ const OverviewPage: React.FC = () => {
                 : formatCurrency(last30DaysEarnings)
             }
             icon={<FiDollarSign className="text-primary" />}
-            trend={{ value: 12.5, isPositive: true }}
+            trend={{ value: 12.5, isPositive: true }} //temp-Placeholder
           />
           <StatsCard
             title="Active Members"
             value="1,234"
             icon={<FiUsers className="text-blue-600 dark:text-blue-400" />}
-            trend={{ value: 8.2, isPositive: true }}
+            trend={{ value: 8.2, isPositive: true }} //temp-placeholder
           />
           <StatsCard
             title="Upcoming Events"

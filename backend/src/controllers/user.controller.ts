@@ -4,6 +4,8 @@ import { generateToken } from "../utils/jwt";
 import { AuthRequest } from "../middleware/types";
 import { verifyFirebaseToken } from "../utils/firebaseAuth";
 import admin from "../config/firebase";
+
+
 // Handle user login/registration through Firebase
 export const handleFirebaseAuth = async (req: Request, res: Response) => {
   try {
@@ -39,8 +41,14 @@ export const handleFirebaseAuth = async (req: Request, res: Response) => {
         throw saveError;
       }
     } else {
+      // Update photo URL if it has changed
+      if (firebaseUser.photoURL && firebaseUser.photoURL !== user.googlePhotoUrl) {
+        user.googlePhotoUrl = firebaseUser.photoURL;
+        await user.save();
+      }
       console.log("Existing user found in MongoDB:", user);
     }
+
 
     // Generate JWT token
     const jwtToken = generateToken(user);
@@ -52,6 +60,7 @@ export const handleFirebaseAuth = async (req: Request, res: Response) => {
         email: user.email,
         role: user.role,
         firebaseUid: user.firebaseUid,
+        googlePhotoUrl: user.googlePhotoUrl,
       },
       token: jwtToken,
     });
@@ -130,7 +139,7 @@ export const getUsers = async (
         select: "name _id",
       })
       .populate({
-        path: "subscription", // Add this to populate subscription data
+        path: "subscription", //  populate subscription data
         select:
           "_id startDate endDate status totalAmount duration autoRenew paymentStatus",
       })
@@ -225,11 +234,18 @@ export const getProfile = async (
       return;
     }
 
-    res.json(user);
+    res.json({
+      email: user.email,
+      role: user.role,
+      defaultMembershipId: user.defaultMembershipId,
+      googlePhotoUrl: user.googlePhotoUrl
+    });
   } catch (error) {
     res.status(500).json({ message: "Error fetching profile", error });
   }
 };
+
+
 
 export const handleAdminAuth = async (req: Request, res: Response) => {
   try {
@@ -295,3 +311,6 @@ export const createInitialOwner = async (
     });
   }
 };
+
+
+

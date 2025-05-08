@@ -1,18 +1,51 @@
 import Modal from "@/components/Modal";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@headlessui/react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   resetBookingModal,
   selectBookingModal,
   selectBookingStatus,
+  selectFormData,
+  selectMachineBooking,
 } from "@/store/slices/bookingSlice";
 import { AppDispatch } from "@/store/store";
-import { updateBookingStatus } from "@/store/thunks/bookingThunk";
+import {
+  fetchFirstAndNextBooking,
+  fetchMachineStatus,
+  updateBookingStatus,
+} from "@/store/thunks/bookingThunk";
+import { selectSelectedMachine } from "@/store/selectors/machineSelector";
+import { formatTo12Hour } from "@/utils/date.util";
+import axiosInstance from "@/axios.config";
+import { PaymentType } from "@/types/booking";
+import {
+  CreditCardOutlined,
+  DollarOutlined,
+  GiftOutlined,
+} from "@ant-design/icons";
+
+interface ModalProps {
+  bookingID: string;
+  statusData: any;
+  bookingData: any;
+}
 
 const BookingModals: React.FC<{ bookingID: string }> = ({ bookingID }) => {
   const bookingModalString = useSelector(selectBookingModal);
   const dispatch = useDispatch();
+  const formData = useSelector(selectFormData);
+  const selectedMachine = useSelector(selectSelectedMachine);
+  const machineID = selectedMachine ? selectedMachine._id : null;
+  const statusData = {
+    startTime: formData.startTime,
+    duration: formData.duration,
+  };
+  const bookingDataReq = {
+    startTime: formData.startTime,
+    duration: formData.duration,
+    machineID: machineID,
+  };
 
   return (
     <Modal
@@ -31,21 +64,37 @@ const BookingModals: React.FC<{ bookingID: string }> = ({ bookingID }) => {
       }
     >
       {bookingModalString === "cancel" && (
-        <CancelBookingModal bookingID={bookingID} />
+        <CancelBookingModal
+          bookingID={bookingID}
+          statusData={statusData}
+          bookingData={bookingDataReq}
+        />
       )}
       {bookingModalString === "extend" && <ExtendBookingModal />}
       {bookingModalString === "start" && (
-        <StartBookingModal bookingID={bookingID} />
+        <StartBookingModal
+          bookingID={bookingID}
+          statusData={statusData}
+          bookingData={bookingDataReq}
+        />
       )}
       {bookingModalString === "end" && (
-        <EndBookingModal bookingID={bookingID} />
+        <EndBookingModal
+          bookingID={bookingID}
+          statusData={statusData}
+          bookingData={bookingDataReq}
+        />
       )}
     </Modal>
   );
 };
 
 // Cancel Booking Modal - Cancels booking with confirmation
-const CancelBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
+const CancelBookingModal: React.FC<ModalProps> = ({
+  bookingID,
+  statusData,
+  bookingData,
+}) => {
   const { loading, error } = useSelector(selectBookingStatus);
   const dispatch = useDispatch<AppDispatch>();
 
@@ -53,13 +102,16 @@ const CancelBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
     const data = { bookingID, status: "Cancelled" };
     // API call to cancel booking
     await dispatch(updateBookingStatus(data));
+    await dispatch(fetchMachineStatus(statusData)); // Fetch machine status after cancellation
+    await dispatch(fetchFirstAndNextBooking(bookingData)); // Fetch first and next booking after cancellation
+    await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
     dispatch(resetBookingModal());
   };
   return (
     <div className="space-y-4">
       <p className="text-sm text-gray-500 dark:text-gray-300">
-        Are you sure you want to cancel this booking {"( " + bookingID + " )"}?
-        This action cannot be undone.
+        Are you sure you want to cancel this booking? This action cannot be
+        undone.
       </p>
       {error && <div className="text-red-500 text-sm text-center">{error}</div>}
       <div className="flex justify-end space-x-2">
@@ -138,18 +190,50 @@ const ExtendBookingModal: React.FC = () => {
 };
 
 // Start Booking Modal - Changes status to "In Use"
-const StartBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
+const StartBookingModal: React.FC<ModalProps> = ({
+  bookingID,
+  statusData,
+  bookingData,
+}) => {
   const { error } = useSelector(selectBookingStatus);
   const dispatch = useDispatch<AppDispatch>();
+  const selectedMachineBookings = useSelector(selectMachineBooking);
   const [isConfirming, setIsConfirming] = useState(false);
+
+  const currentBooking = selectedMachineBookings!.firstBooking!;
+
+  const previousStartTime = new Date(currentBooking.booking.startTime);
+  const previousEndTime = new Date(currentBooking.booking.endTime!);
+
+  const durationMinutes = Math.round(
+    (previousEndTime.getTime() - previousStartTime.getTime()) / (1000 * 60)
+  ); // Calculate duration in minutes
+
+  const startTime = new Date(); // Current Time (Start Time)const startTime = new Date(); // Current Time (Start Time)
+  const endTime = new Date(startTime); // Clone startTime to avoid modifying original
+
+  endTime.setMinutes(endTime.getMinutes() + durationMinutes); // Add duration in minutes
+  const price = currentBooking.transaction.amount; // Example price
+
+  const handleSubmit = async () => {
+    try {
+      const data = { bookingID, startTime, endTime };
+
+      // API call to start booking
+      const response = await axiosInstance.put("bookings/start-booking", data);
+
+      alert(response.data.message); // Show success message
+    } catch (error) {
+      console.error("Error starting booking:", error);
+    }
+  };
 
   const handleStart = async () => {
     setIsConfirming(true);
     try {
-      // API call to start booking (Change status to "In Use")
-      const data = { bookingID, status: "InUse" };
-      // API call to cancel booking
-      await dispatch(updateBookingStatus(data));
+      await handleSubmit(); // Update Booking
+      await dispatch(fetchMachineStatus(statusData));
+      await dispatch(fetchFirstAndNextBooking(bookingData)); // Fetch first and next booking after cancellation
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
       dispatch(resetBookingModal());
     } catch (error) {
@@ -165,6 +249,40 @@ const StartBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
         The customer has arrived and is ready to use the machine. Once you
         confirm, the booking status will change to <b>"In Use"</b>.
       </p>
+
+      <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-md space-y-4">
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500 dark:text-gray-300">Start Time</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {formatTo12Hour(startTime)} (Now)
+          </p>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500 dark:text-gray-300">End Time</p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {formatTo12Hour(endTime)}
+          </p>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500 dark:text-gray-300">
+            Total Duration
+          </p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            {Math.floor(durationMinutes / 60)}h {durationMinutes % 60}min
+          </p>
+        </div>
+
+        <div className="flex justify-between items-center">
+          <p className="text-sm text-gray-500 dark:text-gray-300">
+            Total Price
+          </p>
+          <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+            Rs. {price}
+          </p>
+        </div>
+      </div>
 
       {error && <div className="text-red-500 text-sm text-center">{error}</div>}
 
@@ -190,27 +308,80 @@ const StartBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
 };
 
 // End Booking Modal - Shows summary before ending the booking
-const EndBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
+const EndBookingModal: React.FC<ModalProps> = ({
+  bookingID,
+  statusData,
+  bookingData,
+}) => {
   const { error } = useSelector(selectBookingStatus);
   const dispatch = useDispatch<AppDispatch>();
+  const selectedMachineBookings = useSelector(selectMachineBooking);
   const [isConfirming, setIsConfirming] = useState(false);
+  const [price, setPrice] = useState(0);
 
-  // Dummy Data (Replace these with real values from backend later)
-  const startTime = new Date("2025-03-17T10:00:00"); // Dummy Start Time
+  const paymentType: PaymentType[] = ["cash", "card"];
+  const paymentIcons: Record<PaymentType, JSX.Element> = {
+    cash: <DollarOutlined className="text-4xl" />,
+    card: <CreditCardOutlined className="text-4xl" />,
+    XP: <GiftOutlined className="text-4xl" />,
+  };
+
+  const currentBooking = selectedMachineBookings!.firstBooking!;
+
+  const [payment, setPayment] = useState(
+    currentBooking.transaction.paymentType
+  );
+
+  const startTime = new Date(currentBooking.booking.startTime);
   const endTime = new Date(); // Current Time (End Time)
   const durationMinutes = Math.round(
     (endTime.getTime() - startTime.getTime()) / (1000 * 60)
   ); // Calculate duration in minutes
-  const pricePerHour = 500; // Dummy price per hour
-  const totalPrice = ((durationMinutes / 60) * pricePerHour).toFixed(2); // Calculate price
+
+  useEffect(() => {
+    const calPriceData = {
+      startTime,
+      endTime,
+      machines: currentBooking.booking.machines,
+    };
+
+    const calculatePrice = async () => {
+      try {
+        const response = await axiosInstance.post(
+          "currency/calculate-price",
+          calPriceData
+        );
+        setPrice(response.data);
+        console.log(response.data);
+      } catch (error) {
+        console.log("error: ", error);
+      }
+    };
+    calculatePrice();
+  }, [endTime, startTime]);
+
+  const handleSubmit = async () => {
+    try {
+      const data = {
+        bookingID,
+        paymentType: payment,
+        endTime: endTime,
+      };
+      // API call to create a transaction
+      const response = await axiosInstance.put("bookings/end-booking", data);
+
+      alert(response.data.message); // Show success message
+    } catch (error) {
+      console.error("Error creating transaction:", error);
+    }
+  };
 
   const handleEndBooking = async () => {
     setIsConfirming(true);
     try {
-      // API call to end booking (Change status to "Completed")
-      const data = { bookingID, status: "Completed" };
-      // API call to cancel booking
-      await dispatch(updateBookingStatus(data));
+      await handleSubmit(); // Update Booking
+      await dispatch(fetchMachineStatus(statusData)); // Fetch machine status after ending
+      await dispatch(fetchFirstAndNextBooking(bookingData)); // Fetch first and next booking after cancellation
       await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
       dispatch(resetBookingModal());
     } catch (error) {
@@ -230,14 +401,14 @@ const EndBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
         <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500 dark:text-gray-300">Start Time</p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {startTime.toLocaleTimeString()}
+            {formatTo12Hour(startTime)}
           </p>
         </div>
 
         <div className="flex justify-between items-center">
           <p className="text-sm text-gray-500 dark:text-gray-300">End Time</p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            {endTime.toLocaleTimeString()} (Now)
+            {formatTo12Hour(endTime)} (Now)
           </p>
         </div>
 
@@ -255,10 +426,27 @@ const EndBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
             Total Price
           </p>
           <p className="text-sm font-semibold text-gray-900 dark:text-gray-100">
-            Rs. {totalPrice}
+            Rs. {price}
           </p>
         </div>
       </div>
+
+      {currentBooking.transaction.status === "pending" && (
+        <div className="flex justify-center items-center gap-10">
+          {paymentType.map((type) => (
+            <div
+              key={type}
+              className={`flex flex-col justify-center items-center gap-1 border w-20 h-20 rounded-lg cursor-pointer hover:bg-primary/10 ${
+                type === payment && "bg-primary/30"
+              }`}
+              onClick={() => setPayment(type)}
+            >
+              {paymentIcons[type]}
+              <div>{type}</div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {error && <div className="text-red-500 text-sm text-center">{error}</div>}
 
@@ -273,7 +461,7 @@ const EndBookingModal: React.FC<{ bookingID: string }> = ({ bookingID }) => {
         <Button
           type="button"
           onClick={handleEndBooking}
-          className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+          className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-blue-700 transition"
           disabled={isConfirming}
         >
           {isConfirming ? "Ending Booking..." : "Confirm End Booking"}

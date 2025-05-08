@@ -111,7 +111,7 @@ const AdminGameCard: React.FC<AdminGameCardProps> = ({
         {/* Game Info */}
         <div className="p-3">
           <div className="flex justify-between items-start mb-2">
-            <h3 className="text-base font-press font-semibold text-text-primary dark:text-white truncate flex-1">
+            <h3 className="text-sm font-press font-semibold text-text-primary dark:text-white truncate flex-1">
               {game.name}
             </h3>
             <div className="flex items-center gap-1 bg-gamer-green/10 px-2 py-0.5 rounded-full ml-2">

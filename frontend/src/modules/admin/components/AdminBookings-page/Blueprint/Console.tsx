@@ -57,7 +57,7 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
     transition-transform duration-300 ease-in-out overflow-hidden flex flex-col items-center cursor-pointer ${
       selectedMachine?.serialNumber === machine.serialNumber &&
       !isMoreMachineClicked
-        ? "bg-gray-200 scale-105 shadow-lg"
+        ? "bg-gray-300 dark:bg-gray-800 scale-105 shadow-lg"
         : ""
     } ${isSelected ? "bg-gray-200" : ""} ${
         !isAvailable && isMoreMachineClicked
@@ -94,14 +94,14 @@ const Console: React.FC<ConsoleProp> = ({ machine }) => {
         {/* Sofa with better depth */}
         <div
           id="sofa"
-          className="h-[90%] flex flex-col items-center bg-slate-300 rounded-md overflow-hidden shadow-md"
+          className="h-[90%] flex flex-col items-center bg-slate-300 dark:bg-gray-500 rounded-md overflow-hidden shadow-md"
         >
-          <div className="w-8 h-2 bg-slate-500 rounded-l-sm rounded-tr-md shadow-sm" />
+          <div className="w-8 h-2 bg-slate-500 dark:bg-gray-800 rounded-l-sm rounded-tr-md shadow-sm" />
           <div className="flex flex-grow">
             <div className="w-6 h-full" />
-            <div className="w-2 h-full bg-slate-500 shadow-sm" />
+            <div className="w-2 h-full bg-slate-500 dark:bg-gray-800 shadow-sm" />
           </div>
-          <div className="w-8 h-2 bg-slate-500 rounded-l-sm rounded-br-md shadow-sm" />
+          <div className="w-8 h-2 bg-slate-500 dark:bg-gray-800 rounded-l-sm rounded-br-md shadow-sm" />
         </div>
       </div>
     </div>

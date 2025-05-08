@@ -86,9 +86,21 @@ const BookingHistory: React.FC = () => {
     return acc;
   }, {} as Record<string, typeof bookingLogs>);
 
+  // Filter out dates without any bookings after searching
+  const filteredGroupedBookings = Object.entries(groupedBookings)
+    .filter(([date, bookings]) =>
+      bookings.some((booking) =>
+        booking.customerName.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    )
+    .reduce((acc, [date, bookings]) => {
+      acc[date] = bookings;
+      return acc;
+    }, {} as Record<string, typeof bookingLogs>);
+
   return (
     <div className="py-2 px-4 flex flex-col gap-4 h-full bg-white dark:bg-gray-800 rounded-lg shadow-sm p-6 border border-gray-200 dark:border-gray-700">
-      <div className="text-base font-poppins font-semibold">
+      <div className="text-base font-poppins font-semibold dark:text-primary">
         Booking History
       </div>
       <section className="w-full flex items-center justify-between">
@@ -126,28 +138,22 @@ const BookingHistory: React.FC = () => {
         </div>
       </section>
       <section className="h-[calc(100vh-10rem)] overflow-y-auto scrollbar-hide border-t dark:border-gamer-green/20">
-        {Object.entries(groupedBookings).map(([date, bookings]) => (
+        {Object.entries(filteredGroupedBookings).map(([date, bookings]) => (
           <div key={date}>
             <div className="text-lg font-semibold mt-4">{date}</div>
-            {bookings
-              .filter((booking) =>
-                booking.customerName
-                  .toLowerCase()
-                  .includes(searchQuery.toLowerCase())
-              )
-              .map((booking, index) => (
-                <div
-                  key={index}
-                  onClick={() => handleBookingCardClick(booking._id)}
-                  className={`hover:shadow-lg hover:scale-[0.99] transition-transform duration-300 ease-in-out cursor-pointer ${
-                    selectedBooking === booking._id
-                      ? "scale-[0.99] shadow-lg"
-                      : ""
-                  }`}
-                >
-                  <BookingCard {...booking} />
-                </div>
-              ))}
+            {bookings.map((booking, index) => (
+              <div
+                key={index}
+                onClick={() => handleBookingCardClick(booking._id)}
+                className={`hover:shadow-lg hover:scale-[0.99] transition-transform duration-300 ease-in-out cursor-pointer ${
+                  selectedBooking === booking._id
+                    ? "scale-[0.99] shadow-lg"
+                    : ""
+                }`}
+              >
+                <BookingCard {...booking} />
+              </div>
+            ))}
           </div>
         ))}
       </section>

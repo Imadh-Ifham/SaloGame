@@ -23,4 +23,9 @@ if (!admin.apps.length) {
   });
 }
 
+// Configure custom token duration
+admin.auth().createCustomToken = () => {
+  return Promise.resolve('customToken');
+};
+
 export default admin;

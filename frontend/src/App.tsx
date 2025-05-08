@@ -24,6 +24,7 @@ import EventPage from "./modules/users/pages/EventPage";
 import VerifyEmail from "./modules/users/pages/EventPages/VerifyEmail";
 import VerifyTeamMember from "./modules/users/pages/EventPages/VerifyTeamMember";
 import Leaderboard from "./modules/users/pages/EventPages/Leaderboard";
+import FeedbackForm from "./components/Feedback";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import MembershipPage from "./modules/users/pages/MembershipPage";
@@ -42,6 +43,7 @@ import OverviewPage from "./modules/admin/pages/OverviewPage";
 import SingleBattle from "./modules/users/pages/EventPages/SingleBattle";
 import TeamBattle from "./modules/users/pages/EventPages/TeamBattle";
 import BookingReportPage from "./modules/admin/components/AdminBookings-page/BookingReport/BookingReportPage";
+import AdminMachinePage from "./modules/admin/pages/AdminMachinePage";
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -69,6 +71,7 @@ const App: React.FC = () => {
         <Route path="/events" element={<EventPage />} />
         <Route path="*" element={<NotFoundPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/support/feedback" element={<FeedbackForm />} />
 
         {/* Offer Category Routes */}
         <Route path="/offers/time-based" element={<TimeBased />} />
@@ -89,6 +92,7 @@ const App: React.FC = () => {
           <Route path="offers" element={<AdminOfferPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="memberships" element={<AdminMembershipPage />} />
+          <Route path="machines" element={<AdminMachinePage />} />
           <Route path="packages" element={<AdminPackagePage />} />
           <Route path="booking" element={<AdminBookingManager />} />
           <Route path="events" element={<AdminEventPage />} />

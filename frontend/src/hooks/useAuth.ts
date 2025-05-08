@@ -8,6 +8,7 @@ interface User {
   email: string;
   role: "user" | "manager" | "owner";
   id: string;
+  googlePhotoUrl?: string
 }
 
 export const useAuth = () => {
@@ -19,12 +20,14 @@ export const useAuth = () => {
       if (firebaseUser) {
         try {
           const token = await firebaseUser.getIdToken();
-          axiosInstance.defaults.headers.common[
-            "Authorization"
-          ] = `Bearer ${token}`;
+          axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
           const response = await axiosInstance.get("/users/profile");
-          setUser(response.data as User);
+          // Check if the user has a profile image
+          setUser({
+            ...response.data,
+            googlePhotoUrl: firebaseUser.photoURL || undefined
+          } as User);
         } catch (error) {
           console.error("Session verification failed:", error);
           setUser(null);

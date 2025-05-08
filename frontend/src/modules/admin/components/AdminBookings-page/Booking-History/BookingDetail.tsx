@@ -55,6 +55,14 @@ const BookingDetail: React.FC<BookingDetailProps> = ({ selectedBooking }) => {
     );
   }
 
+  const formatDuration = (startTime: string, endTime: string | undefined) => {
+    const totalMinutes = dayjs(endTime).diff(dayjs(startTime), "minute");
+    const hours = Math.floor(totalMinutes / 60);
+    const minutes = totalMinutes % 60;
+
+    return `${hours} hour${hours !== 1 ? "s" : ""} ${minutes} min`;
+  };
+
   if (loading) {
     return <SkeletonLoader />;
   }
@@ -100,11 +108,7 @@ const BookingDetail: React.FC<BookingDetailProps> = ({ selectedBooking }) => {
           </div>
           <div className="flex justify-between">
             <span className="font-medium">Duration:</span>
-            {dayjs(booking.endTime).diff(
-              dayjs(booking.startTime),
-              "minute"
-            )}{" "}
-            minutes
+            {formatDuration(booking.startTime, booking.endTime)}
           </div>
           <div className="flex justify-between">
             <span className="font-medium">Price:</span>

@@ -4,7 +4,7 @@ export interface IMembershipType extends Document {
   name: string;
   tagline?: string;
   price: number;
-  xpRate: number; // a value that determines how much XP a user earns per LKR1000 spent
+  xpRate: number;
   benefits: string[];
   isActive: boolean;
   subscriberCount: number;

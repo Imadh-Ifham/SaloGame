@@ -1,15 +1,5 @@
 import React from "react";
-import {
-  Document,
-  Page,
-  Text,
-  View,
-  StyleSheet,
-  PDFViewer,
-  Svg,
-  Path,
-  G,
-} from "@react-pdf/renderer";
+import { Document, Page, Text, View, PDFViewer } from "@react-pdf/renderer";
 import { styles } from "./SubscriptionInvoiceReport.styles";
 
 interface SubscriptionInvoiceProps {
@@ -104,6 +94,7 @@ const SubscriptionInvoiceReport: React.FC<SubscriptionInvoiceProps> = ({
               <Text style={styles.title}>INVOICE</Text>
               <Text style={styles.subtitle}>SaloGame Membership</Text>
             </View>
+
             {/* Logo */}
             <View style={{ width: 80 }}>
               <Text

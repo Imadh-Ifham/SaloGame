@@ -4,7 +4,12 @@ import { AppDispatch, RootState } from "@/store/store";
 import { fetchUserNotifications } from "@/store/slices/notificationSlice";
 import RenewalNotification from "./RenewalNotification";
 
-const NotificationArea: React.FC = () => {
+interface NotificationAreaProps {
+  compact?: boolean;
+}
+
+
+const NotificationArea: React.FC<NotificationAreaProps> = ({ compact = false }) => {
   const dispatch = useDispatch<AppDispatch>();
   const { items: notifications, loading } = useSelector(
     (state: RootState) => state.notification

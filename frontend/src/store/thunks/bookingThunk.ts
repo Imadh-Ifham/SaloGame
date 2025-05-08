@@ -167,3 +167,22 @@ export const fetchBookingLogs = createAsyncThunk<
     );
   }
 });
+
+// Fetch upcoming bookings for the admin panel
+export const fetchUpcomingBookings = createAsyncThunk<
+  { today: any[]; tomorrow: any[] }, // Return type
+  void, // No params needed
+  { rejectValue: string }
+>(
+  "bookings/fetchUpcomingBookings",
+  async (_, { rejectWithValue }) => {
+    try {
+      const response = await axiosInstance.get(`/bookings/upcoming`);
+      return response.data.data;
+    } catch (error: any) {
+      return rejectWithValue(
+        error.response?.data || "Failed to fetch upcoming bookings"
+      );
+    }
+  }
+);

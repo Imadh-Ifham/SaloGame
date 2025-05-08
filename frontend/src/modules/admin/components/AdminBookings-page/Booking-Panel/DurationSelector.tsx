@@ -1,8 +1,7 @@
 import { selectFormData, updateBookingForm } from "@/store/slices/bookingSlice";
 import { AppDispatch } from "@/store/store";
 import { ClockCircleOutlined } from "@ant-design/icons";
-import { Select } from "antd";
-import React from "react";
+import React, { useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 
 const durations = [
@@ -17,23 +16,56 @@ const durations = [
 const DurationSelector: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
   const formData = useSelector(selectFormData);
+
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleDropdown = () => setIsOpen(!isOpen);
+
+  const handleSelect = (value: number) => {
+    dispatch(updateBookingForm({ duration: value }));
+    setIsOpen(false); // Close the dropdown after selection
+  };
+
   return (
     <div className="flex-1 w-full">
-      <div className="relative border dark:border-gray-500 rounded-lg px-3 py-2">
-        <Select
-          value={formData.duration}
-          onChange={(value) => dispatch(updateBookingForm({ duration: value }))}
-          className="w-full bg-transparent dark:text-gray-800"
+      <div className="relative border dark:border-gray-500 rounded-lg px-3 py-2 dark:bg-gray-800">
+        {/* Custom Select input */}
+        <div
+          className="w-full bg-transparent dark:text-white cursor-pointer"
+          onClick={toggleDropdown}
         >
-          {durations.map((d) => (
-            <Select.Option key={d.value} value={d.value}>
-              <div className="flex items-center">
-                <ClockCircleOutlined className="mr-2" />
+          <div className="flex items-center">
+            <ClockCircleOutlined className="mr-2 text-gray-500 dark:text-white" />
+            {formData.duration
+              ? durations.find((d) => d.value === formData.duration)?.label
+              : "Select Duration"}
+          </div>
+        </div>
+
+        {/* Dropdown options */}
+        {isOpen && (
+          <div
+            className="absolute left-0 right-0 mt-2 bg-white dark:bg-gray-700 border dark:border-gray-500 rounded-lg shadow-lg z-10"
+            style={{
+              position: "fixed", // Fixed position
+              top: "calc(100% + 10px)", // Position the dropdown below the input
+              left: 0,
+              right: 0,
+              zIndex: 1000, // Ensure it appears above other elements
+            }}
+          >
+            {durations.map((d) => (
+              <div
+                key={d.value}
+                onClick={() => handleSelect(d.value)}
+                className="flex items-center px-4 py-2 cursor-pointer hover:bg-blue-600 dark:hover:bg-blue-500 dark:text-white"
+              >
+                <ClockCircleOutlined className="mr-2 text-gray-500 dark:text-white" />
                 {d.label}
               </div>
-            </Select.Option>
-          ))}
-        </Select>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -16,11 +16,12 @@ interface RawgGame {
   genres: string[]; // List of genres
 }
 
-/**
- * Fetches detailed game information from the RAWG API.
- * @param query The name of the game to search for.
- * @returns A promise that resolves to a RawgGame object or null if no game is found.
- */
+interface RawgGenre {
+  name: string;
+}
+
+// Fetches detailed game information from the RAWG API.
+ 
 export const searchRawgGame = async (
   query: string
 ): Promise<RawgGame | null> => {
@@ -62,14 +63,21 @@ export const searchRawgGame = async (
       description: gameDetails.description_raw || "No description available.",
       rating: gameDetails.rating || 0,
       background_image: gameDetails.background_image || "",
-      genres: gameDetails.genres?.map((genre: any) => genre.name) || [],
+      genres: gameDetails.genres?.map((genre: RawgGenre) => genre.name) || [],
     };
-  } catch (error: any) {
+  } catch (error) {
     // Log the error for debugging
-    console.error(
-      `Error fetching game from RAWG API for query "${query}":`,
-      error.response?.data || error.message
-    );
+    if (axios.isAxiosError(error)) {
+      console.error(
+        `Error fetching game from RAWG API for query "${query}":`,
+        error.response?.data || error.message
+      );
+    } else {
+      console.error(
+        `Unexpected error while fetching game for query "${query}":`,
+        error
+      );
+    }
 
     return null;
   }

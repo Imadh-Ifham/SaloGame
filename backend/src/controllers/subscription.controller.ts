@@ -63,6 +63,15 @@ export const createSubscription = async (
       return;
     }
 
+    // Get membership to access its xpRate
+    const membership = await MembershipType.findById(membershipId).session(
+      session
+    );
+    if (!membership) {
+      res.status(404).json({ success: false, message: "Membership not found" });
+      return;
+    }
+
     // Create new subscription
     const subscription = new Subscription({
       userId: req.user.id,
@@ -87,6 +96,7 @@ export const createSubscription = async (
           defaultMembershipId: membershipId,
           subscription: subscription._id,
         },
+        $inc: { xp: membership.xpRate }, // Increment user's XP based on membership type
       },
       { session }
     );
@@ -485,7 +495,7 @@ export const manuallyRenewSubscription = async (
       renewedFromSubscription: subscription._id,
       renewalCompleted: true,
       renewalCompletedAt: new Date(),
-      manuallyRenewed: true, // Add this flag for tracking manual renewalsl
+      manuallyRenewed: true,
     });
 
     await newSubscription.save({ session });
@@ -526,5 +536,413 @@ export const manuallyRenewSubscription = async (
     });
   } finally {
     session.endSession();
+  }
+};
+
+/**
+ * Change subscription plan
+ */
+export const changeSubscriptionPlan = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    if (!req.user) {
+      res
+        .status(401)
+        .json({ success: false, message: "User not authenticated" });
+      return;
+    }
+
+    const { currentSubscriptionId, newMembershipId, paymentConfirmed } =
+      req.body;
+
+    // Validate inputs
+    if (!currentSubscriptionId || !newMembershipId) {
+      res.status(400).json({
+        success: false,
+        message: "Current subscription ID and new membership ID are required",
+      });
+      return;
+    }
+
+    // Get current subscription
+    const currentSubscription = await Subscription.findById(
+      currentSubscriptionId
+    )
+      .populate("membershipId")
+      .session(session);
+
+    if (!currentSubscription) {
+      res
+        .status(404)
+        .json({ success: false, message: "Current subscription not found" });
+      return;
+    }
+
+    const reqUserId = req.user.id.toString();
+
+    // Verify user owns the subscription
+    if (currentSubscription.userId.toString() !== reqUserId) {
+      res.status(403).json({
+        success: false,
+        message: "Unauthorized access to subscription",
+      });
+      return;
+    }
+
+    // Get new membership plan
+    const newMembership = await MembershipType.findById(
+      newMembershipId
+    ).session(session);
+    if (!newMembership) {
+      res
+        .status(404)
+        .json({ success: false, message: "New membership plan not found" });
+      return;
+    }
+
+    // Calculate remaining days on current subscription
+    const currentDate = new Date();
+    const endDate = new Date(currentSubscription.endDate);
+    const remainingDays = Math.max(
+      0,
+      Math.ceil(
+        (endDate.getTime() - currentDate.getTime()) / (1000 * 3600 * 24)
+      )
+    );
+
+    // Calculate total remaining value of current subscription
+    const oldDailyRate = (currentSubscription.membershipId as any).price / 30;
+    const remainingValue = oldDailyRate * remainingDays;
+
+    // Calculate cost of new subscription for the same duration
+    const newDailyRate = newMembership.price / 30;
+    const newSubscriptionCost =
+      newDailyRate * currentSubscription.duration * 30;
+
+    // Calculate price difference (positive means user pays more, negative means user gets credit)
+    const priceDifference = newSubscriptionCost - remainingValue;
+
+    // If user needs to pay more and hasn't confirmed payment
+    if (priceDifference > 0 && !paymentConfirmed) {
+      res.status(200).json({
+        success: true,
+        paymentRequired: true,
+        additionalAmount: priceDifference,
+        message: "Payment required to upgrade to this membership",
+      });
+      await session.abortTransaction();
+      return;
+    }
+    // Create new subscription with same duration
+    const newStartDate = new Date();
+    const newEndDate = new Date(newStartDate);
+    newEndDate.setMonth(newEndDate.getMonth() + currentSubscription.duration);
+
+    // Create new subscription record
+    const newSubscription = new Subscription({
+      userId: req.user.id,
+      membershipId: newMembershipId,
+      startDate: newStartDate,
+      endDate: newEndDate,
+      duration: currentSubscription.duration,
+      totalAmount: newMembership.price * currentSubscription.duration,
+      status: "active",
+      paymentStatus: "completed",
+      autoRenew: currentSubscription.autoRenew,
+      paymentDetails: currentSubscription.paymentDetails,
+      metadata: {
+        previousSubscriptionId: currentSubscriptionId,
+        appliedCredit: remainingValue,
+      },
+    });
+
+    await newSubscription.save({ session });
+
+    // Convert any leftover balance to XP
+    if (priceDifference < 0) {
+      const xpCredit = Math.abs(priceDifference) * 10; // Assuming 1 unit of currency = 10 XP
+
+      // Add XP to user account
+      const user = await User.findById(req.user.id).session(session);
+      if (user) {
+        user.xp = (user.xp || 0) + Math.round(xpCredit);
+        await user.save({ session });
+
+        newSubscription.set("xpCredit", Math.round(xpCredit));
+        await newSubscription.save({ session });
+      }
+    }
+
+    // Update user's subscription reference
+    await User.findByIdAndUpdate(
+      req.user.id,
+      {
+        subscription: newSubscription._id,
+        defaultMembershipId: newMembershipId,
+        $inc: { xp: newMembership.xpRate },
+      },
+      { session }
+    );
+
+    // Update subscriber counts
+    await MembershipType.findByIdAndUpdate(
+      currentSubscription.membershipId,
+      { $inc: { subscriberCount: -1 } },
+      { session }
+    );
+
+    await MembershipType.findByIdAndUpdate(
+      newMembershipId,
+      { $inc: { subscriberCount: 1 } },
+      { session }
+    );
+
+    // Cancel old subscription
+    await Subscription.findByIdAndUpdate(
+      currentSubscriptionId,
+      {
+        status: "cancelled",
+        endDate: newStartDate,
+      },
+      { session }
+    );
+
+    await session.commitTransaction();
+
+    res.status(200).json({
+      success: true,
+      message: "Subscription plan changed successfully",
+      data: {
+        subscription: newSubscription,
+        priceDifference: priceDifference,
+        xpCredited:
+          priceDifference < 0 ? Math.round(Math.abs(priceDifference) * 10) : 0,
+      },
+    });
+  } catch (error) {
+    await session.abortTransaction();
+    console.error("Error changing subscription plan:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to change subscription plan",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  } finally {
+    session.endSession();
+  }
+};
+
+/**
+ * Update payment method
+ */
+export const updatePaymentMethod = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res
+        .status(401)
+        .json({ success: false, message: "User not authenticated" });
+      return;
+    }
+
+    const { id } = req.params;
+    const { paymentDetails } = req.body;
+
+    // Find subscription
+    const subscription = await Subscription.findById(id);
+    if (!subscription) {
+      res
+        .status(404)
+        .json({ success: false, message: "Subscription not found" });
+      return;
+    }
+
+    const reqUserId = req.user.id.toString();
+
+    // Verify user owns the subscription
+    if (subscription.userId.toString() !== reqUserId) {
+      res.status(403).json({
+        success: false,
+        message: "Unauthorized access to subscription",
+      });
+      return;
+    }
+
+    // Update payment details
+    const updatedSubscription = await Subscription.findByIdAndUpdate(
+      id,
+      { paymentDetails },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment method updated successfully",
+      data: updatedSubscription,
+    });
+  } catch (error) {
+    console.error("Error updating payment method:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to update payment method",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+/**
+ * Delete payment method
+ */
+export const deletePaymentMethod = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res
+        .status(401)
+        .json({ success: false, message: "User not authenticated" });
+      return;
+    }
+
+    const { id } = req.params;
+
+    // Find subscription
+    const subscription = await Subscription.findById(id);
+    if (!subscription) {
+      res
+        .status(404)
+        .json({ success: false, message: "Subscription not found" });
+      return;
+    }
+
+    const reqUserId = req.user.id.toString();
+
+    // Verify user owns the subscription
+    if (subscription.userId.toString() !== reqUserId) {
+      res.status(403).json({
+        success: false,
+        message: "Unauthorized access to subscription",
+      });
+      return;
+    }
+
+    // If auto-renewal is enabled, disable it when removing payment method
+    const update: any = { $unset: { paymentDetails: "" } };
+    if (subscription.autoRenew) {
+      update.autoRenew = false;
+    }
+
+    // Remove payment details
+    const updatedSubscription = await Subscription.findByIdAndUpdate(
+      id,
+      update,
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Payment method removed successfully",
+      data: updatedSubscription,
+    });
+  } catch (error) {
+    console.error("Error removing payment method:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to remove payment method",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+/**
+ * Toggle auto renew
+ */
+export const toggleAutoRenew = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user) {
+      res
+        .status(401)
+        .json({ success: false, message: "User not authenticated" });
+      return;
+    }
+
+    const { id } = req.params;
+    const { autoRenew } = req.body;
+
+    // Find subscription
+    const subscription = await Subscription.findById(id);
+    if (!subscription) {
+      res
+        .status(404)
+        .json({ success: false, message: "Subscription not found" });
+      return;
+    }
+
+    if (autoRenew === false) {
+      const updatedSubscription = await Subscription.findByIdAndUpdate(
+        id,
+        { autoRenew: false },
+        { new: true }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Auto-renewal disabled successfully",
+        data: updatedSubscription,
+      });
+      return;
+    }
+
+    // Convert ObjectId to string for comparison (both ways to ensure match)
+    const subUserId = subscription.userId.toString();
+    const reqUserId = req.user.id.toString();
+
+    console.log("Subscription User ID:", subUserId);
+    console.log("Request User ID:", reqUserId);
+
+    // Only validate payment details when enabling auto-renewal
+    if (
+      !subscription.paymentDetails ||
+      !subscription.paymentDetails.cardNumber
+    ) {
+      res.status(400).json({
+        success: false,
+        message: "Payment details are required for auto-renewal",
+        errorCode: "PAYMENT_DETAILS_REQUIRED",
+        subscriptionId: id,
+      });
+      return;
+    }
+
+    // Update auto-renewal setting (always allow disabling)
+    const updatedSubscription = await Subscription.findByIdAndUpdate(
+      id,
+      { autoRenew: true },
+      { new: true }
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Auto-renewal enabled successfully",
+      data: updatedSubscription,
+    });
+  } catch (error) {
+    console.error("Error toggling auto-renewal:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to toggle auto-renewal",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
   }
 };

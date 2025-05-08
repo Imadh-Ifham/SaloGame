@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import User from "../models/user.model";
 import { AuthRequest } from "../middleware/types";
+import calculateTotalPrice from "../services/calculatePrice";
 
 // Add XP to a user
 export const addXP = async (req: Request, res: Response): Promise<void> => {
@@ -15,8 +16,8 @@ export const addXP = async (req: Request, res: Response): Promise<void> => {
 
     // Check if user has role "user"
     if (user.role !== "user") {
-      res.status(403).json({ 
-        error: "XP can only be added to users with role 'user'" 
+      res.status(403).json({
+        error: "XP can only be added to users with role 'user'",
       });
       return;
     }
@@ -42,8 +43,8 @@ export const deductXP = async (req: Request, res: Response): Promise<void> => {
 
     // Check if user has role "user"
     if (user.role !== "user") {
-      res.status(403).json({ 
-        error: "XP can only be deducted from users with role 'user'" 
+      res.status(403).json({
+        error: "XP can only be deducted from users with role 'user'",
       });
       return;
     }
@@ -62,7 +63,10 @@ export const deductXP = async (req: Request, res: Response): Promise<void> => {
 };
 
 // Get user's XP balance
-export const getXPBalance = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getXPBalance = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
   try {
     if (!req.user?.id) {
       res.status(401).json({ error: "Not authenticated" });
@@ -77,13 +81,37 @@ export const getXPBalance = async (req: AuthRequest, res: Response): Promise<voi
 
     // Check if user has role "user"
     if (user.role !== "user") {
-      res.status(403).json({ 
-        error: "Only users with role 'user' can check XP balance" 
+      res.status(403).json({
+        error: "Only users with role 'user' can check XP balance",
       });
       return;
     }
 
     res.status(200).json({ xp: user.xp });
+  } catch (error) {
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const calculatePrice = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  const { startTime, endTime, machines } = req.body;
+
+  try {
+    if (!startTime || !endTime || !machines.length) {
+      res.status(400).json({ error: "Invalid input" });
+      return;
+    }
+
+    const totalPrice = await calculateTotalPrice(
+      new Date(startTime),
+      new Date(endTime),
+      machines
+    );
+
+    res.status(200).json(totalPrice);
   } catch (error) {
     res.status(500).json({ error: "Internal server error" });
   }

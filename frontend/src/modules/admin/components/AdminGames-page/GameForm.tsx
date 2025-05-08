@@ -1,4 +1,4 @@
-import React, { Fragment, useState } from "react";
+import React, { Fragment, useState, useEffect } from "react";
 import {
   Button,
   Dialog,
@@ -32,11 +32,14 @@ const GameForm: React.FC<GameFormProps> = ({
   onCancel,
 }) => {
   const [name, setName] = useState(initialData.name || "");
+  const [nameError, setNameError] = useState<string | null>(null);
   const [description, setDescription] = useState(initialData.description || "");
+  const [descriptionError, setDescriptionError] = useState<string | null>(null);
   const [rating, setRating] = useState(initialData.rating || 0);
   const [image, setImage] = useState(initialData.image || "");
   const [genres, setGenres] = useState<string[]>(initialData.genres || []);
   const [genreInput, setGenreInput] = useState<string>(""); // For adding new genres
+  const [genreError, setGenreError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -44,13 +47,154 @@ const GameForm: React.FC<GameFormProps> = ({
 
   const isEditMode = !!initialData._id;
 
+  // Field validation constants
+  const MAX_NAME_LENGTH = 30; // Maximum length for a game name
+  const MAX_GENRE_LENGTH = 10; // Maximum length for a genre
+
+  // Validate game name whenever it changes
+  useEffect(() => {
+    validateGameName(name);
+  }, [name]);
+
+  // Validate description whenever it changes
+  useEffect(() => {
+    validateDescription(description);
+  }, [description]);
+
+  const validateGameName = (gameName: string): boolean => {
+    setNameError(null);
+    
+    if (!gameName.trim()) {
+      setNameError("Game name is required");
+      return false;
+    }
+    
+    if (gameName.length > MAX_NAME_LENGTH) {
+      setNameError(`Game name must be ${MAX_NAME_LENGTH} characters or less`);
+      return false;
+    }
+    
+    return true;
+  };
+
+  const validateDescription = (desc: string): boolean => {
+    setDescriptionError(null);
+    
+    if (!desc.trim() && isEditMode) {
+      setDescriptionError("Description is required");
+      return false;
+    }
+    
+    return true;
+  };
+
+  const validateGenreInput = (genre: string): boolean => {
+    setGenreError(null);
+    
+    if (!genre.trim()) {
+      setGenreError("Genre cannot be empty");
+      return false;
+    }
+    
+    if (genre.length > MAX_GENRE_LENGTH) {
+      setGenreError(`Genre must be ${MAX_GENRE_LENGTH} characters or less`);
+      return false;
+    }
+    
+    if (genres.includes(genre)) {
+      setGenreError("This genre has already been added");
+      return false;
+    }
+    
+    return true;
+  };
+
+  const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow letters, numbers, and spaces
+    const filteredValue = e.target.value.replace(/[^a-zA-Z0-9\s]/g, '');
+    setName(filteredValue);
+  };
+
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Get the pressed key
+    const key = e.key;
+    
+    // Only allow letters, numbers, spaces, and control keys (backspace, delete, arrows, etc.)
+    if (
+      !/^[a-zA-Z0-9\s]$/.test(key) && 
+      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab'].includes(key) &&
+      !e.ctrlKey && !e.metaKey
+    ) {
+      e.preventDefault();
+    }
+  };
+
+  const handleDescriptionChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    // Filter out special characters
+    const filteredValue = e.target.value.replace(/[^\w\s.,!?()-]/g, '');
+    setDescription(filteredValue);
+  };
+
+  const handleDescriptionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Get the pressed key
+    const key = e.key;
+    
+    // Only allow letters, numbers, spaces, and allowed punctuation
+    if (
+      !/^[a-zA-Z0-9\s.,!?()-]$/.test(key) && 
+      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab', 'Enter'].includes(key) &&
+      !e.ctrlKey && !e.metaKey
+    ) {
+      e.preventDefault();
+    }
+  };
+
+  const handleRatingChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    
+    // Ensure only up to 2 decimal places
+    if (value === '' || /^\d+(\.\d{0,2})?$/.test(value)) {
+      setRating(Number(value));
+    }
+  };
+
+  const handleGenreInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    // Only allow letters
+    const filteredValue = e.target.value.replace(/[^a-zA-Z]/g, '');
+    
+    // Enforce max length
+    if (filteredValue.length <= MAX_GENRE_LENGTH) {
+      setGenreInput(filteredValue);
+    }
+  };
+
+  const handleGenreKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Get the pressed key
+    const key = e.key;
+    
+    // Only allow letters and control keys
+    if (
+      !/^[a-zA-Z]$/.test(key) && 
+      !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Home', 'End', 'Tab'].includes(key) &&
+      !e.ctrlKey && !e.metaKey
+    ) {
+      // Allow Enter to add genre but prevent default
+      if (key === 'Enter') {
+        e.preventDefault();
+        addGenre();
+      } else {
+        e.preventDefault();
+      }
+    }
+  };
+
   // Handle adding a new genre
   const addGenre = () => {
     const trimmedGenre = genreInput.trim();
-    if (trimmedGenre && !genres.includes(trimmedGenre)) {
+    if (validateGenreInput(trimmedGenre)) {
       setGenres([...genres, trimmedGenre]);
+      setGenreInput("");
     }
-    setGenreInput("");
   };
 
   // Handle removing a genre
@@ -61,10 +205,12 @@ const GameForm: React.FC<GameFormProps> = ({
   // Handle form submission for create mode
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name) {
-      setError("Please provide the game name.");
+    
+    // Validate game name first
+    if (!validateGameName(name)) {
       return;
     }
+    
     setLoading(true);
     setError(null);
 
@@ -119,10 +265,17 @@ const GameForm: React.FC<GameFormProps> = ({
   // Handle form submission for edit mode
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !description || genres.length === 0) {
-      setError("Please fill in all required fields and add at least one genre.");
+    
+    // Validate all fields
+    if (!validateGameName(name) || !validateDescription(description)) {
       return;
     }
+    
+    if (genres.length === 0) {
+      setError("Please add at least one genre.");
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
@@ -192,11 +345,22 @@ const GameForm: React.FC<GameFormProps> = ({
           <input
             type="text"
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 block dark:bg-black w-full border border-gamer-green rounded-md shadow-sm p-2 focus:ring-0 focus:border-gamer-green"
+            onChange={handleNameChange}
+            onKeyDown={handleNameKeyDown}
+            className={`mt-1 block dark:bg-black w-full border ${
+              nameError ? 'border-red-500' : 'border-gamer-green'
+            } rounded-md shadow-sm p-2 focus:ring-0 focus:border-gamer-green`}
+            placeholder="Enter game name (max 30 characters)"
+            maxLength={MAX_NAME_LENGTH}
             required
             autoFocus
           />
+          {nameError && (
+            <p className="mt-1 text-sm text-red-500">{nameError}</p>
+          )}
+          <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+            {name.length}/{MAX_NAME_LENGTH} characters
+          </p>
         </div>
 
         {/* Description (Only in Edit Mode) */}
@@ -207,11 +371,18 @@ const GameForm: React.FC<GameFormProps> = ({
             </label>
             <textarea
               value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+              onChange={handleDescriptionChange}
+              onKeyDown={handleDescriptionKeyDown}
+              className={`mt-1 block w-full border dark:bg-black ${
+                descriptionError ? 'border-red-500' : 'border-gamer-green'
+              } rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green`}
               rows={4}
+              placeholder="Enter game description"
               required
             ></textarea>
+            {descriptionError && (
+              <p className="mt-1 text-sm text-red-500">{descriptionError}</p>
+            )}
           </div>
         )}
 
@@ -222,15 +393,19 @@ const GameForm: React.FC<GameFormProps> = ({
               Rating<span className="text-red-500">*</span>
             </label>
             <input
-              type="number"
+              type="text"
+              inputMode="decimal"
               value={rating}
-              onChange={(e) => setRating(Number(e.target.value))}
+              onChange={handleRatingChange}
               className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
               min={0}
               max={5}
-              step={0.01} // Changed from 0.1 to 0.01
+              placeholder="Enter rating (0-5, up to 2 decimal places)"
               required={isEditMode}
             />
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              Rating must be between 0 and 5, with up to 2 decimal places (e.g., 4.25)
+            </p>
           </div>
         )}
 
@@ -245,6 +420,7 @@ const GameForm: React.FC<GameFormProps> = ({
               value={image}
               onChange={(e) => setImage(e.target.value)}
               className="mt-1 block w-full border dark:bg-black border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+              placeholder="Enter image URL (https://...)"
               required={isEditMode}
             />
           </div>
@@ -277,15 +453,13 @@ const GameForm: React.FC<GameFormProps> = ({
               <input
                 type="text"
                 value={genreInput}
-                onChange={(e) => setGenreInput(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") {
-                    e.preventDefault();
-                    addGenre();
-                  }
-                }}
-                placeholder="Add a genre and press Enter"
-                className="flex-grow dark:bg-black border border-gamer-green rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green"
+                onChange={handleGenreInputChange}
+                onKeyDown={handleGenreKeyDown}
+                placeholder={`Add a genre (max ${MAX_GENRE_LENGTH} letters)`}
+                className={`flex-grow dark:bg-black border ${
+                  genreError ? 'border-red-500' : 'border-gamer-green'
+                } rounded-md shadow-sm p-2 focus:ring-gamer-green focus:border-gamer-green`}
+                maxLength={MAX_GENRE_LENGTH}
               />
               <Button
                 type="button"
@@ -295,6 +469,14 @@ const GameForm: React.FC<GameFormProps> = ({
                 Add
               </Button>
             </div>
+            {genreError && (
+              <p className="mt-1 text-sm text-red-500">{genreError}</p>
+            )}
+            {genreInput && (
+              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                {genreInput.length}/{MAX_GENRE_LENGTH} characters
+              </p>
+            )}
           </div>
         )}
 

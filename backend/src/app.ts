@@ -22,7 +22,10 @@ import transactionRoutes from "./routes/transaction.routes";
 import chatbotRoutes from "./routes/event.routes/chatbot";
 
 //google analytics route
+import visitRoutes from "./routes/visit.routes";
 import analyticsRoutes from "./routes/analytics.routes";
+
+
 
 const app: Express = express();
 
@@ -53,7 +56,9 @@ app.use("/api/transactions", transactionRoutes);
 app.use("/api/chatbot", chatbotRoutes);
 
 //google analytics route
+app.use("/api/visits", visitRoutes);
 app.use("/api/analytics", analyticsRoutes);
+
 
 // Error handling
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {

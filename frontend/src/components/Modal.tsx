@@ -1,10 +1,10 @@
 import React, { Fragment } from "react";
 import {
-    Dialog,
-    DialogTitle,
-    Transition,
-    TransitionChild,
-  } from "@headlessui/react";
+  Dialog,
+  DialogTitle,
+  Transition,
+  TransitionChild,
+} from "@headlessui/react";
 
 interface ModalProps {
   isOpen: boolean;
@@ -32,7 +32,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             leaveFrom="opacity-100"
             leaveTo="opacity-0"
           >
-            <div className="fixed inset-0 bg-black bg-opacity-30 backdrop-blur-sm" />
+            <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm" />
           </TransitionChild>
 
           {/* This element is to center the modal contents */}
@@ -53,7 +53,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children }) => {
             leaveFrom="opacity-100 scale-100 translate-y-0"
             leaveTo="opacity-0 scale-95 translate-y-4"
           >
-            <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-lg border-2 border-gamer-green">
+            <div className="inline-block w-full max-w-2xl p-6 my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-lg border-0">
               <DialogTitle
                 as="h3"
                 className="text-lg font-medium leading-6 text-gray-900 dark:text-gray-100 mb-4"

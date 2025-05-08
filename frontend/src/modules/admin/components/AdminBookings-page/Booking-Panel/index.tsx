@@ -24,7 +24,9 @@ const BookingPanel: React.FC = () => {
 
   return (
     <div className="py-2 px-4 flex flex-col gap-4 h-[calc(100vh-2rem)] shadow-lg dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-      <div className="text-base font-poppins font-semibold">Booking Mode</div>
+      <div className="text-base font-poppins font-semibold dark:text-primary">
+        Booking Mode
+      </div>
       <div className="grid grid-cols-5 gap-4 h-[calc(100%-2rem)]">
         <div className="grid grid-rows-5 col-span-2 gap-4 h-[calc(100vh-6rem)]">
           {/* Check Availability */}
