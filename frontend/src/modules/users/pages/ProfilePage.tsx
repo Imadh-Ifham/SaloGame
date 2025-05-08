@@ -43,7 +43,7 @@ const ProfilePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
 
-  const { user, loading: authLoading } = useAuth() as {
+  const { loading: authLoading } = useAuth() as {
     user: { _id: string; email: string; role?: string } | null;
     loading: boolean;
   };
@@ -216,8 +216,6 @@ const ProfilePage: React.FC = () => {
           </motion.button>
         </div>
 
-        <NotificationArea />
-
         <div className="flex gap-6">
           {/* Sidebar */}
           <div className="w-64 bg-gray-800/40 backdrop-blur-lg rounded-xl p-4 h-[calc(100vh-120px)] sticky top-24">
@@ -356,7 +354,7 @@ const ProfilePage: React.FC = () => {
           isOpen={isSettingsOpen}
           onClose={() => setIsSettingsOpen(false)}
           currentName={profile?.name || profile?.email?.split("@")[0] || ""}
-          currentImage={previewImage}
+          currentImage={previewImage || undefined}
           onUpdate={handleProfileUpdate}
         />
       </div>
