@@ -58,7 +58,6 @@ const Header: React.FC = () => {
   const navLinks = [
     { to: "/", label: "Home" },
     { to: "/games", label: "Games" },
-    { to: "/bookings", label: "Bookings" },
     { to: "/memberships", label: "Memberships" },
     //{ to: "/about", label: "About" },
     { to: "/offers", label: "Offers" },
