@@ -3,7 +3,6 @@ import { motion } from "framer-motion";
 import { PlusIcon, MagnifyingGlassIcon } from "@heroicons/react/24/solid";
 import { Button } from "@headlessui/react";
 import axiosInstance from "../../../axios.config";
-
 import Modal from "../../../components/Modal";
 import AdminGameCard from "../components/AdminGames-page/AdminGameCard";
 import GameForm from "../components/AdminGames-page/GameForm";
@@ -26,7 +25,9 @@ const AdminGamesPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [showMore, setShowMore] = useState(false);
-  const [screenSize, setScreenSize] = useState<"mobile" | "tablet" | "desktop">("desktop");
+  const [screenSize, setScreenSize] = useState<"mobile" | "tablet" | "desktop">(
+    "desktop"
+  );
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [lastScrollY, setLastScrollY] = useState(0);
@@ -37,10 +38,12 @@ const AdminGamesPage: React.FC = () => {
 
   // Handle scroll behavior
   useEffect(() => {
-    const mainContentDiv = document.getElementById('games-page-content');
-    
+    const mainContentDiv = document.getElementById("games-page-content");
+
     const handleScroll = () => {
-      const currentScrollY = mainContentDiv ? mainContentDiv.scrollTop : window.scrollY;
+      const currentScrollY = mainContentDiv
+        ? mainContentDiv.scrollTop
+        : window.scrollY;
       const scrollingDown = currentScrollY > lastScrollY;
       const scrollThreshold = 10;
 
@@ -52,44 +55,44 @@ const AdminGamesPage: React.FC = () => {
 
     // Add event listener to the div if it exists, otherwise use window
     const scrollElement = mainContentDiv || window;
-    scrollElement.addEventListener('scroll', handleScroll, { passive: true });
-    
+    scrollElement.addEventListener("scroll", handleScroll, { passive: true });
+
     return () => {
-      scrollElement.removeEventListener('scroll', handleScroll);
+      scrollElement.removeEventListener("scroll", handleScroll);
     };
   }, [lastScrollY]);
 
   const fetchGames = async (page: number) => {
     const isInitialFetch = page === 1;
-    
+
     if (isInitialFetch) {
       setLoading(true);
     } else {
       setLoadingMore(true);
     }
-    
+
     setError(null);
-    
+
     try {
       const response = await axiosInstance.get("/games", {
         params: {
           page,
-          limit: GAMES_PER_PAGE
-        }
+          limit: GAMES_PER_PAGE,
+        },
       });
-      
+
       if (response.data.success) {
         const newGames = response.data.data;
         if (newGames.length < GAMES_PER_PAGE) {
           setHasMore(false);
         }
-        
+
         if (isInitialFetch) {
           setGames(newGames);
           setFilteredGames(newGames);
         } else {
-          setGames(prevGames => [...prevGames, ...newGames]);
-          setFilteredGames(prevGames => [...prevGames, ...newGames]);
+          setGames((prevGames) => [...prevGames, ...newGames]);
+          setFilteredGames((prevGames) => [...prevGames, ...newGames]);
         }
       } else {
         setError(response.data.message || "Failed to fetch games.");
@@ -130,10 +133,10 @@ const AdminGamesPage: React.FC = () => {
     }
 
     const searchTerm = searchQuery.toLowerCase();
-    const filtered = games.filter(game => 
+    const filtered = games.filter((game) =>
       game.name.toLowerCase().includes(searchTerm)
     );
-    
+
     setFilteredGames(filtered);
   }, [searchQuery, games]);
 
@@ -200,15 +203,15 @@ const AdminGamesPage: React.FC = () => {
   };
 
   return (
-    <div 
+    <div
       id="games-page-content"
-      className="flex-1 h-screen overflow-y-auto scrollbar-hide bg-white dark:bg-background-dark"
+      className="flex-1 h-screen overflow-y-auto scrollbar-hide "
     >
       <div className="py-12 sm:py-16 px-4 sm:px-6 lg:px-8">
         {/* Smart Scroll Header Section */}
         <motion.div
           initial={{ y: 0, opacity: 1 }}
-          animate={{ 
+          animate={{
             y: shouldShowHeader ? 0 : -100,
             opacity: shouldShowHeader ? 1 : 0,
           }}
@@ -217,7 +220,7 @@ const AdminGamesPage: React.FC = () => {
         >
           <div className="relative">
             {/* Backdrop blur only when scrolled */}
-            <div 
+            <div
               className="absolute inset-0 bg-gradient-to-b from-[#0A0A0A]/80 to-transparent backdrop-blur-sm transition-opacity duration-300"
               style={{ opacity: lastScrollY > 50 ? 1 : 0 }}
             />
@@ -276,7 +279,7 @@ const AdminGamesPage: React.FC = () => {
 
         {loading ? (
           <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
-            {renderSkeletons(12)}
+            {renderSkeletons(GAMES_PER_PAGE)}
           </div>
         ) : error ? (
           <div className="flex justify-center items-center mt-16">
@@ -299,7 +302,7 @@ const AdminGamesPage: React.FC = () => {
             {/* Load More Section */}
             {loadingMore && (
               <div className="max-w-7xl mx-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mt-8">
-                {renderSkeletons(4)}
+                {renderSkeletons(GAMES_PER_PAGE)}
               </div>
             )}
 
@@ -315,9 +318,7 @@ const AdminGamesPage: React.FC = () => {
                   disabled={loadingMore}
                   className="flex items-center px-6 py-3 bg-gamer-green text-white rounded-lg hover:bg-gamer-green/90 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="flex items-center">
-                    Load More Games
-                  </span>
+                  <span className="flex items-center">Load More Games</span>
                 </Button>
               </motion.div>
             )}

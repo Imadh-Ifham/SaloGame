@@ -12,6 +12,7 @@ import transactionReducer from "./slices/transactionSlice";
 import { setupRevenueWebSocketListeners } from "./slices/revenueSlice";
 import { setupTransactionWebSocketListeners } from "./slices/transactionSlice";
 import bookingHistoryReducer from "./slices/bookingHistorySlice";
+import upcomingBookingsReducer from "./slices/upcomingBookingsSlice";
 
 const store = configureStore({
   reducer: {
@@ -25,6 +26,7 @@ const store = configureStore({
     revenue: revenueReducer,
     transactions: transactionReducer,
     bookingHistory: bookingHistoryReducer,
+    upcomingBookings: upcomingBookingsReducer,
   },
 });
 

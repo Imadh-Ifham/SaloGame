@@ -8,6 +8,8 @@ import { getBookingStatus } from "../services/getBookingStatus";
 import { createTransaction } from "./transaction.controller";
 import { AuthRequest } from "../middleware/types";
 import { BookingReportData } from "../types/booking";
+import { calculateStartDate } from "../services/bookingReportService";
+import Transaction from "../models/transaction.model";
 
 // Define controller for fetching booking status for all the machines
 export const getBookingStatusForAllMachines = async (
@@ -203,6 +205,12 @@ export const createBooking = async (
       }
     }
 
+    // Set status to "Booked" if the startTime is in the future
+    let finalStatus = status;
+    if (start > new Date()) {
+      finalStatus = "Booked"; // Change the status to "Booked" if the start time is greater than current time
+    }
+
     // Calculate total price securely
     let totalPrice: number;
     try {
@@ -229,7 +237,7 @@ export const createBooking = async (
         startTime: start,
         endTime: end,
         isBooked: true,
-        status,
+        status: finalStatus,
       });
 
       await newBooking.save({ session });
@@ -458,31 +466,6 @@ export const getBookingLog = async (
   }
 };
 
-// Function to calculate the start date based on the given period
-const calculateStartDate = (period: string): Date => {
-  const endDate = new Date();
-  let startDate = new Date();
-
-  switch (period) {
-    case "previous-month":
-      startDate.setMonth(endDate.getMonth() - 1);
-      break;
-    case "last-3-months":
-      startDate.setMonth(endDate.getMonth() - 3);
-      break;
-    case "last-6-months":
-      startDate.setMonth(endDate.getMonth() - 6);
-      break;
-    case "last-year":
-      startDate.setFullYear(endDate.getFullYear() - 1);
-      break;
-    default:
-      throw new Error("Invalid period specified");
-  }
-
-  return startDate;
-};
-
 // Function to generate booking report
 export const generateReport = async (
   req: Request,
@@ -554,6 +537,238 @@ export const generateReport = async (
     res.status(500).json({
       message: "Unexpected server error",
       error: (error as Error).message,
+    });
+  }
+};
+
+export const endBooking = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const { bookingID, endTime, paymentType } = req.body;
+
+  const session = await Booking.startSession();
+  session.startTransaction();
+
+  try {
+    // Validate input
+    if (!bookingID || !endTime || !paymentType) {
+      throw new Error("Missing required fields");
+    }
+
+    // Fetch the booking
+    const booking = await Booking.findById(bookingID).session(session);
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    const newEndTime = new Date(endTime);
+    const newStartTime = new Date(booking.startTime);
+
+    // Calculate the total price
+    const totalPrice = await calculateTotalPrice(
+      newStartTime,
+      newEndTime,
+      booking.machines
+    );
+
+    // Fetch the transaction
+    const transaction = await Transaction.findById(
+      booking.transactionID
+    ).session(session);
+    if (!transaction) {
+      throw new Error("Transaction not found");
+    }
+
+    // Update the transaction details
+    transaction.paymentType = paymentType;
+    transaction.amount = totalPrice;
+    transaction.status = "completed";
+    await transaction.save({ session });
+
+    // Update the booking details
+    booking.endTime = endTime;
+    booking.status = "Completed";
+    await booking.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Booking ended successfully", booking });
+  } catch (error) {
+    console.error("Error ending booking:", error);
+    await session.abortTransaction();
+    session.endSession();
+    res
+      .status(500)
+      .json({ error: "An error occurred while ending the booking" });
+  }
+};
+
+export const startBooking = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const { bookingID, endTime, startTime } = req.body;
+
+  const session = await Booking.startSession();
+  session.startTransaction();
+
+  try {
+    // Validate input
+    if (!bookingID || !endTime || !startTime) {
+      throw new Error("Missing required fields");
+    }
+
+    // Fetch the booking
+    const booking = await Booking.findById(bookingID).session(session);
+    if (!booking) {
+      throw new Error("Booking not found");
+    }
+
+    // Update the booking details
+    booking.startTime = startTime;
+    booking.endTime = endTime;
+    booking.status = "InUse";
+    await booking.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    res.status(200).json({ message: "Booking started successfully", booking });
+  } catch (error) {
+    console.error("Error ending booking:", error);
+    await session.abortTransaction();
+    session.endSession();
+    res
+      .status(500)
+      .json({ error: "An error occurred while ending the booking" });
+  }
+};
+
+export const getUpcomingBookings = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    // Get current date at start of day
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Get tomorrow date
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // Get day after tomorrow
+    const dayAfterTomorrow = new Date(tomorrow);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+
+    // Find upcoming bookings that are today or tomorrow
+    // Only get bookings with status "Booked" or "InUse"
+    const bookings = await Booking.find({
+      startTime: { $gte: today, $lt: dayAfterTomorrow },
+      status: { $in: ["Booked", "InUse"] }
+    })
+      .populate({
+        path: "machines.machineID",
+        select: "machineCategory serialNumber",
+      })
+      .populate({
+        path: "transactionID",
+        select: "amount paymentType status",
+      })
+      .sort({ startTime: 1 })
+      .lean();
+
+    // Group bookings by day (today or tomorrow)
+    const todayBookings = bookings.filter(booking => 
+      booking.startTime >= today && booking.startTime < tomorrow
+    );
+
+    const tomorrowBookings = bookings.filter(booking => 
+      booking.startTime >= tomorrow && booking.startTime < dayAfterTomorrow
+    );
+
+    // Format bookings for frontend consumption
+    const formatBooking = (booking: any) => {
+      // Calculate duration in minutes
+      const startTime = new Date(booking.startTime);
+      const endTime = new Date(booking.endTime);
+      const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
+      
+      // Format duration as string (e.g., "30 mins")
+      const duration = `${durationMinutes} mins`;
+      
+      // Format machines array for frontend
+      const machines = booking.machines.map((machine: any) => {
+        // Ensure machine type is either 'pc' or 'console'
+        const machineCategory = (machine.machineID.machineCategory || "").toLowerCase();
+        const type = machineCategory === 'console' ? 'console' : 'pc';
+        
+        return {
+          name: machine.machineID.serialNumber,
+          type
+        };
+      });
+
+      // Format start time (e.g., "14:00")
+      const formattedStartTime = startTime.toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit',
+        hour12: false 
+      });
+
+      // Map booking status to UI status
+      let uiStatus: "Confirmed" | "Pending" | "In Use";
+      switch(booking.status) {
+        case "InUse":
+          uiStatus = "In Use";
+          break;
+        case "Booked":
+          uiStatus = "Confirmed";
+          break;
+        default:
+          uiStatus = "Pending";
+      }
+
+      // Get payment status from transaction
+      const paymentStatus: "Paid" | "Unpaid" = booking.transactionID && 
+        booking.transactionID.status === "completed" ? "Paid" : "Unpaid";
+
+      // Get price from transaction
+      const price = booking.transactionID ? booking.transactionID.amount.toString() : "0";
+
+      return {
+        id: booking._id,
+        customerName: booking.customerName,
+        machines,
+        startTime: formattedStartTime,
+        duration,
+        status: uiStatus,
+        description: booking.notes || "",
+        price,
+        paymentStatus
+      };
+    };
+
+    // Structure response
+    const response = {
+      today: todayBookings.map(formatBooking),
+      tomorrow: tomorrowBookings.map(formatBooking)
+    };
+
+    res.json({ success: true, data: response });
+  } catch (error) {
+    console.error("Error fetching upcoming bookings:", error);
+    res.status(500).json({
+      success: false,
+      error: "Error fetching upcoming bookings",
+      message: (error as Error).message || "Something went wrong."
     });
   }
 };

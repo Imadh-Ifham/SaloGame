@@ -42,6 +42,7 @@ import OverviewPage from "./modules/admin/pages/OverviewPage";
 import SingleBattle from "./modules/users/pages/EventPages/SingleBattle";
 import TeamBattle from "./modules/users/pages/EventPages/TeamBattle";
 import BookingReportPage from "./modules/admin/components/AdminBookings-page/BookingReport/BookingReportPage";
+import AdminMachinePage from "./modules/admin/pages/AdminMachinePage";
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -89,6 +90,7 @@ const App: React.FC = () => {
           <Route path="offers" element={<AdminOfferPage />} />
           <Route path="settings" element={<SettingsPage />} />
           <Route path="memberships" element={<AdminMembershipPage />} />
+          <Route path="machines" element={<AdminMachinePage />} />
           <Route path="packages" element={<AdminPackagePage />} />
           <Route path="booking" element={<AdminBookingManager />} />
           <Route path="events" element={<AdminEventPage />} />

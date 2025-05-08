@@ -12,12 +12,10 @@ import kids1 from "../../../assets/kids1.jpg";
 import kids2 from "../../../assets/kids2.jpg";
 import kids3 from "../../../assets/kids3.jpg";
 
-
 import offer1 from "../../../assets/offer1.jpg";
 import offer2 from "../../../assets/offer2.jpg";
 import offer3 from "../../../assets/offer3.jpg";
 import offer4 from "../../../assets/offer4.jpg";
-
 
 const HomePage: React.FC = () => {
   return (
@@ -30,8 +28,6 @@ const HomePage: React.FC = () => {
     </HomeLayout>
   );
 };
-
-
 
 const HeroSection: React.FC = () => {
   const navigate = useNavigate();
@@ -47,7 +43,7 @@ const HeroSection: React.FC = () => {
 
   return (
     <section className="relative h-screen overflow-hidden">
-      <AnimatePresence mode='wait'>
+      <AnimatePresence mode="wait">
         <motion.div
           key={currentImageIndex}
           className="absolute inset-0 bg-cover bg-center"
@@ -60,7 +56,7 @@ const HeroSection: React.FC = () => {
       </AnimatePresence>
 
       <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/50 to-transparent" />
-      
+
       <div className="relative h-full flex flex-col items-center justify-center text-center px-4">
         <motion.div
           initial={{ y: 50, opacity: 0 }}
@@ -75,17 +71,20 @@ const HeroSection: React.FC = () => {
             Discover, Play, and Conquer in the Ultimate Gaming Universe
           </p>
           <button
-            onClick={() => navigate("/games")}
+            onClick={() => navigate("/bookings")}
             className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-lg font-semibold rounded-xl hover:scale-105 transition-transform duration-300 shadow-lg shadow-green-500/20"
           >
-            Explore Games Library
+            Book Now
           </button>
         </motion.div>
 
         {/* Platform Stats */}
         <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-8">
-          {['50K+ Games', '10M+ Players', 'Live Support'].map((stat) => (
-            <div key={stat} className="flex items-center gap-2 bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm">
+          {["50K+ Games", "10M+ Players", "Live Support"].map((stat) => (
+            <div
+              key={stat}
+              className="flex items-center gap-2 bg-black/30 px-4 py-2 rounded-full backdrop-blur-sm"
+            >
               <span className="text-green-400 text-lg">✓</span>
               <span className="text-white/90">{stat}</span>
             </div>
@@ -106,8 +105,6 @@ const FeaturedGamesSection: React.FC = () => {
     { id: 6, title: "Kids1", genre: "kids", image: kids1 },
     { id: 6, title: "Kids2", genre: "kids", image: kids2 },
     { id: 6, title: "Kids1", genre: "kids", image: kids3 },
-
-
   ];
 
   const containerVariants = {
@@ -117,8 +114,8 @@ const FeaturedGamesSection: React.FC = () => {
       transition: {
         staggerChildren: 0.2,
         when: "beforeChildren",
-      }
-    }
+      },
+    },
   };
 
   const cardVariants = {
@@ -129,9 +126,9 @@ const FeaturedGamesSection: React.FC = () => {
       transition: {
         type: "spring",
         stiffness: 120,
-        damping: 10
-      }
-    }
+        damping: 10,
+      },
+    },
   };
 
   const chainVariants = {
@@ -141,10 +138,10 @@ const FeaturedGamesSection: React.FC = () => {
         x: {
           repeat: Infinity,
           duration: 30,
-          ease: "linear"
-        }
-      }
-    }
+          ease: "linear",
+        },
+      },
+    },
   };
 
   return (
@@ -176,13 +173,13 @@ const FeaturedGamesSection: React.FC = () => {
               >
                 {/* Gradient Overlay */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10" />
-                
+
                 <img
                   src={game.image}
                   alt={game.title}
                   className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-300"
                 />
-                
+
                 <div className="absolute bottom-0 left-0 w-full p-6 z-20">
                   <h3 className="text-2xl font-bold text-white mb-2">
                     {game.title}
@@ -204,8 +201,18 @@ const FeaturedGamesSection: React.FC = () => {
 
                 {/* Chain Link Effect */}
                 <div className="absolute -right-8 top-1/2 -translate-y-1/2 text-green-400 opacity-40 group-hover:opacity-80 transition-opacity">
-                  <svg className="w-16 h-16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <svg
+                    className="w-16 h-16"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M17 8l4 4m0 0l-4 4m4-4H3"
+                    />
                   </svg>
                 </div>
               </motion.div>
@@ -232,11 +239,13 @@ const OffersSection: React.FC = () => {
     },
     {
       image: offer2,
-      description: " Membership Offer : Exclusive deals for different membership tiers",
+      description:
+        " Membership Offer : Exclusive deals for different membership tiers",
     },
     {
       image: offer3,
-      description: "Time Based offer: Lmited-time discounts and seasonal promotions",
+      description:
+        "Time Based offer: Lmited-time discounts and seasonal promotions",
     },
 
     {
@@ -256,7 +265,7 @@ const OffersSection: React.FC = () => {
   return (
     <section className="relative w-full max-w-7xl mx-auto my-20 px-4">
       <div className="relative h-[500px] rounded-2xl overflow-hidden shadow-2xl">
-        <AnimatePresence mode='wait'>
+        <AnimatePresence mode="wait">
           <motion.div
             key={currentOfferIndex}
             initial={{ opacity: 0 }}
@@ -264,7 +273,9 @@ const OffersSection: React.FC = () => {
             exit={{ opacity: 0 }}
             transition={{ duration: 0.5 }}
             className="absolute inset-0 bg-cover bg-center"
-            style={{ backgroundImage: `url(${offers[currentOfferIndex].image})` }}
+            style={{
+              backgroundImage: `url(${offers[currentOfferIndex].image})`,
+            }}
           />
         </AnimatePresence>
 
@@ -272,7 +283,7 @@ const OffersSection: React.FC = () => {
         <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/50 to-transparent" />
 
         <div className="relative z-10 h-full flex flex-col items-start justify-end p-8 md:p-12">
-          <AnimatePresence mode='wait'>
+          <AnimatePresence mode="wait">
             <motion.div
               key={currentOfferIndex}
               initial={{ opacity: 0, x: -50 }}
@@ -306,9 +317,9 @@ const OffersSection: React.FC = () => {
               key={index}
               onClick={() => setCurrentOfferIndex(index)}
               className={`w-3 h-3 rounded-full transition-all duration-300 ${
-                index === currentOfferIndex 
-                  ? 'bg-green-400 scale-125' 
-                  : 'bg-white/30 hover:bg-white/50'
+                index === currentOfferIndex
+                  ? "bg-green-400 scale-125"
+                  : "bg-white/30 hover:bg-white/50"
               }`}
               aria-label={`Offer ${index + 1}`}
             />
@@ -319,12 +330,11 @@ const OffersSection: React.FC = () => {
   );
 };
 
-
 const StatsSection: React.FC = () => {
   const stats = [
     { number: "500+", label: "Active Players" },
     { number: "20+", label: "Tournaments" },
-  { number: "99%", label: "Uptime" },
+    { number: "99%", label: "Uptime" },
   ];
 
   return (
@@ -339,8 +349,12 @@ const StatsSection: React.FC = () => {
               transition={{ delay: index * 0.2 }}
               className="text-center p-6 bg-gray-800/30 rounded-xl backdrop-blur-sm"
             >
-              <div className="text-4xl font-bold text-green-400 mb-2">{stat.number}</div>
-              <div className="text-gray-300 uppercase text-sm">{stat.label}</div>
+              <div className="text-4xl font-bold text-green-400 mb-2">
+                {stat.number}
+              </div>
+              <div className="text-gray-300 uppercase text-sm">
+                {stat.label}
+              </div>
             </motion.div>
           ))}
         </div>
@@ -362,7 +376,7 @@ const NewsSection: React.FC = () => {
         <h2 className="text-3xl font-bold text-center mb-8 text-white">
           Latest <span className="text-green-500">News</span>
         </h2>
-        
+
         <div className="max-w-3xl mx-auto space-y-4">
           {newsItems.map((news, index) => (
             <motion.div
@@ -382,9 +396,5 @@ const NewsSection: React.FC = () => {
     </section>
   );
 };
-
-
-
-
 
 export default HomePage;

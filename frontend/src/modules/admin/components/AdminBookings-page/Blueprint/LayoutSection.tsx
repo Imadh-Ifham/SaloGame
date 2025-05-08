@@ -42,7 +42,7 @@ const LayoutSection: React.FC = () => {
     <div className="box-border flex flex-col justify-between h-full">
       {/* Title */}
       <div className=""></div>
-      <div className="text-base font-poppins font-semibold ml-8 mt-1">
+      <div className="text-base font-poppins font-semibold ml-8 mt-1 dark:text-primary">
         Louge Layout
       </div>
 
