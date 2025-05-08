@@ -28,7 +28,7 @@ const userSchema = new Schema<IUser>({
 
   googlePhotoUrl: { 
     type: String,
-    required: true
+    required: false
   },
 
 
