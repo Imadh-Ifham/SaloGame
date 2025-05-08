@@ -19,10 +19,13 @@ const layoutSlice = createSlice({
     resetMoreMachine(state) {
       state.isMoreMachineClicked = false;
     },
+    setMoreMachine(state, action) {
+      state.isMoreMachineClicked = action.payload;
+    }
   },
 });
 
-export const { resetMoreMachine, toggleMoreMachine } = layoutSlice.actions;
+export const { resetMoreMachine, toggleMoreMachine, setMoreMachine } = layoutSlice.actions;
 
 export default layoutSlice.reducer;
 
