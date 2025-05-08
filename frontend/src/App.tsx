@@ -25,7 +25,7 @@ import VerifyEmail from "./modules/users/pages/EventPages/VerifyEmail";
 import VerifyTeamMember from "./modules/users/pages/EventPages/VerifyTeamMember";
 import Leaderboard from "./modules/users/pages/EventPages/Leaderboard";
 import FeedbackForm from "./components/Feedback";
-import FeedbackDashboard from "./components/User/reveiwsDashboard";
+import ReviewsDashboard from "./components/User/reveiwsDashboard";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import MembershipPage from "./modules/users/pages/MembershipPage";
@@ -74,7 +74,7 @@ const App: React.FC = () => {
         <Route path="*" element={<NotFoundPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/support/feedback" element={<FeedbackForm />} />
-        <Route path="/support/reviews" element={<FeedbackDashboard />} />
+        <Route path="/support/reviews" element={<ReviewsDashboard />} />
 
         {/* Offer Category Routes */}
         <Route path="/offers/time-based" element={<TimeBased />} />

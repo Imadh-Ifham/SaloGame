@@ -1,25 +1,39 @@
 import express from 'express';
 import { 
-  createFeedback, 
-  getFeedback,
-  replyToFeedback,
-  updateFeedbackStatus
+    createFeedback, 
+    getFeedback,
+    replyToFeedback,
+    updateFeedbackStatus 
 } from '../controllers/feedback.controller';
-import { authMiddleware } from '../middleware/authMiddleware';
+import { authMiddleware, managerOrOwner } from '../middleware/authMiddleware';
+import fileUpload from 'express-fileupload';
+import { RequestHandler } from 'express';
 
 const router = express.Router();
 
-// Public routes (with auth)
-router.post('/', authMiddleware, createFeedback);
-router.get('/', authMiddleware, getFeedback);
+router.get('/', authMiddleware, getFeedback as RequestHandler);
 
-// Admin/Manager routes
-router.post('/:feedbackId/reply', authMiddleware, async (req, res) => {
-  await replyToFeedback(req, res);
-});
+router.post('/', 
+    authMiddleware,
+    fileUpload({
+        useTempFiles: true,
+        tempFileDir: '/tmp/',
+        limits: { fileSize: 5 * 1024 * 1024 },
+        abortOnLimit: true
+    }),
+    createFeedback as RequestHandler
+);
 
-router.patch('/:feedbackId/status', authMiddleware, async (req, res) => {
-  await updateFeedbackStatus(req, res);
-});
+router.post('/:feedbackId/reply', 
+    authMiddleware, 
+    managerOrOwner, 
+    replyToFeedback as RequestHandler
+);
+
+router.patch('/:feedbackId/status', 
+    authMiddleware, 
+    managerOrOwner, 
+    updateFeedbackStatus as RequestHandler
+);
 
 export default router;

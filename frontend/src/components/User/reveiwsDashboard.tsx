@@ -48,26 +48,25 @@ const ReviewsDashboard = () => {
   
     const fetchFeedbacks = async () => {
       try {
-        const response = await axiosInstance.get('/api/feedback', {
-          headers: {
-            'Content-Type': 'application/json'
-            // Auth token should be handled by axiosInstance defaults
+          const response = await axiosInstance.get('/feedback', {
+              headers: {
+                  'Content-Type': 'application/json'
+              }
+          });
+          
+          if (response.data.success) {
+              setFeedbacks(response.data.data);
+          } else {
+              setError(response.data.message || 'Failed to load reviews');
           }
-        });
-        if (response.data.success) {
-          setFeedbacks(response.data.data);
-        } else {
-          setError(response.data.message || 'Failed to load reviews');
-        }
       } catch (err: any) {
-        const errorMessage = err.response?.data?.message || 'Failed to connect to server';
-        setError(errorMessage);
-        console.error('Error fetching feedback:', err);
+          const errorMessage = err.response?.data?.message || 'Failed to connect to server';
+          setError(errorMessage);
+          console.error('Error fetching feedback:', err);
       } finally {
-        setLoading(false);
+          setLoading(false);
       }
-    };
-    
+  };
     const initializeSocket = () => {
       socket = io(import.meta.env.VITE_API_URL || 'http://localhost:4000', {
         transports: ['websocket'],
