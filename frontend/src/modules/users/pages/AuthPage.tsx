@@ -45,24 +45,60 @@ const AuthPage: React.FC = () => {
     e.preventDefault();
     setError("");
     setLoading(true);
-
+  
+    // Basic validation
+    if (!email || !password) {
+      setError("Please fill in all fields");
+      setLoading(false);
+      return;
+    }
+  
+    // Password strength validation for signup
+    if (isSignUp && password.length < 6) {
+      setError("Password must be at least 6 characters long");
+      setLoading(false);
+      return;
+    }
+  
     try {
       let firebaseUser;
-
       if (isSignUp) {
+        // Create new user in Firebase
         firebaseUser = await createUserWithEmailAndPassword(
           auth,
           email,
           password
         );
-      } else {
-        firebaseUser = await signInWithEmailAndPassword(auth, email, password);
-      }
+  
+        // Get Firebase token for new user
+        const token = await firebaseUser.user.getIdToken();
+  
+        // Create user profile in your backend
+        const response = await axiosInstance.post("/users/auth/firebase", {
+          firebaseUser: {
+            uid: firebaseUser.user.uid,
+            email: firebaseUser.user.email,
+            photoURL: firebaseUser.user.photoURL || null // Add photo URL
+          },
+          token,
+          profile: {
+            name: email.split('@')[0],
+            role: 'user'
+          }
+        });
 
-      // Get Firebase token
+      // Store token
+      localStorage.setItem("token", token);
+      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // Navigate to home page for new users
+      navigate("/");
+      
+    } else {
+      // Handle login
+      firebaseUser = await signInWithEmailAndPassword(auth, email, password);
       const token = await firebaseUser.user.getIdToken();
-
-      // Send both user data and token to backend
+      
       const response = await axiosInstance.post("/users/auth/firebase", {
         firebaseUser: {
           uid: firebaseUser.user.uid,
@@ -71,11 +107,8 @@ const AuthPage: React.FC = () => {
         token,
       });
 
-      // Store token
       localStorage.setItem("token", token);
-      axiosInstance.defaults.headers.common[
-        "Authorization"
-      ] = `Bearer ${token}`;
+      axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       // Redirect based on role
       const userData = response.data as { user: { role: string } };
@@ -84,19 +117,22 @@ const AuthPage: React.FC = () => {
       } else {
         navigate("/admin/auth");
       }
-    } catch (err: any) {
-      if (err.code === "auth/email-already-in-use") {
-        setError("Email already in use");
-      } else if (isSignUp) {
-        setError("Registration failed. Please contact an admin.");
-      } else {
-        setError("Invalid email or password");
-      }
-    } finally {
-      setLoading(false);
     }
-  };
-
+  } catch (err: any) {
+    console.error("Auth error:", err);
+    if (err.code === "auth/email-already-in-use") {
+      setError("Email already in use");
+    } else if (err.code === "auth/invalid-email") {
+      setError("Invalid email format");
+    } else if (err.code === "auth/weak-password") {
+      setError("Password is too weak");
+    } else {
+      setError(err.message || "Authentication failed");
+    }
+  } finally {
+    setLoading(false);
+  }
+};
   // Handle Google Authentication (via Firebase)
   const handleGoogleSignIn = async () => {
     try {
@@ -116,10 +152,14 @@ const AuthPage: React.FC = () => {
         firebaseUser: {
           uid: firebaseUser.user.uid,
           email: firebaseUser.user.email,
+          photoURL: firebaseUser.user.photoURL || null // Add photo URL
         },
         token,
+        profile: {
+          name: email.split('@')[0],
+          role: 'user'
+        }
       });
-
       // Store token
       localStorage.setItem("token", token);
       axiosInstance.defaults.headers.common[

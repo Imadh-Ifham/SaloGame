@@ -32,6 +32,7 @@ export const handleFirebaseAuth = async (req: Request, res: Response) => {
         email: firebaseUser.email,
         firebaseUid: firebaseUser.uid,
         role: "user", // Default role
+        googlePhotoUrl: firebaseUser.photoURL || null // Add default value for photoURL
       });
       try {
         await user.save();
@@ -40,7 +41,7 @@ export const handleFirebaseAuth = async (req: Request, res: Response) => {
         console.error("Error saving user to MongoDB:", saveError);
         throw saveError;
       }
-    } else {
+    }else {
       // Update photo URL if it has changed
       if (firebaseUser.photoURL && firebaseUser.photoURL !== user.googlePhotoUrl) {
         user.googlePhotoUrl = firebaseUser.photoURL;
