@@ -1,6 +1,9 @@
-import React, { useEffect, useState, useRef } from 'react';
-import axios from 'axios';
-import { Line } from 'react-chartjs-2';
+import React, { useState, useEffect } from "react";
+import { ArrowUpIcon, MagnifyingGlassIcon, ArrowDownIcon, ArrowPathIcon } from "@heroicons/react/24/outline";
+import { CheckCircleIcon } from "@heroicons/react/24/solid";
+import { FirebaseAnalytics } from "@/config/firebase";
+import axiosInstance from "@/axios.config";
+import { Line } from "react-chartjs-2";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,12 +12,9 @@ import {
   LineElement,
   Title,
   Tooltip,
-  Legend,
-  ChartOptions,
-} from 'chart.js';
-import { motion } from 'framer-motion';
+  Legend
+} from "chart.js";
 
-// Register ChartJS components
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -25,322 +25,248 @@ ChartJS.register(
   Legend
 );
 
-interface ActiveUser {
-  date: string;
-  activeUsers: string;
+interface EventData {
+  name: string;
+  count: number;
+  users: number;
+  countChange?: number;
+  userChange?: number;
 }
 
-interface PageView {
-  pagePath: string;
-  pageViews: string;
-}
-
-interface EventCount {
-  date: string;
-  eventCount: string;
-}
-
-interface EventType {
-  eventName: string;
-  count: string;
-}
-
-interface EngagementMetrics {
-  userEngagementDuration: string;
-  engagementRate: string;
-  sessionsPerUser: string;
+interface UserActivityData {
+  thirtyDays: { data: any[]; total: string };
+  sevenDays: { data: any[]; total: string };
+  oneDay: { data: any[]; total: string };
 }
 
 const AnalyticsDashboard: React.FC = () => {
-  const [activeUsers, setActiveUsers] = useState<ActiveUser[]>([]);
-  const [pageViews, setPageViews] = useState<PageView[]>([]);
-  const [eventCounts, setEventCounts] = useState<EventCount[]>([]);
-  const [eventTypes, setEventTypes] = useState<EventType[]>([]);
-  const [engagement, setEngagement] = useState<EngagementMetrics | null>(null);
+  const [isKeyEvent, setIsKeyEvent] = useState<Record<string, boolean>>({});
+  const [eventsData, setEventsData] = useState<EventData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [activityData, setActivityData] = useState<any>(null);
 
-  const chartRef = useRef<ChartJS<"line">>(null);
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const isDarkMode = () => {
-    return document.documentElement.classList.contains('dark');
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+
+      // Fetch analytics data
+      const [eventsRes, activityRes] = await Promise.all([
+        axiosInstance.get('/analytics/events'),
+        FirebaseAnalytics.getUserActivityData()
+      ]);
+
+      setEventsData(eventsRes.data.data);
+      setActivityData(activityRes);
+
+      setLoading(false);
+    } catch (error) {
+      console.error('Error fetching analytics data:', error);
+      setLoading(false);
+    }
   };
 
-  // Common chart options
-  const commonChartOptions: ChartOptions<'line'> = {
+  const handleKeyEventToggle = (eventName: string) => {
+    setIsKeyEvent(prev => {
+      const newState = {
+        ...prev,
+        [eventName]: !prev[eventName]
+      };
+
+      // Track event marking
+      FirebaseAnalytics.trackEventInteraction({
+        eventName,
+        interactionType: 'key_event_toggle',
+        count: 1
+      });
+
+      return newState;
+    });
+  };
+
+  const chartData = {
+    labels: activityData?.thirtyDays?.data.map((item: any) => 
+      new Date(item.timestamp).toLocaleDateString()
+    ) || [],
+    datasets: [
+      {
+        label: '30 Days',
+        data: activityData?.thirtyDays?.data.map((item: any) => item.count) || [],
+        borderColor: '#3B82F6',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        tension: 0.4
+      },
+      {
+        label: '7 Days',
+        data: activityData?.sevenDays?.data.map((item: any) => item.count) || [],
+        borderColor: '#8B5CF6',
+        backgroundColor: 'rgba(139, 92, 246, 0.1)',
+        tension: 0.4
+      },
+      {
+        label: '24 Hours',
+        data: activityData?.oneDay?.data.map((item: any) => item.count) || [],
+        borderColor: '#EC4899',
+        backgroundColor: 'rgba(236, 72, 153, 0.1)',
+        tension: 0.4
+      }
+    ]
+  };
+
+  const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
-    interaction: {
-      intersect: false,
-      mode: 'index',
-    },
-    animation: {
-      duration: 2000,
-      easing: 'easeInOutQuart',
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: {
+          color: 'rgba(75, 85, 99, 0.1)'
+        },
+        ticks: {
+          color: '#9CA3AF'
+        }
+      },
+      x: {
+        grid: {
+          display: false
+        },
+        ticks: {
+          color: '#9CA3AF'
+        }
+      }
     },
     plugins: {
       legend: {
-        display: true,
+        position: 'top' as const,
         labels: {
-          color: isDarkMode() ? '#9ca3af' : '#4b5563',
-          font: {
-            family: "'Poppins', sans-serif",
-          }
-        },
-      },
-      tooltip: {
-        backgroundColor: isDarkMode() ? '#1f2937' : '#ffffff',
-        titleColor: isDarkMode() ? '#e5e7eb' : '#374151',
-        bodyColor: isDarkMode() ? '#f9fafb' : '#111827',
-        borderColor: isDarkMode() ? '#374151' : '#e5e7eb',
-        borderWidth: 1,
-        padding: 12,
-        displayColors: false,
-      },
-    },
-    scales: {
-      x: {
-        grid: {
-          display: false,
-        },
-        border: {
-          display: false,
-        },
-        ticks: {
-          color: isDarkMode() ? '#9ca3af' : '#4b5563',
-          font: {
-            size: 12,
-          },
-        },
-      },
-      y: {
-        grid: {
-          color: isDarkMode() ? 'rgba(75, 85, 99, 0.1)' : 'rgba(229, 231, 235, 1)',
-        },
-        border: {
-          display: false,
-        },
-        ticks: {
-          color: isDarkMode() ? '#9ca3af' : '#4b5563',
-          font: {
-            size: 12,
-          },
-        },
-      },
-    },
-  };
-
-  useEffect(() => {
-    const fetchAnalyticsData = async () => {
-      try {
-        setLoading(true);
-        const [activeUsersRes, pageViewsRes, engagementRes, eventCountRes, eventTypesRes] = await Promise.all([
-          axios.get('/api/analytics/active-users'),
-          axios.get('/api/analytics/page-views'),
-          axios.get('/api/analytics/user-engagement'),
-          axios.get('/api/analytics/event-count'),
-          axios.get('/api/analytics/event-types')
-        ]);
-
-        setActiveUsers(Array.isArray(activeUsersRes.data) ? activeUsersRes.data : []);
-        setPageViews(Array.isArray(pageViewsRes.data) ? pageViewsRes.data : []);
-        setEngagement(engagementRes.data);
-        setEventCounts(eventCountRes.data.dailyData || []);
-        setEventTypes(Array.isArray(eventTypesRes.data) ? eventTypesRes.data : []);
-        setError(null);
-      } catch (err) {
-        console.error('Error fetching analytics data:', err);
-        setError('Failed to load analytics data');
-      } finally {
-        setLoading(false);
+          color: '#9CA3AF'
+        }
       }
-    };
-
-    fetchAnalyticsData();
-  }, []);
-
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
   };
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1, transition: { staggerChildren: 0.2 } },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0 },
-  };
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <motion.h1 
-        className="text-3xl font-bold mb-8 text-gray-900 dark:text-white"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-      >
-        Analytics Dashboard
-      </motion.h1>
-
-      {loading ? (
-        <div className="flex justify-center items-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+    <div className="space-y-6">
+      {/* User Activity Chart */}
+      <div className="bg-gray-900 rounded-lg overflow-hidden shadow p-4">
+        <h2 className="text-lg font-medium text-white mb-4">User Activity</h2>
+        <div className="h-96">
+          <Line data={chartData} options={chartOptions} />
         </div>
-      ) : error ? (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-          {error}
+        <div className="grid grid-cols-3 gap-4 mt-4">
+          <div className="bg-gray-800 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">30 Days Active</h3>
+            <p className="text-2xl text-white">{activityData?.thirtyDays?.total || 0}</p>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">7 Days Active</h3>
+            <p className="text-2xl text-white">{activityData?.sevenDays?.total || 0}</p>
+          </div>
+          <div className="bg-gray-800 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-400">24 Hours Active</h3>
+            <p className="text-2xl text-white">{activityData?.oneDay?.total || 0}</p>
+          </div>
         </div>
-      ) : (
-        <motion.div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-8"
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-        >
-          {/* Active Users Chart */}
-          <motion.div
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
-            variants={itemVariants}
-          >
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Active Users (Last 7 Days)
-            </h2>
-            <div className="h-80">
-              <Line
-                data={{
-                  labels: activeUsers.map(item => formatDate(item.date)),
-                  datasets: [{
-                    label: 'Active Users',
-                    data: activeUsers.map(item => parseInt(item.activeUsers)),
-                    borderColor: isDarkMode() ? '#34d399' : '#10b981',
-                    backgroundColor: isDarkMode() ? 'rgba(52, 211, 153, 0.1)' : 'rgba(16, 185, 129, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                  }]
-                }}
-                options={commonChartOptions}
-              />
-            </div>
-          </motion.div>
+      </div>
 
-          {/* Page Views Chart */}
-          <motion.div
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
-            variants={itemVariants}
-          >
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Top Pages
-            </h2>
-            <div className="h-80">
-              <Line
-                data={{
-                  labels: pageViews.map(item => item.pagePath),
-                  datasets: [{
-                    label: 'Page Views',
-                    data: pageViews.map(item => parseInt(item.pageViews)),
-                    borderColor: isDarkMode() ? '#8b5cf6' : '#6d28d9',
-                    backgroundColor: isDarkMode() ? 'rgba(139, 92, 246, 0.1)' : 'rgba(109, 40, 217, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                  }]
-                }}
-                options={commonChartOptions}
-              />
-            </div>
-          </motion.div>
+      {/* Events Table Section */}
+      <div className="bg-gray-900 rounded-lg overflow-hidden shadow">
+        <div className="flex justify-between items-center p-4 border-b border-gray-800">
+          <h2 className="text-lg font-medium text-white">Event Analytics</h2>
+          <div className="flex space-x-2">
+            <button 
+              onClick={() => {
+                FirebaseAnalytics.trackUserActivity({
+                  activityType: 'refresh_analytics',
+                  page: 'analytics'
+                });
+                fetchData();
+              }}
+              className="text-gray-400 hover:text-white"
+            >
+              <ArrowPathIcon className="h-5 w-5" />
+            </button>
+          </div>
+        </div>
 
-          {/* Event Counts Chart */}
-          <motion.div
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
-            variants={itemVariants}
-          >
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Event Counts (Last 7 Days)
-            </h2>
-            <div className="h-80">
-              <Line
-                data={{
-                  labels: eventCounts.map(item => formatDate(item.date)),
-                  datasets: [{
-                    label: 'Events',
-                    data: eventCounts.map(item => parseInt(item.eventCount)),
-                    borderColor: isDarkMode() ? '#ec4899' : '#db2777',
-                    backgroundColor: isDarkMode() ? 'rgba(236, 72, 153, 0.1)' : 'rgba(219, 39, 119, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                  }]
-                }}
-                options={commonChartOptions}
-              />
-            </div>
-          </motion.div>
-
-          {/* Event Types Chart */}
-          <motion.div
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg"
-            variants={itemVariants}
-          >
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              Event Types Distribution
-            </h2>
-            <div className="h-80">
-              <Line
-                data={{
-                  labels: eventTypes.map(item => item.eventName),
-                  datasets: [{
-                    label: 'Event Count',
-                    data: eventTypes.map(item => parseInt(item.count)),
-                    borderColor: isDarkMode() ? '#f59e0b' : '#d97706',
-                    backgroundColor: isDarkMode() ? 'rgba(245, 158, 11, 0.1)' : 'rgba(217, 119, 6, 0.1)',
-                    tension: 0.4,
-                    fill: true,
-                  }]
-                }}
-                options={commonChartOptions}
-              />
-            </div>
-          </motion.div>
-
-          {/* Engagement Metrics */}
-          <motion.div
-            className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg lg:col-span-2"
-            variants={itemVariants}
-          >
-            <h2 className="text-xl font-semibold mb-4 text-gray-900 dark:text-white">
-              User Engagement Metrics
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-blue-50 dark:bg-blue-900 p-4 rounded-lg">
-                <h3 className="text-lg font-medium text-blue-800 dark:text-blue-200">
-                  Engagement Duration
-                </h3>
-                <p className="text-3xl font-bold text-blue-600 dark:text-blue-300 mt-2">
-                  {engagement?.userEngagementDuration || '0'}s
-                </p>
-              </div>
-              <div className="bg-green-50 dark:bg-green-900 p-4 rounded-lg">
-                <h3 className="text-lg font-medium text-green-800 dark:text-green-200">
-                  Engagement Rate
-                </h3>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-300 mt-2">
-                  {engagement ? (parseFloat(engagement.engagementRate) * 100).toFixed(1) + '%' : '0%'}
-                </p>
-              </div>
-              <div className="bg-purple-50 dark:bg-purple-900 p-4 rounded-lg">
-                <h3 className="text-lg font-medium text-purple-800 dark:text-purple-200">
-                  Sessions Per User
-                </h3>
-                <p className="text-3xl font-bold text-purple-600 dark:text-purple-300 mt-2">
-                  {engagement?.sessionsPerUser || '0'}
-                </p>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-800">
+            <thead className="bg-gray-900">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Event Name
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Total Count
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Change %
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Unique Users
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-400 uppercase tracking-wider">
+                  Key Event
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-gray-900 divide-y divide-gray-800">
+              {eventsData.map((event) => (
+                <tr key={event.name} className="hover:bg-gray-800">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {event.name}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {event.count.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className={`flex items-center text-sm ${
+                      (event.countChange === undefined || event.countChange === 0) ? 'text-gray-300' :
+                      event.countChange > 0 ? 'text-green-500' : 'text-red-500'
+                    }`}>
+                      {event.countChange !== undefined && (
+                        event.countChange > 0 ? (
+                          <ArrowUpIcon className="h-4 w-4 mr-1" />
+                        ) : event.countChange < 0 ? (
+                          <ArrowDownIcon className="h-4 w-4 mr-1" />
+                        ) : null
+                      )}
+                      {event.countChange !== undefined ? `${Math.abs(event.countChange)}%` : '-'}
+                    </div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-300">
+                    {event.users.toLocaleString()}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={!!isKeyEvent[event.name]}
+                        onChange={() => handleKeyEventToggle(event.name)}
+                      />
+                      <div className="w-11 h-6 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-gray-300 after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                    </label>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

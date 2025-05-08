@@ -28,6 +28,7 @@ router.use(managerOrOwner);
 router.get("/", getUsers);
 router.put("/:id", updateUser);
 
+
 // Owner only routes
 router.post("/managers", ownerOnly, createManager);
 router.delete("/:id", ownerOnly, deleteUser);
