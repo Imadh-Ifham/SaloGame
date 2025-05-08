@@ -24,6 +24,7 @@ import EventPage from "./modules/users/pages/EventPage";
 import VerifyEmail from "./modules/users/pages/EventPages/VerifyEmail";
 import VerifyTeamMember from "./modules/users/pages/EventPages/VerifyTeamMember";
 import Leaderboard from "./modules/users/pages/EventPages/Leaderboard";
+import FeedbackForm from "./components/Feedback";
 
 import AdminOfferPage from "./modules/admin/pages/AdminOfferPage";
 import MembershipPage from "./modules/users/pages/MembershipPage";
@@ -70,6 +71,7 @@ const App: React.FC = () => {
         <Route path="/events" element={<EventPage />} />
         <Route path="*" element={<NotFoundPage />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/support/feedback" element={<FeedbackForm />} />
 
         {/* Offer Category Routes */}
         <Route path="/offers/time-based" element={<TimeBased />} />

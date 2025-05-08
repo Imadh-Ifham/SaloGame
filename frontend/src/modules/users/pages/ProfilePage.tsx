@@ -5,12 +5,14 @@ import HomeLayout from "../layout/HomeLayout";
 import { auth } from "../../../config/firebase";
 import { signOut } from "firebase/auth";
 import { useAuth } from "../../../hooks/useAuth";
+import axiosInstance from "../../../axios.config";
 import { FiLogOut, FiUser, FiCalendar, FiHelpCircle, FiSettings } from "react-icons/fi";
 import UserMembershipDashboard from "../../../components/User/userMembershipDashboard";
 import UserEventDashboard from "../../../components/User/userEventDashboard"; 
 import UserSupportDashboard from "../../../components/User/userSupportDashboard";
 import UserProfileSettings from "../../../components/User/UserProfileSettings";
 import VisitsChart from "../../../components/User/VisitChart";
+
 interface UserProfile {
   email: string;
   name?: string;
@@ -27,8 +29,28 @@ const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [loading, setLoading] = useState(true); 
+  const [error, setError] = useState<string | null>(null);
+
   useAuth();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const response = await axiosInstance.get<UserProfile>("/users/profile");
+        setProfile(response.data);
+        setError(null);
+      } catch (err: any) {
+        setError(err.response?.data?.message || "Failed to fetch profile");
+        console.error("Error fetching profile:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   const handleLogout = async () => {
     try {
@@ -55,6 +77,28 @@ const ProfilePage: React.FC = () => {
     { id: "support", icon: <FiHelpCircle />, label: "Support" },
     { id: "settings", icon: <FiSettings />, label: "Settings" }
   ];
+
+  if (loading) {
+    return (
+      <HomeLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-emerald-500"></div>
+        </div>
+      </HomeLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <HomeLayout>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="bg-red-500/10 text-red-500 p-4 rounded-lg border border-red-500/20">
+            {error}
+          </div>
+        </div>
+      </HomeLayout>
+    );
+  }
 
   return (
     <HomeLayout>
@@ -132,9 +176,7 @@ const ProfilePage: React.FC = () => {
               </div>
             )}
 
-
             {activeTab === "membership" && <UserMembershipDashboard profile={profile} />}
-           
             {activeTab === "events" && <UserEventDashboard />}
             {activeTab === "support" && <UserSupportDashboard />}
           </div>

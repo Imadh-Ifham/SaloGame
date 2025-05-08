@@ -21,6 +21,7 @@ import teamRoutes from "./routes/event.routes/team.routes";
 import transactionRoutes from "./routes/transaction.routes";
 import visitRoutes from "./routes/visit.routes";
 import analyticsRoutes from "./routes/analytics.routes";
+import feedbackRoutes from "./routes/feedback.routes";
 
 
 
@@ -52,6 +53,7 @@ app.use("/api/teams", teamRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/visits", visitRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 
 // Error handling
