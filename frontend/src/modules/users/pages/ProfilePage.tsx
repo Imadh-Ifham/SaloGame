@@ -13,10 +13,12 @@ import {
   FiHelpCircle,
   FiSettings,
   FiCreditCard,
+  FiBookmark,
 } from "react-icons/fi";
 import UserMembershipDashboard from "../../../components/User/userMembershipDashboard";
 import UserEventDashboard from "../../../components/User/userEventDashboard";
 import UserSupportDashboard from "../../../components/User/userSupportDashboard";
+import UserBookingDashboard from "../../../components/User/userBookingDashboard";
 import UserProfileSettings from "../../../components/User/UserProfileSettings";
 import VisitsChart from "../../../components/User/VisitChart";
 import NotificationArea from "../../../components/notifications/NotificationArea";
@@ -172,6 +174,7 @@ const ProfilePage: React.FC = () => {
     { id: "overview", icon: <FiUser />, label: "Overview" },
     { id: "membership", icon: <FiCreditCard />, label: "Membership" },
     { id: "events", icon: <FiCalendar />, label: "Events" },
+    { id: "booking", icon: <FiBookmark />, label: "Booking" },
     { id: "support", icon: <FiHelpCircle />, label: "Support" },
     { id: "settings", icon: <FiSettings />, label: "Settings" },
   ];
@@ -346,6 +349,7 @@ const ProfilePage: React.FC = () => {
               <UserMembershipDashboard profile={profile} />
             )}
             {activeTab === "events" && <UserEventDashboard />}
+            {activeTab === "booking" && <UserBookingDashboard />}
             {activeTab === "support" && <UserSupportDashboard />}
           </div>
         </div>

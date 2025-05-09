@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { toast } from 'react-hot-toast';
-import { FaStar } from 'react-icons/fa';
+import { FaStar, FaCamera, FaLightbulb, FaCommentAlt } from 'react-icons/fa';
 import axiosInstance from '@/axios.config';
 
 const categories = [
@@ -61,22 +61,29 @@ const FeedbackForm = () => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-lg mx-auto p-6 bg-white dark:bg-gray-800 rounded-xl shadow-lg"
+      className="max-w-md mx-auto p-6 bg-white dark:bg-gray-800 rounded-2xl shadow-xl border border-gray-100 dark:border-gray-700"
     >
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-4">
-        Share Your Thoughts
-      </h3>
+      <div className="flex items-center mb-6">
+        {type === 'feedback' ? (
+          <FaCommentAlt className="text-blue-500 mr-3 text-xl" />
+        ) : (
+          <FaLightbulb className="text-yellow-500 mr-3 text-xl" />
+        )}
+        <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+          {type === 'feedback' ? 'Share Your Feedback' : 'Make a Suggestion'}
+        </h3>
+      </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Feedback Type */}
-        <div className="flex space-x-4 mb-4">
+      <form onSubmit={handleSubmit} className="space-y-6">
+        {/* Feedback Type Toggle */}
+        <div className="flex space-x-2 p-1 bg-gray-100 dark:bg-gray-700 rounded-lg">
           <button
             type="button"
             onClick={() => setType('feedback')}
-            className={`px-4 py-2 rounded-lg ${
-              type === 'feedback' 
-                ? 'bg-primary text-white' 
-                : 'bg-gray-100 dark:bg-gray-700'
+            className={`flex-1 py-2 px-4 rounded-md transition-all ${
+              type === 'feedback'
+                ? 'bg-white dark:bg-gray-600 shadow-sm font-medium'
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
             }`}
           >
             Feedback
@@ -84,10 +91,10 @@ const FeedbackForm = () => {
           <button
             type="button"
             onClick={() => setType('suggestion')}
-            className={`px-4 py-2 rounded-lg ${
-              type === 'suggestion' 
-                ? 'bg-primary text-white' 
-                : 'bg-gray-100 dark:bg-gray-700'
+            className={`flex-1 py-2 px-4 rounded-md transition-all ${
+              type === 'suggestion'
+                ? 'bg-white dark:bg-gray-600 shadow-sm font-medium'
+                : 'text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-600'
             }`}
           >
             Suggestion
@@ -99,37 +106,53 @@ const FeedbackForm = () => {
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
             Category
           </label>
-          <select
-            value={category}
-            onChange={(e) => setCategory(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-primary"
-          >
-            {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>
-                {cat.label}
-              </option>
-            ))}
-          </select>
+          <div className="relative">
+            <select
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full appearance-none rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-3 pr-8 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              {categories.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.label}
+                </option>
+              ))}
+            </select>
+            <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+              <svg className="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                <path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z" />
+              </svg>
+            </div>
+          </div>
         </div>
 
         {/* Rating (only for feedback) */}
         {type === 'feedback' && (
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Rating
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
+              How would you rate your experience?
             </label>
-            <div className="flex space-x-1">
+            <div className="flex justify-center space-x-2">
               {[1, 2, 3, 4, 5].map((star) => (
-                <FaStar
+                <button
+                  type="button"
                   key={star}
-                  className="cursor-pointer"
-                  size={24}
-                  color={(hover || rating) >= star ? "#ffc107" : "#e4e5e9"}
+                  className="focus:outline-none"
                   onMouseEnter={() => setHover(star)}
                   onMouseLeave={() => setHover(null)}
                   onClick={() => setRating(star)}
-                />
+                >
+                  <FaStar
+                    className="transition-transform hover:scale-125"
+                    size={28}
+                    color={(hover || rating) >= star ? "#f59e0b" : "#d1d5db"}
+                  />
+                </button>
               ))}
+            </div>
+            <div className="flex justify-between mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <span>Poor</span>
+              <span>Excellent</span>
             </div>
           </div>
         )}
@@ -137,42 +160,57 @@ const FeedbackForm = () => {
         {/* Message Input */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Your Message
+            {type === 'feedback' ? 'Your Feedback' : 'Your Suggestion'}
           </label>
           <textarea
             value={message}
             onChange={(e) => setMessage(e.target.value)}
             required
-            rows={4}
-            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-primary"
-            placeholder={type === 'feedback' ? "Tell us what you think..." : "Share your suggestion..."}
+            rows={5}
+            className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+            placeholder={
+              type === 'feedback' 
+                ? "What did you like or dislike about your experience?" 
+                : "How can we improve our service?"
+            }
           />
         </div>
 
         {/* Screenshot Upload */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Screenshot (optional)
+            Attach Screenshot (optional)
           </label>
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
-            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary-dark"
-          />
+          <label className="flex flex-col items-center justify-center w-full p-6 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 cursor-pointer transition-colors">
+            <div className="flex flex-col items-center justify-center">
+              <FaCamera className="text-gray-400 text-2xl mb-2" />
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {screenshot ? screenshot.name : 'Click to upload or drag and drop'}
+              </p>
+            </div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => setScreenshot(e.target.files?.[0] || null)}
+              className="hidden"
+            />
+          </label>
         </div>
 
         {/* Anonymous Toggle */}
-        <div className="flex items-center space-x-2">
-          <input
-            type="checkbox"
-            id="anonymous"
-            checked={isAnonymous}
-            onChange={(e) => setIsAnonymous(e.target.checked)}
-            className="rounded border-gray-300 text-primary focus:ring-primary"
-          />
-          <label htmlFor="anonymous" className="text-sm text-gray-700 dark:text-gray-300">
-            Submit anonymously
+        <div className="flex items-center">
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              id="anonymous"
+              checked={isAnonymous}
+              onChange={(e) => setIsAnonymous(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
+            <span className="ml-3 text-sm font-medium text-gray-700 dark:text-gray-300">
+              Submit anonymously
+            </span>
           </label>
         </div>
 
@@ -180,14 +218,15 @@ const FeedbackForm = () => {
         {!isAnonymous && (
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Email
+              Email address
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-2 focus:ring-2 focus:ring-primary"
+              className="w-full rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white px-4 py-3 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="your@email.com"
             />
           </div>
         )}
@@ -196,9 +235,23 @@ const FeedbackForm = () => {
         <button
           type="submit"
           disabled={loading || (type === 'feedback' && rating === 0) || (!isAnonymous && !email)}
-          className="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary-dark transition-colors disabled:opacity-50"
+          className={`w-full px-6 py-3 rounded-lg font-medium text-white transition-all ${
+            loading
+              ? 'bg-blue-400 cursor-not-allowed'
+              : 'bg-blue-600 hover:bg-blue-700 focus:ring-4 focus:ring-blue-300'
+          } flex items-center justify-center`}
         >
-          {loading ? 'Submitting...' : 'Submit'}
+          {loading ? (
+            <>
+              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Submitting...
+            </>
+          ) : (
+            'Submit ' + (type === 'feedback' ? 'Feedback' : 'Suggestion')
+          )}
         </button>
       </form>
     </motion.div>
