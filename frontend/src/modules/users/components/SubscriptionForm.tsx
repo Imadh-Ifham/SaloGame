@@ -1,9 +1,12 @@
-// src/modules/users/components/SubscriptionForm.tsx
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Dialog } from "@headlessui/react";
 import axiosInstance from "@/axios.config";
 import { useNavigate } from "react-router-dom";
 import { toast } from "react-hot-toast";
+import { useDispatch as useReduxDispatch } from "react-redux";
+import type { AppDispatch } from "../../../store/store";
+import { fetchXpBalance } from "@/store/slices/XPslice";
+import Payment from "payment";
 
 interface SubscriptionFormProps {
   isOpen: boolean;
@@ -54,11 +57,25 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   const [autoRenew, setAutoRenew] = useState(false);
+
+  const [cardType, setCardType] = useState<string>("");
+  const [errors, setErrors] = useState<{
+    cardNumber?: string;
+    expiryDate?: string;
+    cvv?: string;
+  }>({});
   const [saveCardDetails, setSaveCardDetails] = useState(false);
+  const cardNumberRef = useRef<HTMLInputElement>(null);
+  const expiryDateRef = useRef<HTMLInputElement>(null);
+  const cvvRef = useRef<HTMLInputElement>(null);
+  const dispatch = useReduxDispatch<AppDispatch>();
 
   const handlePaymentSubmit = () => {
-    if (!cardNumber || !expiryDate || !cvv) {
-      toast.error("Please fill in all payment details");
+    if (!validatePaymentForm()) {
+      const errorMessage =
+        Object.values(errors).find((err) => err) ||
+        "Please correct the card details";
+      toast.error(errorMessage);
       return;
     }
 
@@ -146,11 +163,13 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
         success: boolean;
         message?: string;
       };
+
       if (responseData.success) {
         // Show success message
         toast.success(
           `Subscription to ${membershipName} confirmed successfully!`
         );
+        dispatch(fetchXpBalance());
 
         // Close both modals
         setShowConfirmation(false);
@@ -177,7 +196,112 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
     if (error) {
       toast.error(error);
     }
+
+    if (cardNumberRef.current) {
+      Payment.formatCardNumber(cardNumberRef.current);
+    }
+    if (expiryDateRef.current) {
+      Payment.formatCardExpiry(expiryDateRef.current);
+    }
+    if (cvvRef.current) {
+      Payment.formatCardCVC(cvvRef.current);
+    }
   }, [error]);
+
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCardNumber(value);
+
+    // Detect card type
+    const detectedType = Payment.fns.cardType(value);
+    setCardType(detectedType || "");
+
+    // Validate card number
+    if (value) {
+      if (!Payment.fns.validateCardNumber(value)) {
+        setErrors((prev) => ({ ...prev, cardNumber: "Invalid card number" }));
+      } else {
+        setErrors((prev) => ({ ...prev, cardNumber: undefined }));
+      }
+    } else {
+      setErrors((prev) => ({ ...prev, cardNumber: undefined }));
+    }
+  };
+
+  // Handle expiry date change with validation
+  const handleExpiryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setExpiryDate(value);
+
+    if (value) {
+      // Parse expiry date
+      const [month, year] = value.split("/");
+
+      // Validate expiry date
+      if (!Payment.fns.validateCardExpiry(month, year)) {
+        setErrors((prev) => ({
+          ...prev,
+          expiryDate: "Invalid or expired date",
+        }));
+      } else {
+        setErrors((prev) => ({ ...prev, expiryDate: undefined }));
+      }
+    } else {
+      setErrors((prev) => ({ ...prev, expiryDate: undefined }));
+    }
+  };
+
+  // Handle CVV change with validation
+  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setCvv(value);
+
+    if (value) {
+      if (!Payment.fns.validateCardCVC(value, cardType)) {
+        setErrors((prev) => ({ ...prev, cvv: "Invalid CVV" }));
+      } else {
+        setErrors((prev) => ({ ...prev, cvv: undefined }));
+      }
+    } else {
+      setErrors((prev) => ({ ...prev, cvv: undefined }));
+    }
+  };
+
+  // Enhanced payment validation
+  const validatePaymentForm = () => {
+    const newErrors: {
+      cardNumber?: string;
+      expiryDate?: string;
+      cvv?: string;
+    } = {};
+
+    // Check card number
+    if (!cardNumber) {
+      newErrors.cardNumber = "Card number is required";
+    } else if (!Payment.fns.validateCardNumber(cardNumber)) {
+      newErrors.cardNumber = "Invalid card number";
+    }
+
+    // Check expiry date
+    if (!expiryDate) {
+      newErrors.expiryDate = "Expiry date is required";
+    } else {
+      const [month, year] = expiryDate.split("/");
+      if (!Payment.fns.validateCardExpiry(month, year)) {
+        newErrors.expiryDate = "Invalid or expired date";
+      }
+    }
+
+    // Check CVV
+    if (!cvv) {
+      newErrors.cvv = "CVV is required";
+    } else if (!Payment.fns.validateCardCVC(cvv, cardType)) {
+      newErrors.cvv = "Invalid CVV";
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   return (
     <Dialog open={isOpen} onClose={onClose} className="relative z-50">
@@ -333,25 +457,33 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
               <div className="p-4 bg-gray-50 dark:bg-gray-700 rounded-md">
                 <div className="flex justify-between font-semibold">
                   <span>Total Amount:</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>LKR.{totalPrice.toFixed(2)}</span>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
-                  Card Number
-                </label>
+              <div className="relative">
                 <input
                   type="text"
                   placeholder="1234 5678 9012 3456"
                   value={cardNumber}
-                  onChange={(e) => setCardNumber(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                  onChange={handleCardNumberChange}
+                  className={`w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 ${
+                    errors.cardNumber ? "border-red-500" : ""
+                  }`}
+                  ref={cardNumberRef}
                   maxLength={19}
                 />
+                {cardType && (
+                  <span className="absolute right-3 top-2 text-gray-500">
+                    {cardType}
+                  </span>
+                )}
               </div>
+              {errors.cardNumber && (
+                <p className="mt-1 text-sm text-red-500">{errors.cardNumber}</p>
+              )}
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 gap-4 mt-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
                     Expiry Date
@@ -360,10 +492,18 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                     type="text"
                     placeholder="MM/YY"
                     value={expiryDate}
-                    onChange={(e) => setExpiryDate(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
+                    onChange={handleExpiryDateChange}
+                    className={`w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 ${
+                      errors.expiryDate ? "border-red-500" : ""
+                    }`}
+                    ref={expiryDateRef}
                     maxLength={5}
                   />
+                  {errors.expiryDate && (
+                    <p className="mt-1 text-sm text-red-500">
+                      {errors.expiryDate}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-2">
@@ -373,10 +513,16 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
                     type="text"
                     placeholder="123"
                     value={cvv}
-                    onChange={(e) => setCvv(e.target.value)}
-                    className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600"
-                    maxLength={3}
+                    onChange={handleCvvChange}
+                    className={`w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 ${
+                      errors.cvv ? "border-red-500" : ""
+                    }`}
+                    ref={cvvRef}
+                    maxLength={4}
                   />
+                  {errors.cvv && (
+                    <p className="mt-1 text-sm text-red-500">{errors.cvv}</p>
+                  )}
                 </div>
               </div>
 

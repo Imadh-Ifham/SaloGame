@@ -28,7 +28,11 @@ export const fetchXpBalance = createAsyncThunk(
 const xpSlice = createSlice({
   name: "xp",
   initialState,
-  reducers: {},
+  reducers: {
+    updateXpBalance: (state, action) => {
+      state.xpBalance = action.payload;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchXpBalance.pending, (state) => {
@@ -44,4 +48,5 @@ const xpSlice = createSlice({
   },
 });
 
+export const { updateXpBalance } = xpSlice.actions;
 export default xpSlice.reducer;

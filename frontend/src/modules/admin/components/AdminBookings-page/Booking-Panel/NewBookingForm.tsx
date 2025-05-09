@@ -30,6 +30,7 @@ import {
   fetchFirstAndNextBooking,
   fetchMachineStatus,
 } from "@/store/thunks/bookingThunk";
+import { FaDesktop, FaGamepad } from "react-icons/fa";
 
 const NewBookingForm: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -140,7 +141,7 @@ const NewBookingForm: React.FC = () => {
         )}
       </div>
 
-      <div className="mb-4 text-sm">
+      <div className="mb-4 text-sm space-y-2">
         <div className="flex justify-between items-center text-gray-700 dark:text-gray-300">
           <strong>Selected Machines:</strong>
           <button
@@ -152,46 +153,58 @@ const NewBookingForm: React.FC = () => {
             <PlusOutlined className="text-white" />
           </button>
         </div>
-        {/* Display other machines in a row */}
-        {otherMachines.length !== 0 ? (
-          <div className="flex flex-wrap gap-2 mt-2">
+        {/* Other Machines (PC) */}
+        {otherMachines.length > 0 && (
+          <div className="flex flex-wrap gap-4">
             {otherMachines.map((machine, index) => (
-              <span
+              <div
                 key={index}
-                className="rounded-xl bg-blue-600 px-4 py-1 text-yellow-50 font-bold border border-blue-700 shadow-lg cursor-default"
+                className="flex flex-col items-center bg-slate-100 dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-xl px-2 py-1 shadow-md w-16"
               >
-                {getMachineSerialNumber(machine.machineID)}
-              </span>
+                <FaDesktop className="h-6 w-6 text-green-500" />
+                <span className="mt-1 text-center text-xs text-gray-700 dark:text-gray-200 font-semibold">
+                  {getMachineSerialNumber(machine.machineID)}
+                </span>
+              </div>
             ))}
           </div>
-        ) : null}
-        {/* Display console machines in the existing format */}
-        <div className="space-y-2 mt-4">
-          {consoleMachines.map((machine, index) => (
-            <div key={index} className="flex items-center gap-2">
-              <span className="rounded-xl bg-blue-600 px-4 py-1 text-yellow-50 font-bold border border-blue-700 shadow-lg cursor-default">
-                {getMachineSerialNumber(machine.machineID)}
-              </span>
-              <span>{"=>"}</span>
-
-              <div className="flex gap-1">
-                {[1, 2, 4].map((count) => (
-                  <button
-                    key={count}
-                    className={`px-3 py-1 rounded-md border  transition-all duration-300 ease-in-out transform hover:translate-y-[-2px] hover:shadow-xl cursor-pointer ${
-                      machine.userCount === count
-                        ? "bg-blue-600 text-white"
-                        : "bg-white text-gray-600 border-gray-300"
-                    }`}
-                    onClick={() => handleUserCountChange(index, count)}
-                  >
-                    {count}
-                  </button>
-                ))}
+        )}
+        {/* Console Machines with User Count */}
+        {consoleMachines.length > 0 && (
+          <div className="space-y-4">
+            {consoleMachines.map((machine, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-xl py-2 px-4 shadow-sm"
+              >
+                <div className="flex items-center gap-3">
+                  <FaGamepad className="h-8 w-8 text-green-500" />
+                  <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
+                    {getMachineSerialNumber(machine.machineID)}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  {[1, 2, 4].map((count) => (
+                    <button
+                      key={count}
+                      onClick={() => {
+                          const actualIndex = formData.machines.findIndex((m) => m.machineID === machine.machineID);
+                          handleUserCountChange(actualIndex, count);
+                        }}
+                      className={`rounded-full px-3 py-1 text-sm font-semibold border transition-all duration-200 ${
+                        machine.userCount === count
+                          ? "bg-green-500 text-white shadow-md"
+                          : "bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-200 border-gray-300 dark:border-gray-500"
+                      }`}
+                    >
+                      {count}P
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="space-y-4">

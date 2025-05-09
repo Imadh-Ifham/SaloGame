@@ -1,25 +1,66 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import HomeLayout from "../layout/HomeLayout";
-import BookingForm from "../components/BookingForm";
+import LayoutSection from "../components/booking/Blueprint/LayoutSection";
+import { fetchMachines } from "@/store/thunks/machineThunks";
+import { useDispatch, useSelector } from "react-redux";
+import { AppDispatch } from "@/store/store";
+import { fetchMachineStatus } from "@/store/thunks/bookingThunk";
+import { getCurrentUTC } from "@/utils/date.util";
+import { selectFetched } from "@/store/selectors/machineSelector";
+import CheckAvailability from "../components/booking/booking-panel/CheckAvailability";
+import { updateBookingForm } from "@/store/slices/bookingSlice";
+import { setMoreMachine } from "@/store/slices/layoutSlice";
+import SelectedMachineDetail from "../components/booking/booking-panel/SelectedMachineDetail";
+import BookingForm from "../components/booking/booking-panel/BookingForm";
 
 const BookingPage: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const fetched = useSelector(selectFetched);
+  const [activeTab, setActiveTab] = useState("machine-details");
+
+  useEffect(() => {
+      const fetchData = async () => {
+        if (!fetched) {
+          await dispatch(fetchMachines());
+          await dispatch(
+            fetchMachineStatus({ startTime: getCurrentUTC(), duration: 60 })
+          );
+        }
+      };
+  
+      fetchData(); // Call the async function
+    }, [dispatch, fetched]);
+
+  useEffect(() => {
+
+    const date = new Date();
+    date.setMinutes(date.getMinutes() + 30);
+    dispatch(updateBookingForm({ startTime: date.toISOString() }));
+    dispatch(setMoreMachine(true))
+
+    return () => {
+      // This runs when the component unmounts
+      dispatch(setMoreMachine(false));
+    };
+  }, [dispatch]);
+
   return (
     <HomeLayout>
-      <div className="py-12 px-4 sm:px-6 lg:px-8 relative">
-        {/* View My Bookings Button */}
-        <button
-          className="absolute top-0 right-0 bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-4 rounded-lg m-4"
-        >
-          View My Bookings
-        </button>
-
-        {/* Booking Form Section */}
-        <div className="max-w-3xl mx-auto">
-          <h1 className="text-3xl font-bold text-center mb-8">Book Your Session</h1>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            <BookingForm />
-          </div>
+      <div className="flex justify-between h-full w-full max-w-[1200px] mx-auto px-4 py-4 gap-4">
+        <div />
+        <LayoutSection />
+        <div className="flex-1 flex-col relative w-full max-w-[400px] dark:bg-gray-800 p-4 my-7 rounded-lg bg-slate-200 ">
+          {activeTab === "machine-details" && (
+            <>
+              <CheckAvailability />
+              <SelectedMachineDetail setActiveTab={setActiveTab}/>
+            </>
+          )}
+          {activeTab === "customer-details" && (
+            <BookingForm setActiveTab={setActiveTab} />
+          )}
         </div>
+        <div />
       </div>
     </HomeLayout>
   );

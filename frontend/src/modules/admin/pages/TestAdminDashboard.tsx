@@ -1,11 +1,9 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   FiUsers,
   FiDollarSign,
   FiRefreshCw,
   FiAlertCircle,
-  FiSun,
-  FiMoon,
 } from "react-icons/fi";
 import axiosInstance from "@/axios.config";
 import SubscriptionGrowthChart from "../components/AdminMembership-page/SubscriptionGrowthChart";
@@ -28,7 +26,6 @@ export default function AdminMembershipPage() {
   const [recentActivities, setRecentActivities] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [darkMode, setDarkMode] = useState(true);
 
   useEffect(() => {
     const fetchStats = async () => {

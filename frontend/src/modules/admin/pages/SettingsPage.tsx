@@ -9,7 +9,7 @@ import {
 } from "@heroicons/react/24/outline";
 
 import { useAuth } from "../../../hooks/useAuth";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import AnalyticsDashboard from "./AnalyticsDashboard";
 import DashboardPage from "./DashboardPage";
 import UserAccountSummary from "../components/UserAnalytics/userStats";
@@ -17,6 +17,12 @@ import UserAccountSummary from "../components/UserAnalytics/userStats";
 const SettingsPage: React.FC = () => {
   const [selectedTab, setSelectedTab] = useState(0);
   const { user, loading } = useAuth();
+
+  const navigate = useNavigate();
+
+  const handleClick = () => {
+    navigate('/');
+  };
 
   // Handle loading state
   if (loading) {
@@ -147,6 +153,15 @@ const SettingsPage: React.FC = () => {
           </Tab.Panel>
         </Tab.Panels>
       </Tab.Group>
+
+      <div className="flex justify-center mt-4">
+      <button
+        onClick={handleClick}
+        className="px-6 py-2 bg-blue-600 text-white rounded-xl shadow-md hover:bg-blue-700 transition duration-300"
+      >
+        View Customer Site
+      </button>
+    </div>
     </div>
   );
 };

@@ -24,6 +24,7 @@ export interface ISubscription extends Document {
   lastRenewalAttempt?: Date;
   renewalFailureReason?: string;
 }
+
 const SubscriptionSchema: Schema = new Schema(
   {
     userId: {
@@ -73,12 +74,25 @@ const SubscriptionSchema: Schema = new Schema(
     paymentDetails: {
       cardNumber: {
         type: String,
-        // In production, you'd encrypt this field
       },
       expiryDate: {
         type: String,
       },
       // No CVV for security reasons
+    },
+    renewalAttempted: {
+      type: Boolean,
+      default: false,
+    },
+    renewalSuccessful: {
+      type: Boolean,
+      default: false,
+    },
+    lastRenewalAttempt: {
+      type: Date,
+    },
+    renewalFailureReason: {
+      type: String,
     },
   },
   { timestamps: true }

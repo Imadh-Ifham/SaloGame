@@ -204,12 +204,17 @@ const AdminEventPage: React.FC = () => {
         <Tab.Panels>
           {/* Event Management Panel */}
           <Tab.Panel>
-          <UpcomingEventsSection events={events} />
+          <UpcomingEventsSection
+            events={events.map((event) => ({
+              ...event,
+              category: event.category as "team-battle" | "single-battle",
+            }))}
+          />
             <AdminEventCard
               events={events}
               onEdit={handleEditEvent}
               onDelete={handleDeleteEvent}
-              onCreateEvent={() => setIsModalOpen(true)}
+              onCreateEvent={handleCreateEvent}
             />
           </Tab.Panel>
 
@@ -233,7 +238,7 @@ const AdminEventPage: React.FC = () => {
           <Tab.Panel>
             <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
 
-              <ReportsAnalyticsTab />
+              <ReportsAnalyticsTab teams={[]} />
             </div>
           </Tab.Panel>
         </Tab.Panels>

@@ -96,6 +96,7 @@ export class AutoRenewalService {
         renewalAttempted: true,
         lastRenewalAttempt: new Date(),
         renewalSuccessful: paymentSuccessful,
+        paymentStatus: "falied",
         renewalFailureReason: paymentSuccessful
           ? null
           : "Payment processing failed",

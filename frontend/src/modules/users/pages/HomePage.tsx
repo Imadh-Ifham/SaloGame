@@ -16,6 +16,7 @@ import offer1 from "../../../assets/offer1.jpg";
 import offer2 from "../../../assets/offer2.jpg";
 import offer3 from "../../../assets/offer3.jpg";
 import offer4 from "../../../assets/offer4.jpg";
+import { getAuth } from "firebase/auth";
 
 const HomePage: React.FC = () => {
   return (
@@ -33,6 +34,21 @@ const HeroSection: React.FC = () => {
   const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const images = [Leona, clancy, fifa, red, bros];
+
+  const auth = getAuth();
+
+  const handleClick = () => {
+    const user = auth.currentUser;
+
+    if (user) {
+      // User is signed in
+      navigate('/booking');
+    } else {
+      // Not signed in
+      alert("Please sign in to book a machine.");
+      navigate('/auth');
+    }
+  };
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -71,7 +87,7 @@ const HeroSection: React.FC = () => {
             Discover, Play, and Conquer in the Ultimate Gaming Universe
           </p>
           <button
-            onClick={() => navigate("/bookings")}
+            onClick={handleClick}
             className="px-8 py-4 bg-gradient-to-r from-green-500 to-emerald-600 text-lg font-semibold rounded-xl hover:scale-105 transition-transform duration-300 shadow-lg shadow-green-500/20"
           >
             Book Now
