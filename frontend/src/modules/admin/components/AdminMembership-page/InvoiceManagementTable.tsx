@@ -423,8 +423,8 @@ const InvoiceManagementTable: React.FC = () => {
       )}
 
       {/* Invoice Table */}
-      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="overflow-x-auto bg-white scrollbar-hide dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full divide-y scrollbar-hide divide-gray-200 dark:divide-gray-700">
           <thead className="bg-gray-50 dark:bg-gray-700">
             <tr>
               <th
