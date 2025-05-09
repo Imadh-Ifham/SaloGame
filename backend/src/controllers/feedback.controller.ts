@@ -2,40 +2,45 @@ import { Response } from 'express';
 import { AuthRequest } from '../middleware/types';
 import { Feedback } from '../models/feedback.model';
 
-export const createFeedback = async (req: AuthRequest, res: Response) => {
+// Fixed the return type to be void
+export const createFeedback = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     const { type, message, rating, category, isAnonymous, email } = req.body;
     
     // Validate required fields
     if (!type || !message || !category) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Missing required fields: type, message, and category are required'
       });
+      return; // Add return statement to exit function
     }
 
     // Validate type
     if (!['feedback', 'suggestion'].includes(type)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Invalid feedback type'
       });
+      return; // Add return statement
     }
 
     // Validate category
     if (!['general', 'service', 'facility', 'games', 'events'].includes(category)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Invalid category'
       });
+      return; // Add return statement
     }
 
     // Validate rating if type is feedback
     if (type === 'feedback' && (rating < 1 || rating > 5)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: 'Rating must be between 1 and 5'
       });
+      return; // Add return statement
     }
 
     const feedback = new Feedback({
@@ -68,7 +73,8 @@ export const createFeedback = async (req: AuthRequest, res: Response) => {
   }
 };
 
-export const getFeedback = async (req: AuthRequest, res: Response) => {
+// Fixed the return type to be void
+export const getFeedback = async (req: AuthRequest, res: Response): Promise<void> => {
   try {
     // Use lean() for better performance when you don't need Mongoose documents
     const feedback = await Feedback.find()
@@ -78,10 +84,11 @@ export const getFeedback = async (req: AuthRequest, res: Response) => {
       .lean();
 
     if (!feedback) {
-      return res.status(404).json({
+      res.status(404).json({
         success: false,
         message: 'No feedback found'
       });
+      return; // Add return statement
     }
 
     res.status(200).json({

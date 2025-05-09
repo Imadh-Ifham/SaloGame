@@ -17,7 +17,7 @@ const replySchema = new mongoose.Schema({
 });
 
 const feedbackSchema = new mongoose.Schema({
-  userId: {
+  user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: false

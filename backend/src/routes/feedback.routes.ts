@@ -1,39 +1,24 @@
 import express from 'express';
-import { 
-    createFeedback, 
-    getFeedback,
-    replyToFeedback,
-    updateFeedbackStatus 
+import { authMiddleware } from '../middleware/authMiddleware';
+import {
+  createFeedback,
+  getFeedback,
+  replyToFeedback,
+  updateFeedbackStatus
 } from '../controllers/feedback.controller';
-import { authMiddleware, managerOrOwner } from '../middleware/authMiddleware';
-import fileUpload from 'express-fileupload';
-import { RequestHandler } from 'express';
 
 const router = express.Router();
 
-router.get('/', authMiddleware, getFeedback as RequestHandler);
+// Public route for creating feedback
+router.post('/', createFeedback);
 
-router.post('/', 
-    authMiddleware,
-    fileUpload({
-        useTempFiles: true,
-        tempFileDir: '/tmp/',
-        limits: { fileSize: 5 * 1024 * 1024 },
-        abortOnLimit: true
-    }),
-    createFeedback as RequestHandler
-);
+// Get all feedback - requires authentication
+router.get('/', authMiddleware, getFeedback);
 
-router.post('/:feedbackId/reply', 
-    authMiddleware, 
-    managerOrOwner, 
-    replyToFeedback as RequestHandler
-);
+// Reply to feedback - requires authentication
+router.post('/:feedbackId/reply', authMiddleware, replyToFeedback);
 
-router.patch('/:feedbackId/status', 
-    authMiddleware, 
-    managerOrOwner, 
-    updateFeedbackStatus as RequestHandler
-);
+// Update feedback status - requires authentication
+router.patch('/:feedbackId/status', authMiddleware, updateFeedbackStatus);
 
 export default router;
