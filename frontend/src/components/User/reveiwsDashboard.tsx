@@ -7,6 +7,7 @@ import axiosInstance from '@/axios.config';
 import { format } from 'date-fns';
 import { io } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
+import HomeLayout from '../../modules/users/layout/HomeLayout';
 
 interface Reply {
   _id: string;
@@ -170,69 +171,72 @@ const ReviewsDashboard = () => {
     ? feedbacks 
     : feedbacks.filter(f => f.category.toLowerCase() === activeFilter.toLowerCase());
 
-  if (loading) {
+ if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen bg-gray-900">
-        <div className="animate-pulse flex flex-col items-center">
-          <div className="relative">
-            <FaGamepad className="text-6xl text-green-500 mb-4 animate-pulse" />
-            <div className="absolute -inset-2 rounded-full bg-green-500 opacity-20 animate-ping"></div>
+      <HomeLayout>
+        <div className="flex justify-center items-center min-h-[calc(100vh-200px)]">
+          <div className="animate-pulse flex flex-col items-center">
+            <div className="relative">
+              <FaGamepad className="text-6xl text-green-500 mb-4 animate-pulse" />
+              <div className="absolute -inset-2 rounded-full bg-green-500 opacity-20 animate-ping"></div>
+            </div>
+            <p className="text-gray-300 mt-4">Loading game feedback...</p>
           </div>
-          <p className="text-gray-300 mt-4">Loading game feedback...</p>
         </div>
-      </div>
+      </HomeLayout>
     );
   }
 
-  if (error) {
+ if (error) {
     return (
-      <div className="text-center py-8 bg-gray-900 min-h-screen">
-        <p className="text-red-500">{error}</p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
-        >
-          Try Again
-        </button>
-      </div>
+      <HomeLayout>
+        <div className="text-center py-8">
+          <p className="text-red-500">{error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
+          >
+            Try Again
+          </button>
+        </div>
+      </HomeLayout>
     );
   }
 
   if (!feedbacks.length) {
     return (
-      <div className="min-h-screen bg-gray-900 py-12 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-4xl mx-auto text-center">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <FaGamepad className="text-6xl text-green-500 animate-bounce" />
-              <div className="absolute -inset-2 rounded-full bg-green-500 opacity-20 animate-ping"></div>
+      <HomeLayout>
+        <div className="py-12 px-4 sm:px-6 lg:px-8">
+          <div className="max-w-4xl mx-auto text-center">
+            <div className="flex justify-center mb-6">
+              <div className="relative">
+                <FaGamepad className="text-6xl text-green-500 animate-bounce" />
+                <div className="absolute -inset-2 rounded-full bg-green-500 opacity-20 animate-ping"></div>
+              </div>
             </div>
+            <h1 className="text-3xl font-bold text-white mb-4">Game Cafe Feedback</h1>
+            <p className="text-gray-400 mb-8">No reviews yet. Be the first to share your gaming experience!</p>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => navigate('/support/feedback')}
+              className="flex items-center gap-2 px-6 py-3 bg-green-600 rounded-lg text-white hover:bg-green-700 transition-colors mx-auto shadow-lg"
+            >
+              <FiPlus /> Share Your Experience
+            </motion.button>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-4">Game Cafe Feedback</h1>
-          <p className="text-gray-400 mb-8">No reviews yet. Be the first to share your gaming experience!</p>
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/support/feedback')}
-            className="flex items-center gap-2 px-6 py-3 bg-green-600 rounded-lg text-white hover:bg-green-700 transition-colors mx-auto shadow-lg"
-          >
-            <FiPlus /> Share Your Experience
-          </motion.button>
         </div>
-      </div>
+      </HomeLayout>
     );
   }
 
   return (
-    <div className="relative min-h-screen bg-black py-8 px-4 sm:px-6 lg:px-8">
-    {/* Dot pattern overlay matching HomeLayout */}
-    <div className="absolute inset-0 pattern-dots pattern-green-300 dark:pattern-green-950 
-                    pattern-bg-transparent pattern-opacity-5 pattern-size-2 pointer-events-none"></div>
+    <HomeLayout>
+    <div className="relative min-h-screen py-8 px-4 sm:px-6 lg:px-8">
+      
+      <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/30 to-transparent pointer-events-none"></div>
 
-    {/* Dark overlay to make content more readable */}
-    <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/70 to-black/50 pointer-events-none"></div>
-
-    <div className="relative z-10 max-w-7xl mx-auto">
+      <div className="relative z-10 max-w-7xl mx-auto">
         {/* Top Navigation */}
         <div className="flex justify-between items-center mb-8">
           <motion.button
@@ -333,19 +337,19 @@ const ReviewsDashboard = () => {
 
         {/* Stats Bar */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-gray-800 p-4 rounded-lg border-l-4 border-green-500 shadow">
+          <div className="bg-gray-800/80 p-4 rounded-lg border-l-4 border-green-500 shadow backdrop-blur-sm">
             <h3 className="text-gray-400 text-sm">Total Feedback</h3>
             <p className="text-2xl font-bold text-white">{feedbacks.length}</p>
           </div>
-          <div className="bg-gray-800 p-4 rounded-lg border-l-4 border-yellow-500 shadow">
+          <div className="bg-gray-800/80 p-4 rounded-lg border-l-4 border-yellow-500 shadow backdrop-blur-sm">
             <h3 className="text-gray-400 text-sm">Pending</h3>
             <p className="text-2xl font-bold text-white">{feedbacks.filter(f => f.status === 'pending').length}</p>
           </div>
-          <div className="bg-gray-800 p-4 rounded-lg border-l-4 border-blue-500 shadow">
+          <div className="bg-gray-800/80 p-4 rounded-lg border-l-4 border-blue-500 shadow backdrop-blur-sm">
             <h3 className="text-gray-400 text-sm">Reviewed</h3>
             <p className="text-2xl font-bold text-white">{feedbacks.filter(f => f.status === 'reviewed').length}</p>
           </div>
-          <div className="bg-gray-800 p-4 rounded-lg border-l-4 border-green-500 shadow">
+          <div className="bg-gray-800/80 p-4 rounded-lg border-l-4 border-green-500 shadow backdrop-blur-sm">
             <h3 className="text-gray-400 text-sm">Resolved</h3>
             <p className="text-2xl font-bold text-white">{feedbacks.filter(f => f.status === 'resolved').length}</p>
           </div>
@@ -359,7 +363,7 @@ const ReviewsDashboard = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3 }}
-              className="bg-gray-800 rounded-xl p-6 shadow-lg border border-gray-700 hover:border-green-500 transition-all hover:shadow-xl"
+              className="bg-gray-800/80 rounded-xl p-6 shadow-lg border border-gray-700 hover:border-green-500 transition-all hover:shadow-xl backdrop-blur-sm"
             >
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0 relative">
@@ -393,7 +397,7 @@ const ReviewsDashboard = () => {
                     </div>
                   </div>
                   
-                  <div className="mt-3 bg-gray-900 p-4 rounded-lg border border-gray-700">
+                  <div className="mt-3 bg-gray-900/70 p-4 rounded-lg border border-gray-700">
                     <p className="text-gray-300">{feedback.message}</p>
                   </div>
                   
@@ -427,7 +431,7 @@ const ReviewsDashboard = () => {
                       key={reply._id}
                       className="pl-4 ml-4 border-l-2 border-green-500"
                     >
-                      <div className="bg-gray-700 rounded-lg p-4 shadow">
+                      <div className="bg-gray-700/80 rounded-lg p-4 shadow backdrop-blur-sm">
                         <div className="flex justify-between items-start mb-2">
                           <div>
                             <p className="text-white text-sm font-medium">
@@ -467,6 +471,7 @@ const ReviewsDashboard = () => {
         </div>
       </div>
     </div>
+    </HomeLayout>
   );
 };
 
