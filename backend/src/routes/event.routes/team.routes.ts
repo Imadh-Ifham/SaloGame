@@ -17,10 +17,10 @@ const router = express.Router();
 router.post('/:eventId/register-team', registerTeamForEvent);
 router.post('/register', upload.single('teamLogo'), createTeam);
 router.get('/verify-member/:token', verifyMember);
-router.get('/', getAllTeams);
-router.get('/:teamId', getTeamById);
 router.put('/:teamId', updateTeam);
 router.delete('/:teamId', deleteTeam);
+router.get('/', getAllTeams);
+router.get('/:teamId', getTeamById);
 
 
 

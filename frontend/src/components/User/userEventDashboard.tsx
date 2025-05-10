@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { FiCalendar, FiUsers, FiClock } from "react-icons/fi";
 import { GiTrophyCup } from "react-icons/gi";
 import { IoMdPerson } from "react-icons/io";
-import { FaUsers } from "react-icons/fa";
+import { FaUsers, FaMedal, FaTrophy, FaAward } from "react-icons/fa";
 import { format } from "date-fns";
 import axiosInstance from "@/axios.config";
 
@@ -33,17 +33,21 @@ const UserEventDashboard: React.FC = () => {
         
         // Get token and set headers if available
         const token = localStorage.getItem("token");
-        if (token) {
-          axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        if (!token) {
+          setError("You need to be logged in to view your registered events");
+          setLoading(false);
+          return;
         }
         
-        // Get user email (either from API or localStorage)
+        axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+        
+        // Get user email - critical for identifying user's events
         let userEmail = localStorage.getItem("userEmail");
         
         try {
-          const userResponse = await axiosInstance.get('/users/me');
+          // This API call should return the current user's profile including email
+          const userResponse = await axiosInstance.get('/users/profile');
           userEmail = userResponse.data.email;
-          // Save email for future use
           if (userEmail) {
             localStorage.setItem("userEmail", userEmail);
           }
@@ -57,7 +61,7 @@ const UserEventDashboard: React.FC = () => {
           }
         }
         
-        // Step 2: Fetch all events - critical for showing any data
+        // Fetch all events the user might be registered for
         let allEvents = [];
         try {
           const eventsResponse = await axiosInstance.get('/events');
@@ -72,27 +76,26 @@ const UserEventDashboard: React.FC = () => {
           return;
         }
         
-        // Step 3: Attempt to fetch user's team registrations but don't fail if it doesn't exist
+        // Fetch user's team registrations
         let userTeams = [];
         try {
           const teamsResponse = await axiosInstance.get('/teams/my-teams');
           userTeams = teamsResponse.data.data || [];
-          if (!Array.isArray(userTeams)) {
-            console.warn("Teams data is not in expected format");
-            userTeams = [];
-          }
+          console.log("User teams data:", userTeams); // Debug log for team data
         } catch (err) {
           console.info("Team data unavailable - continuing without team events");
+          userTeams = [];
         }
         
         const userRegistrations: UserEvent[] = [];
         
-        // Process single battle registrations if we have user email
+        // Process single battle registrations
         if (userEmail && Array.isArray(allEvents)) {
           allEvents.forEach((event: any) => {
             if (!event) return;
             
             if (event.category === "single-battle" && Array.isArray(event.registeredEmails)) {
+              // Check if user is registered for this event
               const userReg = event.registeredEmails.find(
                 (reg: any) => reg && reg.email === userEmail
               );
@@ -120,7 +123,7 @@ const UserEventDashboard: React.FC = () => {
           });
         }
         
-        // Process team battle registrations only if we have team data
+        // Process team battle registrations
         if (Array.isArray(userTeams) && userTeams.length > 0) {
           userTeams.forEach((team: any) => {
             if (!team) return;
@@ -129,7 +132,7 @@ const UserEventDashboard: React.FC = () => {
               team.eventRegistrations.forEach((reg: any) => {
                 if (!reg || !reg.eventId) return;
                 
-                // Find event details
+                // Find matching event
                 const event = allEvents.find((e: any) => e && e._id === reg.eventId);
                 
                 if (event) {
@@ -145,12 +148,20 @@ const UserEventDashboard: React.FC = () => {
                   let placement;
                   if (Array.isArray(event.placements) && event.placements.length > 0) {
                     const teamPlacement = event.placements.find(
-                      (p: any) => p && p.teamId === team.teamId
+                      (p: any) => p && p.teamId === team._id
                     );
                     if (teamPlacement) {
                       placement = teamPlacement.placement;
                     }
                   }
+                  
+                  // Debug log for team event matches
+                  console.log("Team event match:", {
+                    teamId: team._id,
+                    teamName: team.teamName,
+                    eventId: reg.eventId,
+                    foundEvent: !!event
+                  });
                   
                   userRegistrations.push({
                     id: event._id,
@@ -169,6 +180,33 @@ const UserEventDashboard: React.FC = () => {
           });
         }
         
+        // Sort events by date (upcoming first, then ongoing, then completed)
+        userRegistrations.sort((a, b) => {
+          // First by status priority
+          const statusPriority = { upcoming: 0, ongoing: 1, completed: 2 };
+          if (statusPriority[a.status] !== statusPriority[b.status]) {
+            return statusPriority[a.status] - statusPriority[b.status];
+          }
+          
+          // Then by start date (newest first for upcoming/ongoing)
+          if (a.status !== 'completed') {
+            return new Date(b.startDateTime).getTime() - new Date(a.startDateTime).getTime();
+          }
+          
+          // For completed events, sort by placement if available (winners first)
+          if (a.placement && b.placement) {
+            return a.placement - b.placement;
+          } else if (a.placement) {
+            return -1;
+          } else if (b.placement) {
+            return 1;
+          }
+          
+          // Finally by end date (most recently completed first)
+          return new Date(b.endDateTime).getTime() - new Date(a.endDateTime).getTime();
+        });
+        
+        console.log("User registered events:", userRegistrations);
         setUserEvents(userRegistrations);
         setLoading(false);
       } catch (err: any) {
@@ -205,9 +243,15 @@ const UserEventDashboard: React.FC = () => {
         );
       case "completed":
         return event.placement ? (
-          <span className={`text-xs px-2 py-1 rounded-full ${
-            event.placement <= 3 ? 'text-yellow-400 bg-yellow-500/10' : 'text-gray-400 bg-gray-500/10'
+          <span className={`text-xs px-2 py-1 rounded-full flex items-center gap-1 ${
+            event.placement === 1 ? 'bg-yellow-500/20 text-yellow-400' : 
+            event.placement === 2 ? 'bg-gray-300/20 text-gray-300' : 
+            event.placement === 3 ? 'bg-amber-700/20 text-amber-600' : 
+            'bg-gray-500/10 text-gray-400'
           }`}>
+            {event.placement === 1 ? <FaTrophy className="text-yellow-400" /> :
+             event.placement === 2 ? <FaMedal className="text-gray-300" /> :
+             event.placement === 3 ? <FaAward className="text-amber-600" /> : null}
             #{event.placement}
           </span>
         ) : (
@@ -228,7 +272,7 @@ const UserEventDashboard: React.FC = () => {
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold text-gray-100 flex items-center gap-2">
             <GiTrophyCup className="text-yellow-400" />
-            <span>My Events</span>
+            <span>My Registered Events</span>
           </h3>
           <button
             onClick={() => navigate('/events')}
