@@ -626,8 +626,7 @@ export const changeSubscriptionPlan = async (
 
     // Calculate cost of new subscription for the same duration
     const newDailyRate = newMembership.price / 30;
-    const newSubscriptionCost =
-      newDailyRate * currentSubscription.duration * 30;
+    const newSubscriptionCost = newDailyRate * remainingDays;
 
     // Calculate price difference (positive means user pays more, negative means user gets credit)
     const priceDifference = newSubscriptionCost - remainingValue;

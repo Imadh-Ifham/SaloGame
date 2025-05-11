@@ -24,6 +24,7 @@ import {
   DollarOutlined,
   GiftOutlined,
 } from "@ant-design/icons";
+import toast from "react-hot-toast";
 
 interface ModalProps {
   bookingID: string;
@@ -33,7 +34,7 @@ interface ModalProps {
 
 const BookingModals: React.FC<{ bookingID: string }> = ({ bookingID }) => {
   const bookingModalString = useSelector(selectBookingModal);
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const formData = useSelector(selectFormData);
   const selectedMachine = useSelector(selectSelectedMachine);
   const machineID = selectedMachine ? selectedMachine._id : null;
@@ -70,7 +71,13 @@ const BookingModals: React.FC<{ bookingID: string }> = ({ bookingID }) => {
           bookingData={bookingDataReq}
         />
       )}
-      {bookingModalString === "extend" && <ExtendBookingModal />}
+      {bookingModalString === "extend" && (
+        <ExtendBookingModal
+          bookingID={bookingID}
+          statusData={statusData}
+          bookingData={bookingDataReq}
+        />
+      )}
       {bookingModalString === "start" && (
         <StartBookingModal
           bookingID={bookingID}
@@ -135,14 +142,35 @@ const CancelBookingModal: React.FC<ModalProps> = ({
   );
 };
 
-// Extend Booking Modal with Select Input inside Sentence
-const ExtendBookingModal: React.FC = () => {
-  const { loading, error } = useSelector(selectBookingStatus);
+// Extend Booking Modal - Allows user to extend booking time
+const ExtendBookingModal: React.FC<ModalProps> = ({ bookingID }) => {
+  const { loading } = useSelector(selectBookingStatus);
   const dispatch = useDispatch();
-  const [extendTime, setExtendTime] = useState("30min");
+  const [extendTime, setExtendTime] = useState("30");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleExtend = async () => {
-    // Handle time extension logic
+    setIsSubmitting(true);
+    try {
+      const data = { bookingID, extendBy: extendTime };
+      console.log("Extend Booking Data:", data);
+
+      const response = await axiosInstance.put(
+        "/bookings/extend-booking",
+        data
+      );
+
+      toast.success(response.data.message || "Booking extended successfully");
+      await new Promise((resolve) => setTimeout(resolve, 1000)); // Simulated delay
+      dispatch(resetBookingModal()); // Close modal
+    } catch (err: any) {
+      const message =
+        err.response?.data?.message || "Something went wrong while extending!";
+      toast.error(message);
+      console.error("Extension error:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -151,7 +179,6 @@ const ExtendBookingModal: React.FC = () => {
         Select how long you want to extend the booking:
       </p>
 
-      {/* Select Dropdown inside Sentence */}
       <div className="flex items-center space-x-2">
         <p className="text-gray-700 dark:text-gray-300">I want to extend by</p>
         <select
@@ -159,14 +186,12 @@ const ExtendBookingModal: React.FC = () => {
           onChange={(e) => setExtendTime(e.target.value)}
           className="px-3 py-2 border rounded dark:bg-gray-800 dark:text-white"
         >
-          <option value="30min">30 minutes</option>
-          <option value="1hour">1 hour</option>
-          <option value="1h30min">1 hour 30 minutes</option>
-          <option value="2hours">2 hours</option>
+          <option value="30">30 minutes</option>
+          <option value="60">1 hour</option>
+          <option value="90">1 hour 30 minutes</option>
+          <option value="120">2 hours</option>
         </select>
       </div>
-
-      {error && <div className="text-red-500 text-sm text-center">{error}</div>}
 
       <div className="flex justify-end space-x-2">
         <Button
@@ -179,10 +204,10 @@ const ExtendBookingModal: React.FC = () => {
         <Button
           type="button"
           onClick={handleExtend}
+          disabled={loading || isSubmitting}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition"
-          disabled={loading}
         >
-          {loading ? "Extending..." : `Confirm Extension`}
+          {isSubmitting ? "Extending..." : "Confirm Extension"}
         </Button>
       </div>
     </div>
@@ -221,8 +246,7 @@ const StartBookingModal: React.FC<ModalProps> = ({
 
       // API call to start booking
       const response = await axiosInstance.put("bookings/start-booking", data);
-
-      alert(response.data.message); // Show success message
+      toast.success(response.data.message || "Booking started successfully");
     } catch (error) {
       console.error("Error starting booking:", error);
     }
@@ -369,8 +393,7 @@ const EndBookingModal: React.FC<ModalProps> = ({
       };
       // API call to create a transaction
       const response = await axiosInstance.put("bookings/end-booking", data);
-
-      alert(response.data.message); // Show success message
+      toast.success(response.data.message || "Booking ended successfully");
     } catch (error) {
       console.error("Error creating transaction:", error);
     }

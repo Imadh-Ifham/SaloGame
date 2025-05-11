@@ -227,8 +227,12 @@ export const createBooking = async (
     const session = await Booking.startSession();
     session.startTransaction();
 
+    let userID = null;
+    mode !== "admin" ? (userID = req.user.id) : null;
+
     try {
       const newBooking = new Booking({
+        userID,
         customerName,
         phoneNumber,
         notes,
@@ -338,6 +342,61 @@ export const updateBookingStatus = async (
     await booking.save();
 
     res.json({ message: "Booking status updated successfully." });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unexpected server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getBookingByUserID = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    const userID = req.user.id;
+
+    // Get the current time
+    const currentTime = new Date();
+
+    // Find the next immediate booking for the user
+    const booking = await Booking.findOne({
+      userID,
+      endTime: { $gt: currentTime }, // Filter bookings where endTime is greater than the current time
+    })
+      .sort({ startTime: 1 }) // Sort by startTime in ascending order to get the next immediate booking
+      .select("-isBooked -reservedAt -createdAt -updatedAt -__v")
+      .populate({
+        path: "transactionID",
+        select: "-userID -__v -createdAt", // Exclude userID
+      })
+      .populate({
+        path: "machines.machineID", // Populate machine details
+        select: "machineCategory serialNumber", // Exclude unnecessary fields
+      })
+      .lean();
+
+    if (!booking) {
+      res.status(404).json({ message: "No upcoming bookings found." });
+      return;
+    }
+
+    // Extract transaction details separately
+    const { transactionID, ...bookingData } = booking;
+
+    // Structure the response
+    const structuredResponse = {
+      booking: bookingData,
+      transaction: transactionID || null, // Ensure transaction is explicitly null if not present
+    };
+
+    res.json({ status: "Success", data: structuredResponse });
   } catch (error) {
     res.status(500).json({
       message: "Unexpected server error",
@@ -779,5 +838,116 @@ export const getUpcomingBookings = async (
       error: "Error fetching upcoming bookings",
       message: (error as Error).message || "Something went wrong.",
     });
+  }
+};
+
+export const extendBooking = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  const session = await Booking.startSession();
+
+  try {
+    session.startTransaction();
+
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+
+    const { bookingID, extendBy } = req.body;
+
+    console.log("Booking ID:", bookingID);
+    console.log("Extend By (raw):", extendBy);
+
+    // Parse and validate extendBy
+    const extendByMinutes = parseInt(extendBy);
+    if (!bookingID || isNaN(extendByMinutes) || extendByMinutes <= 0) {
+      res.status(400).json({
+        message: "Valid bookingID and extendBy (positive number) are required.",
+      });
+      return;
+    }
+
+    // Fetch booking with session
+    const booking = await Booking.findById(bookingID).session(session);
+    if (!booking) {
+      res.status(404).json({ message: "Booking not found." });
+      return;
+    }
+
+    // Prevent extension if booking is already completed
+    if (booking.status === "Completed") {
+      res.status(400).json({ message: "Cannot extend a completed booking." });
+      return;
+    }
+
+    // Calculate new end time
+    const newEndTime = new Date(booking.endTime);
+    newEndTime.setMinutes(newEndTime.getMinutes() + extendByMinutes);
+
+    const currentTime = new Date();
+    if (newEndTime < currentTime) {
+      res.status(400).json({
+        message: "New end time cannot be in the past.",
+      });
+      return;
+    }
+
+    // Check for overlaps for each machine
+    for (const machine of booking.machines) {
+      const isAvailable = await isSlotAvailable(
+        machine.machineID.toString(),
+        booking.startTime,
+        newEndTime,
+        (booking._id as string).toString()
+      );
+
+      if (!isAvailable) {
+        res.status(400).json({
+          message: `Machine ${machine.machineID} is already booked for the selected time slot.`,
+        });
+        return;
+      }
+    }
+
+    // Recalculate total price
+    const newPrice = await calculateTotalPrice(
+      booking.startTime,
+      newEndTime,
+      booking.machines
+    );
+
+    // Update booking and transaction atomically
+    booking.endTime = newEndTime;
+
+    const transaction = await Transaction.findById(
+      booking.transactionID
+    ).session(session);
+    if (!transaction) {
+      res.status(404).json({ message: "Transaction not found." });
+      return;
+    }
+
+    transaction.amount = newPrice;
+
+    await transaction.save({ session });
+    await booking.save({ session });
+
+    await session.commitTransaction();
+
+    res.status(200).json({
+      message: `Booking successfully extended by ${extendByMinutes} minutes.`,
+      booking,
+    });
+  } catch (error) {
+    console.error("Error extending booking:", error);
+    await session.abortTransaction();
+    res.status(500).json({
+      message: "An error occurred while extending the booking.",
+      error: (error as Error).message,
+    });
+  } finally {
+    session.endSession(); // Ensure session ends in all paths
   }
 };

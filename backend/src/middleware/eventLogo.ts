@@ -7,12 +7,14 @@ const storage = new CloudinaryStorage({
   params: async (req, file) => ({
     public_id: `${Date.now()}-${file.originalname}`,
     format: file.mimetype.split("/")[1], // Extract file format (jpg, png, etc.)
-    limits: {
-      fileSize: 5 * 1024 * 1024 // 5MB limit
-    }
   }),
 });
 
-const upload = multer({ storage });
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+});
 
 export default upload;

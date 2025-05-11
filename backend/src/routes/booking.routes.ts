@@ -2,8 +2,10 @@ import express from "express";
 import {
   createBooking,
   endBooking,
+  extendBooking,
   generateReport,
   getBookingByID,
+  getBookingByUserID,
   getBookingLog,
   getBookingStatusForAllMachines,
   getFirstAndNextBooking,
@@ -20,10 +22,12 @@ router.post("/get-first-and-next", getFirstAndNextBooking);
 router.post("/machines-status", getBookingStatusForAllMachines);
 router.patch("/update-status", updateBookingStatus);
 router.post("/get-booking/:bookingID", getBookingByID);
+router.get("/get-booking", getBookingByUserID);
 router.post("/get-log", getBookingLog);
 router.get("/report", generateReport);
 router.get("/upcoming", getUpcomingBookings);
 router.put("/end-booking", endBooking);
 router.put("/start-booking", startBooking);
+router.put("/extend-booking", extendBooking);
 
 export default router;

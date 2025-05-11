@@ -18,6 +18,7 @@ interface MembershipPlan {
   name: string;
   price: number;
   xpRate: number;
+  tagline?: string;
   benefits: string[];
   subscriberCount: number;
   isActive: boolean;
@@ -313,9 +314,9 @@ const MembershipPlansTable: React.FC = () => {
                   name: editingPlan.name,
                   price: editingPlan.price,
                   xpRate: editingPlan.xpRate,
-                  tagline: "",
+                  tagline: editingPlan.tagline || "",
                   benefits: editingPlan.benefits,
-                  isActive: true,
+                  isActive: editingPlan.isActive,
                 }
               : undefined
           }
