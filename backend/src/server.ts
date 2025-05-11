@@ -37,6 +37,16 @@ initializeSocketIO(io);
 // Socket.IO connection handling
 io.on("connection", (socket) => {
   console.log(`Client connected: ${socket.id}`);
+
+  // Handle admin replies to feedback
+  socket.on('adminReply', (updatedFeedback) => {
+    socket.broadcast.emit('feedbackReplied', updatedFeedback);
+  });
+
+  // Handle admin editing feedback replies
+  socket.on('adminEditReply', (updatedFeedback) => {
+    socket.broadcast.emit('feedbackReplyEdited', updatedFeedback);
+  });
   
   socket.on("disconnect", () => {
     console.log(`Client disconnected: ${socket.id}`);

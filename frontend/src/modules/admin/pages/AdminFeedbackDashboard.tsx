@@ -4,10 +4,11 @@ import { FaStar, FaGamepad, FaReply } from 'react-icons/fa';
 import { format } from 'date-fns';
 import axiosInstance from '@/axios.config';
 import { toast } from 'react-hot-toast';
-import FeedbackChart from "../components/FeedbackChart"
+import FeedbackChart from "../components/FeedbackChart";
 import { PDFViewer } from '@react-pdf/renderer';
 import FeedbackSummaryPDF from '../components/FeedbackSummaryPDF';
 import { FiDownload } from 'react-icons/fi';
+import { io, Socket } from 'socket.io-client';
 
 interface FeedbackReply {
   _id: string;
@@ -47,9 +48,47 @@ const AdminFeedbackDashboard: React.FC = () => {
   const [editingReplyId, setEditingReplyId] = useState<string | null>(null);
   const [editedReplyText, setEditedReplyText] = useState('');
   const [showPDF, setShowPDF] = useState(false);
+  const [socket, setSocket] = useState<Socket | null>(null);
 
   useEffect(() => {
     fetchFeedbacks();
+    
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:4000';
+    const socketUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
+    
+    const newSocket = io(socketUrl, {
+      transports: ['websocket'],
+      reconnection: true,
+      reconnectionAttempts: 5,
+      reconnectionDelay: 1000,
+    });
+    
+    newSocket.on('connect', () => {
+      console.log('Admin connected to feedback socket');
+    });
+    
+    newSocket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+    
+    // Listen for new feedback submissions
+    newSocket.on('newFeedback', (newFeedback: Feedback) => {
+      setFeedbacks(prev => [newFeedback, ...prev]);
+      toast.success('New feedback received!');
+    });
+    
+    // Listen for feedback status updates
+    newSocket.on('feedbackStatusUpdate', (updatedFeedback: Feedback) => {
+      setFeedbacks(prev => prev.map(f => 
+        f._id === updatedFeedback._id ? updatedFeedback : f
+      ));
+    });
+    
+    setSocket(newSocket);
+    
+    return () => {
+      newSocket.disconnect();
+    };
   }, []);
 
   const fetchFeedbacks = async () => {
@@ -77,6 +116,9 @@ const AdminFeedbackDashboard: React.FC = () => {
       });
   
       if (response.data.success) {
+        // Emit socket event with updated feedback
+        socket?.emit('adminReply', response.data.data);
+        
         toast.success('Reply sent successfully');
         setReplyText('');
         setActiveReplyId(null);
@@ -93,6 +135,9 @@ const AdminFeedbackDashboard: React.FC = () => {
       const response = await axiosInstance.patch(`/feedback/${feedbackId}/status`, { status });
       
       if (response.data.success) {
+        // Emit socket event with updated status
+        socket?.emit('statusUpdate', response.data.data);
+        
         toast.success('Status updated successfully');
         setFeedbacks(prev => prev.map(f => 
           f._id === feedbackId ? { ...f, status } : f
@@ -115,6 +160,9 @@ const AdminFeedbackDashboard: React.FC = () => {
       });
   
       if (response.data.success) {
+        // Emit socket event with updated feedback
+        socket?.emit('adminEditReply', response.data.data);
+        
         toast.success('Reply updated successfully');
         setEditingReplyId(null);
         setEditedReplyText('');
@@ -124,7 +172,6 @@ const AdminFeedbackDashboard: React.FC = () => {
       toast.error(err.response?.data?.message || 'Failed to update reply');
     }
   };
-
 
   const renderStars = (rating: number = 0) => (
     <div className="flex gap-1">
@@ -162,12 +209,12 @@ const AdminFeedbackDashboard: React.FC = () => {
           </p>
         </div>
         <button
-    onClick={() => setShowPDF(!showPDF)}
-    className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-  >
-    <FiDownload size={16} />
-    <span>{showPDF ? 'Hide Report' : 'Generate Report'}</span>
-  </button>
+          onClick={() => setShowPDF(!showPDF)}
+          className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          <FiDownload size={16} />
+          <span>{showPDF ? 'Hide Report' : 'Generate Report'}</span>
+        </button>
         
         {/* Analytics Chart */}
         <FeedbackChart feedbacks={feedbacks} />

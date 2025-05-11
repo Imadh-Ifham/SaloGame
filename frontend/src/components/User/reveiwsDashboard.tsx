@@ -5,7 +5,7 @@ import { FiPlus, FiHome } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/axios.config';
 import { format } from 'date-fns';
-import { io } from 'socket.io-client';
+import { io, Socket } from 'socket.io-client';
 import { toast } from 'react-hot-toast';
 import HomeLayout from '../../modules/users/layout/HomeLayout';
 
@@ -45,7 +45,7 @@ const ReviewsDashboard = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let socket: any;
+    let socket: Socket;
   
     const fetchFeedbacks = async () => {
       try {
@@ -89,7 +89,7 @@ const ReviewsDashboard = () => {
         console.log('Connected to feedback socket');
       });
     
-      socket.on('connect_error', (error: Error) => {
+      socket.on('connect_error', (error) => {
         console.error('Socket connection error:', error);
         toast.error('Real-time updates unavailable');
       });
@@ -104,6 +104,15 @@ const ReviewsDashboard = () => {
         });
       });
     
+      socket.on('feedbackReplyEdited', (updatedFeedback: Feedback) => {
+        setFeedbacks(prev => prev.map(f => 
+          f._id === updatedFeedback._id ? updatedFeedback : f
+        ));
+        toast.success('Reply updated!', {
+          duration: 3000
+        });
+      });
+      
       socket.on('feedbackUpdated', (updatedFeedback: Feedback) => {
         setFeedbacks(prev => prev.map(f => 
           f._id === updatedFeedback._id ? updatedFeedback : f
