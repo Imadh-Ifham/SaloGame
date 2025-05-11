@@ -166,59 +166,65 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
     return teamNameValid && leaderEmailValid && contactValid && memberEmailsValid;
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    // Mark all fields as touched
-    setTouched({
-      teamName: true,
-      teamLeaderEmail: true,
-      contactNumber: true,
-      teamLogo: true,
-      memberEmails: memberEmails.map(() => true)
-    });
-    
-    // Validate all fields
-    const nameError = validateField('teamName', formData.teamName);
-    const leaderError = validateField('teamLeaderEmail', formData.teamLeaderEmail);
-    const contactError = validateField('contactNumber', formData.contactNumber);
-    const memberErrors = memberEmails.map(email => validateField('memberEmail', email));
-    
-    setErrors({
-      teamName: nameError,
-      teamLeaderEmail: leaderError,
-      contactNumber: contactError,
-      teamLogo: '',
-      memberEmails: memberErrors
-    });
-    
-    // If there are errors, stop submission
-    if (nameError || leaderError || contactError || memberErrors.some(err => err)) {
-      setError('Please fix the errors in the form');
-      return;
-    }
-    
-    setLoading(true);
-    setError('');
+// Modify the handleSubmit function
+const handleSubmit = async (e: React.FormEvent) => {
+  e.preventDefault();
+  
+  // Mark all fields as touched
+  setTouched({
+    teamName: true,
+    teamLeaderEmail: true,
+    contactNumber: true,
+    teamLogo: true,
+    memberEmails: memberEmails.map(() => true)
+  });
+  
+  // Validate all fields
+  const nameError = validateField('teamName', formData.teamName);
+  const leaderError = validateField('teamLeaderEmail', formData.teamLeaderEmail);
+  const contactError = validateField('contactNumber', formData.contactNumber);
+  const memberErrors = memberEmails.map(email => validateField('memberEmail', email));
+  
+  setErrors({
+    teamName: nameError,
+    teamLeaderEmail: leaderError,
+    contactNumber: contactError,
+    teamLogo: '',
+    memberEmails: memberErrors
+  });
+  
+  // If there are errors, stop submission
+  if (nameError || leaderError || contactError || memberErrors.some(err => err)) {
+    setError('Please fix the errors in the form');
+    return;
+  }
+  
+  setLoading(true);
+  setError('');
 
-    // Validate member emails
-    const validEmails = memberEmails.filter(email => email.trim() !== '');
-    if (validEmails.length === 0) {
-      setError('Please add at least one team member');
-      setLoading(false);
-      return;
-    }
+  // Validate member emails
+  const validEmails = memberEmails.filter(email => email.trim() !== '');
+  if (validEmails.length === 0) {
+    setError('Please add at least one team member');
+    setLoading(false);
+    return;
+  }
 
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append('teamName', formData.teamName);
+    formDataToSend.append('teamLeaderEmail', formData.teamLeaderEmail);
+    formDataToSend.append('contactNumber', formData.contactNumber);
+    
+    // Make sure memberEmails is properly formatted as a JSON string
+    formDataToSend.append('memberEmails', JSON.stringify(validEmails));
+    
+    // Only append the logo if it exists
+    if (formData.teamLogo) {
+      formDataToSend.append('teamLogo', formData.teamLogo);
+    }
+  
     try {
-      const formDataToSend = new FormData();
-      formDataToSend.append('teamName', formData.teamName);
-      formDataToSend.append('teamLeaderEmail', formData.teamLeaderEmail);
-      formDataToSend.append('contactNumber', formData.contactNumber);
-      formDataToSend.append('memberEmails', JSON.stringify(validEmails));
-      if (formData.teamLogo) {
-        formDataToSend.append('teamLogo', formData.teamLogo);
-      }
-    
       const response = await axiosInstance.post('/teams/register', formDataToSend, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
@@ -235,16 +241,33 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
           onClose();
         }, 5000);
       } else {
-        throw new Error('Unexpected response from server');
+        throw new Error(response.data.message || 'Unexpected response from server');
       }
     } catch (err: any) {
       console.error('Error creating team:', err);
-      const errorMessage = err.response?.data?.message || 'Failed to create team';
-      setError(errorMessage);
+      
+      // Enhanced error handling with more specific messages
+      if (err.response?.status === 500) {
+        const serverError = err.response?.data?.error || err.response?.data?.message;
+        if (serverError?.includes('SENDGRID')) {
+          setError('Server email service issue. Team created but verification emails could not be sent.');
+        } else if (serverError?.includes('memberEmails')) {
+          setError('Invalid member email format. Please check all emails and try again.');
+        } else {
+          setError(`Server error: ${serverError || 'Unknown internal error'}`);
+        }
+      } else {
+        setError(err.response?.data?.message || 'Failed to create team');
+      }
     } finally {
       setLoading(false);
     }
-  };
+  } catch (clientErr) {
+    console.error('Client-side error:', clientErr);
+    setError('Failed to prepare form data. Please try again.');
+    setLoading(false);
+  }
+};
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} title="Create New Team">
