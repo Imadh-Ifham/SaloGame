@@ -2,6 +2,7 @@ import express from "express";
 import {
   createBooking,
   endBooking,
+  extendBooking,
   generateReport,
   getBookingByID,
   getBookingByUserID,
@@ -27,5 +28,6 @@ router.get("/report", generateReport);
 router.get("/upcoming", getUpcomingBookings);
 router.put("/end-booking", endBooking);
 router.put("/start-booking", startBooking);
+router.put("/extend-booking", extendBooking);
 
 export default router;
