@@ -57,7 +57,7 @@ const NewBookingForm: React.FC = () => {
     dispatch(resetMoreMachine());
     dispatch(setShowBookingForm(false));
 
-    await dispatch(createBooking(formData))
+    await dispatch(createBooking({ formData, mode: "admin" }))
       .then(() => {
         if (selectedMachine) {
           dispatch(
@@ -188,9 +188,11 @@ const NewBookingForm: React.FC = () => {
                     <button
                       key={count}
                       onClick={() => {
-                          const actualIndex = formData.machines.findIndex((m) => m.machineID === machine.machineID);
-                          handleUserCountChange(actualIndex, count);
-                        }}
+                        const actualIndex = formData.machines.findIndex(
+                          (m) => m.machineID === machine.machineID
+                        );
+                        handleUserCountChange(actualIndex, count);
+                      }}
                       className={`rounded-full px-3 py-1 text-sm font-semibold border transition-all duration-200 ${
                         machine.userCount === count
                           ? "bg-green-500 text-white shadow-md"

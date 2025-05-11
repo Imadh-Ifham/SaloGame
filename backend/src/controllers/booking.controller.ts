@@ -149,7 +149,7 @@ export const createBooking = async (
       status = "InUse",
     } = req.body;
 
-    const { mode } = req.query;
+    const { mode, paymentType } = req.query;
 
     // Validate required fields
     if (!machines || !Array.isArray(machines) || machines.length === 0) {
@@ -252,7 +252,7 @@ export const createBooking = async (
       const transactionReq = {
         user: req.user,
         body: {
-          paymentType: "cash", // or other payment type as required
+          paymentType, // or other payment type as required
           amount: totalPrice,
           transactionType: transactionType, // set the transaction type based on mode
         },
@@ -672,7 +672,7 @@ export const getUpcomingBookings = async (
     // Only get bookings with status "Booked" or "InUse"
     const bookings = await Booking.find({
       startTime: { $gte: today, $lt: dayAfterTomorrow },
-      status: { $in: ["Booked", "InUse"] }
+      status: { $in: ["Booked", "InUse"] },
     })
       .populate({
         path: "machines.machineID",
@@ -686,12 +686,13 @@ export const getUpcomingBookings = async (
       .lean();
 
     // Group bookings by day (today or tomorrow)
-    const todayBookings = bookings.filter(booking => 
-      booking.startTime >= today && booking.startTime < tomorrow
+    const todayBookings = bookings.filter(
+      (booking) => booking.startTime >= today && booking.startTime < tomorrow
     );
 
-    const tomorrowBookings = bookings.filter(booking => 
-      booking.startTime >= tomorrow && booking.startTime < dayAfterTomorrow
+    const tomorrowBookings = bookings.filter(
+      (booking) =>
+        booking.startTime >= tomorrow && booking.startTime < dayAfterTomorrow
     );
 
     // Format bookings for frontend consumption
@@ -699,33 +700,37 @@ export const getUpcomingBookings = async (
       // Calculate duration in minutes
       const startTime = new Date(booking.startTime);
       const endTime = new Date(booking.endTime);
-      const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / (1000 * 60));
-      
+      const durationMinutes = Math.round(
+        (endTime.getTime() - startTime.getTime()) / (1000 * 60)
+      );
+
       // Format duration as string (e.g., "30 mins")
       const duration = `${durationMinutes} mins`;
-      
+
       // Format machines array for frontend
       const machines = booking.machines.map((machine: any) => {
         // Ensure machine type is either 'pc' or 'console'
-        const machineCategory = (machine.machineID.machineCategory || "").toLowerCase();
-        const type = machineCategory === 'console' ? 'console' : 'pc';
-        
+        const machineCategory = (
+          machine.machineID.machineCategory || ""
+        ).toLowerCase();
+        const type = machineCategory === "console" ? "console" : "pc";
+
         return {
           name: machine.machineID.serialNumber,
-          type
+          type,
         };
       });
 
       // Format start time (e.g., "14:00")
-      const formattedStartTime = startTime.toLocaleTimeString('en-US', { 
-        hour: '2-digit', 
-        minute: '2-digit',
-        hour12: false 
+      const formattedStartTime = startTime.toLocaleTimeString("en-US", {
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
       });
 
       // Map booking status to UI status
       let uiStatus: "Confirmed" | "Pending" | "In Use";
-      switch(booking.status) {
+      switch (booking.status) {
         case "InUse":
           uiStatus = "In Use";
           break;
@@ -737,11 +742,15 @@ export const getUpcomingBookings = async (
       }
 
       // Get payment status from transaction
-      const paymentStatus: "Paid" | "Unpaid" = booking.transactionID && 
-        booking.transactionID.status === "completed" ? "Paid" : "Unpaid";
+      const paymentStatus: "Paid" | "Unpaid" =
+        booking.transactionID && booking.transactionID.status === "completed"
+          ? "Paid"
+          : "Unpaid";
 
       // Get price from transaction
-      const price = booking.transactionID ? booking.transactionID.amount.toString() : "0";
+      const price = booking.transactionID
+        ? booking.transactionID.amount.toString()
+        : "0";
 
       return {
         id: booking._id,
@@ -752,14 +761,14 @@ export const getUpcomingBookings = async (
         status: uiStatus,
         description: booking.notes || "",
         price,
-        paymentStatus
+        paymentStatus,
       };
     };
 
     // Structure response
     const response = {
       today: todayBookings.map(formatBooking),
-      tomorrow: tomorrowBookings.map(formatBooking)
+      tomorrow: tomorrowBookings.map(formatBooking),
     };
 
     res.json({ success: true, data: response });
@@ -768,7 +777,7 @@ export const getUpcomingBookings = async (
     res.status(500).json({
       success: false,
       error: "Error fetching upcoming bookings",
-      message: (error as Error).message || "Something went wrong."
+      message: (error as Error).message || "Something went wrong.",
     });
   }
 };
