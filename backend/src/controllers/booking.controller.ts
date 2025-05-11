@@ -227,8 +227,12 @@ export const createBooking = async (
     const session = await Booking.startSession();
     session.startTransaction();
 
+    let userID = null;
+    mode !== "admin" ? (userID = req.user.id) : null;
+
     try {
       const newBooking = new Booking({
+        userID,
         customerName,
         phoneNumber,
         notes,
@@ -355,14 +359,18 @@ export const getBookingByID = async (
       res.status(401).json({ message: "Not authenticated" });
       return;
     }
-    const { bookingID } = req.params;
 
-    if (!bookingID) {
-      res.status(400).json({ message: "Booking ID is required." });
-      return;
-    }
+    const userID = req.user.id;
 
-    const booking = await Booking.findById(bookingID)
+    // Get the current time
+    const currentTime = new Date();
+
+    // Find the next immediate booking for the user
+    const booking = await Booking.findOne({
+      userID,
+      endTime: { $gt: currentTime }, // Filter bookings where endTime is greater than the current time
+    })
+      .sort({ startTime: 1 }) // Sort by startTime in ascending order to get the next immediate booking
       .select("-isBooked -reservedAt -createdAt -updatedAt -__v")
       .populate({
         path: "transactionID",
@@ -373,15 +381,16 @@ export const getBookingByID = async (
         select: "machineCategory serialNumber", // Exclude unnecessary fields
       })
       .lean();
+
     if (!booking) {
-      res.status(404).json({ message: "Booking not found." });
+      res.status(404).json({ message: "No upcoming bookings found." });
       return;
     }
 
     // Extract transaction details separately
-    const { transactionID, ...bookingData } = booking; // Convert Mongoose document to plain object
+    const { transactionID, ...bookingData } = booking;
 
-    // Separate booking and transaction
+    // Structure the response
     const structuredResponse = {
       booking: bookingData,
       transaction: transactionID || null, // Ensure transaction is explicitly null if not present

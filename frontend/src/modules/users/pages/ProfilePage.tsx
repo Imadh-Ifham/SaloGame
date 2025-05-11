@@ -21,7 +21,6 @@ import UserSupportDashboard from "../../../components/User/userSupportDashboard"
 import UserBookingDashboard from "../../../components/User/userBookingDashboard";
 import UserProfileSettings from "../../../components/User/UserProfileSettings";
 import VisitsChart from "../../../components/User/VisitChart";
-import NotificationArea from "../../../components/notifications/NotificationArea";
 
 interface UserProfile {
   _id?: string;
@@ -37,6 +36,30 @@ interface UserProfile {
   };
 }
 
+interface UpcomingBooking {
+  booking: {
+    _id: string;
+    customerName: string;
+    phoneNumber: string;
+    startTime: string;
+    endTime: string;
+    machines: {
+      machineID: {
+        serialNumber: string;
+        machineCategory: string;
+      };
+      userCount: number;
+    }[];
+    status: string;
+  };
+  transaction?: {
+    paymentType: string;
+    transactionType: string;
+    amount: number;
+    status: string;
+  };
+}
+
 const ProfilePage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("overview");
   const [profile, setProfile] = useState<UserProfile | null>(null);
@@ -44,7 +67,8 @@ const ProfilePage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
-
+  const [upcomingBooking, setUpcomingBooking] =
+    useState<UpcomingBooking | null>(null);
   const { loading: authLoading } = useAuth() as {
     user: { _id: string; email: string; role?: string } | null;
     loading: boolean;
@@ -82,6 +106,19 @@ const ProfilePage: React.FC = () => {
     };
 
     fetchProfile();
+  }, []);
+
+  useEffect(() => {
+    const fetchUpcomingBooking = async () => {
+      try {
+        const response = await axiosInstance.get("/bookings/get-booking");
+        setUpcomingBooking(response.data.data);
+      } catch (err: any) {
+        console.error("Error fetching upcoming booking:", err);
+      }
+    };
+
+    fetchUpcomingBooking();
   }, []);
 
   const handleLogout = async () => {
@@ -327,6 +364,166 @@ const ProfilePage: React.FC = () => {
                       </div>
                     </div>
                   </div>
+                </motion.div>
+
+                {/* Upcoming Booking Section */}
+                <motion.div
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="bg-gray-800/40 backdrop-blur-lg rounded-xl p-6 border border-gray-700/50"
+                >
+                  <h3 className="text-lg font-semibold text-white mb-4">
+                    Upcoming Booking
+                  </h3>
+                  {upcomingBooking ? (
+                    <div className="space-y-4">
+                      {/* Booking Details */}
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <p className="text-sm text-gray-400">
+                            <strong className="text-white">
+                              Customer Name:
+                            </strong>
+                          </p>
+                          <p className="text-base text-gray-300">
+                            {upcomingBooking.booking.customerName}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-400">
+                            <strong className="text-white">
+                              Phone Number:
+                            </strong>
+                          </p>
+                          <p className="text-base text-gray-300">
+                            {upcomingBooking.booking.phoneNumber}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-400">
+                            <strong className="text-white">Start Time:</strong>
+                          </p>
+                          <p className="text-base text-gray-300">
+                            {new Date(
+                              upcomingBooking.booking.startTime
+                            ).toLocaleString()}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-400">
+                            <strong className="text-white">End Time:</strong>
+                          </p>
+                          <p className="text-base text-gray-300">
+                            {new Date(
+                              upcomingBooking.booking.endTime
+                            ).toLocaleString()}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Machines Section */}
+                      <div className="border-t border-gray-700 pt-4">
+                        <h4 className="text-md font-semibold text-white mb-2">
+                          Machines
+                        </h4>
+                        <div className="space-y-2">
+                          {upcomingBooking.booking.machines.map(
+                            (machine, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center justify-between bg-gray-700/30 p-3 rounded-lg"
+                              >
+                                <div>
+                                  <p className="text-sm text-gray-400">
+                                    <strong className="text-white">
+                                      Serial Number:
+                                    </strong>{" "}
+                                    {machine.machineID.serialNumber}
+                                  </p>
+                                  <p className="text-sm text-gray-400">
+                                    <strong className="text-white">
+                                      Category:
+                                    </strong>{" "}
+                                    {machine.machineID.machineCategory}
+                                  </p>
+                                </div>
+                                <div>
+                                  <p className="text-sm text-gray-400">
+                                    <strong className="text-white">
+                                      User Count:
+                                    </strong>{" "}
+                                    {machine.userCount}
+                                  </p>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status and Payment Details */}
+                      <div className="border-t border-gray-700 pt-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <p className="text-sm text-gray-400">
+                              <strong className="text-white">Status:</strong>
+                            </p>
+                            <p
+                              className={`text-base font-semibold ${
+                                upcomingBooking.booking.status === "Booked"
+                                  ? "text-emerald-400"
+                                  : "text-yellow-400"
+                              }`}
+                            >
+                              {upcomingBooking.booking.status}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-400">
+                              <strong className="text-white">
+                                Payment Type:
+                              </strong>
+                            </p>
+                            <p className="text-base text-gray-300">
+                              {upcomingBooking.transaction?.paymentType ||
+                                "N/A"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-400">
+                              <strong className="text-white">Amount:</strong>
+                            </p>
+                            <p className="text-base text-gray-300">
+                              Rs. {upcomingBooking.transaction?.amount || "N/A"}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-400">
+                              <strong className="text-white">
+                                Transaction Status:
+                              </strong>
+                            </p>
+                            <p
+                              className={`text-base font-semibold ${
+                                upcomingBooking.transaction?.status ===
+                                "completed"
+                                  ? "text-emerald-400"
+                                  : "text-red-400"
+                              }`}
+                            >
+                              {upcomingBooking.transaction?.status || "N/A"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center h-24">
+                      <p className="text-gray-400">
+                        You have no upcoming bookings.
+                      </p>
+                    </div>
+                  )}
                 </motion.div>
 
                 {/* Visits Activity Chart */}
