@@ -209,8 +209,15 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
   }, [error]);
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setCardNumber(value);
+    const inputValue = e.target.value;
+    const numericValue = inputValue.replace(/[^\d\s]/g, "");
+
+    if (inputValue !== numericValue) {
+      e.target.value = numericValue; // Update input field if non-numeric chars were entered
+    }
+    const value = numericValue.replace(/\s+/g, ""); // Remove spaces
+    const formattedValue = value.replace(/(\d{4})(?=\d)/g, "$1 "); // Add space every 4 digits
+    setCardNumber(formattedValue);
 
     // Detect card type
     const detectedType = Payment.fns.cardType(value);
@@ -230,8 +237,23 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
 
   // Handle expiry date change with validation
   const handleExpiryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setExpiryDate(value);
+    const inputValue = e.target.value;
+    const numericWithSlash = inputValue.replace(/[^\d/]/g, "");
+
+    if (inputValue !== numericWithSlash) {
+      e.target.value = numericWithSlash; // Update if non-numeric chars were entered
+    }
+
+    const value = numericWithSlash.replace(/\s+/g, ""); // Remove spaces
+    let formattedValue = value;
+
+    if (value.length >= 2 && !value.includes("/")) {
+      formattedValue = value.slice(0, 2) + "/" + value.slice(2);
+    }
+
+    if (formattedValue.length <= 5) {
+      setExpiryDate(formattedValue);
+    }
 
     if (value) {
       // Parse expiry date
@@ -253,11 +275,17 @@ const SubscriptionForm: React.FC<SubscriptionFormProps> = ({
 
   // Handle CVV change with validation
   const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setCvv(value);
+    const inputValue = e.target.value;
+    const numericValue = inputValue.replace(/\D/g, "");
 
-    if (value) {
-      if (!Payment.fns.validateCardCVC(value, cardType)) {
+    if (inputValue !== numericValue) {
+      e.target.value = numericValue; // Update if non-numeric chars were entered
+    }
+
+    setCvv(numericValue);
+
+    if (numericValue) {
+      if (!Payment.fns.validateCardCVC(numericValue, cardType)) {
         setErrors((prev) => ({ ...prev, cvv: "Invalid CVV" }));
       } else {
         setErrors((prev) => ({ ...prev, cvv: undefined }));

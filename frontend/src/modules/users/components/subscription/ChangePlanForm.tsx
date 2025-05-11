@@ -55,8 +55,16 @@ const ChangePlanForm = ({
   }, []);
 
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setCardNumber(value);
+    const inputValue = e.target.value;
+    const numericValue = inputValue.replace(/[^\d\s]/g, ""); // Keep only digits and spaces
+
+    if (inputValue !== numericValue) {
+      e.target.value = numericValue; // Update input field if non-numeric chars were entered
+    }
+
+    const value = numericValue.replace(/\s+/g, ""); // Remove spaces
+    const formattedValue = value.replace(/(\d{4})(?=\d)/g, "$1 "); // Add space every 4 digits
+    setCardNumber(formattedValue);
 
     // Detect card type
     const detectedType = Payment.fns.cardType(value);
@@ -75,8 +83,24 @@ const ChangePlanForm = ({
   };
 
   const handleExpiryDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setExpiryDate(value);
+    const inputValue = e.target.value;
+    const numericWithSlash = inputValue.replace(/[^\d/]/g, "");
+
+    if (inputValue !== numericWithSlash) {
+      e.target.value = numericWithSlash;
+    }
+
+    const value = numericWithSlash.replace(/\s+/g, ""); // Remove spaces
+    let formattedValue = value;
+
+    // Only add slash if it doesn't already contain one
+    if (value.length >= 2 && !value.includes("/")) {
+      formattedValue = value.slice(0, 2) + "/" + value.slice(2);
+    }
+
+    if (formattedValue.length <= 5) {
+      setExpiryDate(formattedValue);
+    }
 
     if (value) {
       const [month, year] = value.split("/");
@@ -94,11 +118,17 @@ const ChangePlanForm = ({
   };
 
   const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setCvv(value);
+    const inputValue = e.target.value;
+    const numericValue = inputValue.replace(/\D/g, "");
 
-    if (value) {
-      if (!Payment.fns.validateCardCVC(value, cardType)) {
+    if (inputValue !== numericValue) {
+      e.target.value = numericValue;
+    }
+
+    setCvv(numericValue);
+
+    if (numericValue) {
+      if (!Payment.fns.validateCardCVC(numericValue, cardType)) {
         setErrors((prev) => ({ ...prev, cvv: "Invalid CVV" }));
       } else {
         setErrors((prev) => ({ ...prev, cvv: undefined }));
