@@ -4,6 +4,11 @@ import MembershipType from "../models/membershipType.model";
 import User from "../models/user.model";
 import { AuthRequest } from "../middleware/types";
 import mongoose from "mongoose";
+import PDFDocument from "pdfkit";
+import {
+  generateSubscriptionReport,
+  generatePDF,
+} from "../services/membershipReportService";
 
 /**
  * Create Subscription
@@ -942,6 +947,45 @@ export const toggleAutoRenew = async (
     res.status(500).json({
       success: false,
       message: "Failed to toggle auto-renewal",
+      error: error instanceof Error ? error.message : "Unknown error",
+    });
+  }
+};
+
+/**
+ * Download Subscription Report
+ */
+export const downloadSubscriptionReport = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const { period = "30days", sections = "" } = req.query;
+    const selectedSections = String(sections).split(",").filter(Boolean);
+
+    // Get the report data using existing function
+    const reportData = await generateSubscriptionReport(
+      String(period),
+      selectedSections
+    );
+
+    // Generate PDF using PDFKit or similar library
+    const pdfBuffer = await generatePDF(reportData);
+
+    // Set headers for file download
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=membership-report-${period}.pdf`
+    );
+
+    // Send the PDF buffer
+    res.send(pdfBuffer);
+  } catch (error) {
+    console.error("Error generating PDF report:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to generate report",
       error: error instanceof Error ? error.message : "Unknown error",
     });
   }

@@ -12,6 +12,7 @@ import {
   updatePaymentMethod,
   deletePaymentMethod,
   toggleAutoRenew,
+  downloadSubscriptionReport,
 } from "../controllers/subscription.controller";
 import { authMiddleware, managerOrOwner } from "../middleware/authMiddleware";
 
@@ -31,5 +32,6 @@ router.post("/change-plan", changeSubscriptionPlan);
 router.patch("/:id/payment-method", updatePaymentMethod);
 router.delete("/:id/payment-method", deletePaymentMethod);
 router.patch("/:id/auto-renew", toggleAutoRenew);
+router.get("/report/download", downloadSubscriptionReport);
 
 export default router;

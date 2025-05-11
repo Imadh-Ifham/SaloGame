@@ -33,6 +33,7 @@ interface IEvent extends Document {
     placement: number;
     awardedAt: Date;
   }>
+  status: 'not_started' | 'in_progress' | 'paused' | 'completed';
 }
 
 // Create the Event schema
@@ -81,7 +82,12 @@ const eventSchema = new Schema<IEvent>({
       awardedAt: { type: Date, default: Date.now }
     }],
     default: []
-  }
+  },
+  status: {
+    type: String,
+    enum: ['not_started', 'in_progress', 'paused', 'completed'],
+    default: 'not_started'
+  },
 }, { timestamps: true });
 
 // Create the Event model
