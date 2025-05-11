@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import axiosInstance from '@/axios.config';
-import Modal from '@/components/Modal';
-import { toast } from 'react-hot-toast';
+import React, { useState, useEffect } from "react";
+import axiosInstance from "@/axios.config";
+import Modal from "@/components/Modal";
+import { toast } from "react-hot-toast";
 
 interface User {
   _id: string;
@@ -28,46 +28,49 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
   onClose,
 }) => {
   const [formData, setFormData] = useState({
-    teamName: '',
-    teamLeaderEmail: '',
-    contactNumber: '',
+    teamName: "",
+    teamLeaderEmail: "",
+    contactNumber: "",
     teamLogo: null as File | null,
   });
 
-  const [memberEmails, setMemberEmails] = useState<string[]>(['']); 
+  const [memberEmails, setMemberEmails] = useState<string[]>([""]);
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMessage, setSuccessMessage] = useState<{show: boolean; teamId: string} | null>(null);
-  
+  const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] = useState<{
+    show: boolean;
+    teamId: string;
+  } | null>(null);
+
   // Add validation states
   const [errors, setErrors] = useState({
-    teamName: '',
-    teamLeaderEmail: '',
-    contactNumber: '',
-    teamLogo: '',
-    memberEmails: ['']
+    teamName: "",
+    teamLeaderEmail: "",
+    contactNumber: "",
+    teamLogo: "",
+    memberEmails: [""],
   });
-  
+
   // Track which fields have been touched
   const [touched, setTouched] = useState({
     teamName: false,
     teamLeaderEmail: false,
     contactNumber: false,
     teamLogo: false,
-    memberEmails: [false]
+    memberEmails: [false],
   });
 
   // Add member email field
   const addMemberEmail = () => {
-    setMemberEmails([...memberEmails, '']);
-    setErrors(prev => ({
+    setMemberEmails([...memberEmails, ""]);
+    setErrors((prev) => ({
       ...prev,
-      memberEmails: [...prev.memberEmails, '']
+      memberEmails: [...prev.memberEmails, ""],
     }));
-    setTouched(prev => ({
+    setTouched((prev) => ({
       ...prev,
-      memberEmails: [...prev.memberEmails, false]
+      memberEmails: [...prev.memberEmails, false],
     }));
   };
 
@@ -75,171 +78,192 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
   const removeMemberEmail = (index: number) => {
     const newEmails = memberEmails.filter((_, i) => i !== index);
     setMemberEmails(newEmails);
-    
+
     const newErrors = [...errors.memberEmails];
     newErrors.splice(index, 1);
-    setErrors(prev => ({
+    setErrors((prev) => ({
       ...prev,
-      memberEmails: newErrors
+      memberEmails: newErrors,
     }));
-    
+
     const newTouched = [...touched.memberEmails];
     newTouched.splice(index, 1);
-    setTouched(prev => ({
+    setTouched((prev) => ({
       ...prev,
-      memberEmails: newTouched
+      memberEmails: newTouched,
     }));
   };
-  
+
   // Validate single field
   const validateField = (name: string, value: string, index?: number) => {
-    if (name === 'teamName') {
-      if (!value.trim()) return 'Team name is required';
-      if (value.length < 3) return 'Team name must be at least 3 characters';
-      if (value.length > 50) return 'Team name must be less than 50 characters';
-      return '';
+    if (name === "teamName") {
+      if (!value.trim()) return "Team name is required";
+      if (value.length < 3) return "Team name must be at least 3 characters";
+      if (value.length > 50) return "Team name must be less than 50 characters";
+      return "";
     }
-    
-    if (name === 'teamLeaderEmail') {
-      if (!value.trim()) return 'Team leader email is required';
-      if (!validateEmail(value)) return 'Please enter a valid email address';
-      return '';
+
+    if (name === "teamLeaderEmail") {
+      if (!value.trim()) return "Team leader email is required";
+      if (!validateEmail(value)) return "Please enter a valid email address";
+      return "";
     }
-    
-    if (name === 'contactNumber') {
-      if (!value.trim()) return 'Contact number is required';
-      if (!validatePhone(value)) return 'Please enter a valid 10-digit phone number';
-      return '';
+
+    if (name === "contactNumber") {
+      if (!value.trim()) return "Contact number is required";
+      if (!validatePhone(value))
+        return "Please enter a valid 10-digit phone number";
+      return "";
     }
-    
-    if (name === 'memberEmail') {
-      if (!value.trim()) return 'Member email is required';
-      if (!validateEmail(value)) return 'Please enter a valid email address';
-      return '';
+
+    if (name === "memberEmail") {
+      if (!value.trim()) return "Member email is required";
+      if (!validateEmail(value)) return "Please enter a valid email address";
+      return "";
     }
-    
-    return '';
+
+    return "";
   };
-  
+
   // Handle field blur
   const handleBlur = (field: string, index?: number) => {
-    if (field === 'memberEmail' && index !== undefined) {
+    if (field === "memberEmail" && index !== undefined) {
       const newTouched = [...touched.memberEmails];
       newTouched[index] = true;
-      setTouched(prev => ({
+      setTouched((prev) => ({
         ...prev,
-        memberEmails: newTouched
+        memberEmails: newTouched,
       }));
-      
+
       const error = validateField(field, memberEmails[index]);
       const newErrors = [...errors.memberEmails];
       newErrors[index] = error;
-      setErrors(prev => ({
+      setErrors((prev) => ({
         ...prev,
-        memberEmails: newErrors
+        memberEmails: newErrors,
       }));
     } else {
-      setTouched(prev => ({
+      setTouched((prev) => ({
         ...prev,
-        [field]: true
+        [field]: true,
       }));
-      
-      const error = validateField(field, formData[field as keyof typeof formData] as string);
-      setErrors(prev => ({
+
+      const error = validateField(
+        field,
+        formData[field as keyof typeof formData] as string
+      );
+      setErrors((prev) => ({
         ...prev,
-        [field]: error
+        [field]: error,
       }));
     }
   };
-  
+
   // Form validation
   const isFormValid = () => {
     // Check each field's validation
     const teamNameValid = !errors.teamName;
     const leaderEmailValid = !errors.teamLeaderEmail;
     const contactValid = !errors.contactNumber;
-    
+
     // Check member emails validity
-    const memberEmailsValid = errors.memberEmails.every(err => !err) && 
-                             memberEmails.filter(email => email.trim() !== '').length > 0;
-    
-    return teamNameValid && leaderEmailValid && contactValid && memberEmailsValid;
+    const memberEmailsValid =
+      errors.memberEmails.every((err) => !err) &&
+      memberEmails.filter((email) => email.trim() !== "").length > 0;
+
+    return (
+      teamNameValid && leaderEmailValid && contactValid && memberEmailsValid
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Mark all fields as touched
     setTouched({
       teamName: true,
       teamLeaderEmail: true,
       contactNumber: true,
       teamLogo: true,
-      memberEmails: memberEmails.map(() => true)
+      memberEmails: memberEmails.map(() => true),
     });
-    
+
     // Validate all fields
-    const nameError = validateField('teamName', formData.teamName);
-    const leaderError = validateField('teamLeaderEmail', formData.teamLeaderEmail);
-    const contactError = validateField('contactNumber', formData.contactNumber);
-    const memberErrors = memberEmails.map(email => validateField('memberEmail', email));
-    
+    const nameError = validateField("teamName", formData.teamName);
+    const leaderError = validateField(
+      "teamLeaderEmail",
+      formData.teamLeaderEmail
+    );
+    const contactError = validateField("contactNumber", formData.contactNumber);
+    const memberErrors = memberEmails.map((email) =>
+      validateField("memberEmail", email)
+    );
+
     setErrors({
       teamName: nameError,
       teamLeaderEmail: leaderError,
       contactNumber: contactError,
-      teamLogo: '',
-      memberEmails: memberErrors
+      teamLogo: "",
+      memberEmails: memberErrors,
     });
-    
+
     // If there are errors, stop submission
-    if (nameError || leaderError || contactError || memberErrors.some(err => err)) {
-      setError('Please fix the errors in the form');
+    if (
+      nameError ||
+      leaderError ||
+      contactError ||
+      memberErrors.some((err) => err)
+    ) {
+      setError("Please fix the errors in the form");
       return;
     }
-    
+
     setLoading(true);
-    setError('');
+    setError("");
 
     // Validate member emails
-    const validEmails = memberEmails.filter(email => email.trim() !== '');
+    const validEmails = memberEmails.filter((email) => email.trim() !== "");
     if (validEmails.length === 0) {
-      setError('Please add at least one team member');
+      setError("Please add at least one team member");
       setLoading(false);
       return;
     }
 
     try {
       const formDataToSend = new FormData();
-      formDataToSend.append('teamName', formData.teamName);
-      formDataToSend.append('teamLeaderEmail', formData.teamLeaderEmail);
-      formDataToSend.append('contactNumber', formData.contactNumber);
-      formDataToSend.append('memberEmails', JSON.stringify(validEmails));
+      formDataToSend.append("teamName", formData.teamName);
+      formDataToSend.append("teamLeaderEmail", formData.teamLeaderEmail);
+      formDataToSend.append("contactNumber", formData.contactNumber);
+      formDataToSend.append("memberEmails", JSON.stringify(validEmails));
       if (formData.teamLogo) {
-        formDataToSend.append('teamLogo', formData.teamLogo);
+        formDataToSend.append("teamLogo", formData.teamLogo);
       }
-    
-      const response = await axiosInstance.post('/teams/register', formDataToSend, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-      });
+
+      const response = await axiosInstance.post(
+        "/teams/register",
+        formDataToSend
+      );
 
       if (response.data.success) {
         setSuccessMessage({
           show: true,
-          teamId: response.data.data.teamId
+          teamId: response.data.data.teamId,
         });
-        
-        toast.success('Team created! Members will receive verification emails.');
+
+        toast.success(
+          "Team created! Members will receive verification emails."
+        );
         setTimeout(() => {
           setSuccessMessage(null);
           onClose();
         }, 5000);
       } else {
-        throw new Error('Unexpected response from server');
+        throw new Error("Unexpected response from server");
       }
     } catch (err: any) {
-      console.error('Error creating team:', err);
-      const errorMessage = err.response?.data?.message || 'Failed to create team';
+      console.error("Error creating team:", err);
+      const errorMessage =
+        err.response?.data?.message || "Failed to create team";
       setError(errorMessage);
     } finally {
       setLoading(false);
@@ -267,12 +291,16 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
               onChange={(e) => {
                 setFormData((prev) => ({ ...prev, teamName: e.target.value }));
                 if (touched.teamName) {
-                  const error = validateField('teamName', e.target.value);
-                  setErrors(prev => ({ ...prev, teamName: error }));
+                  const error = validateField("teamName", e.target.value);
+                  setErrors((prev) => ({ ...prev, teamName: error }));
                 }
               }}
-              onBlur={() => handleBlur('teamName')}
-              className={`w-full border ${errors.teamName && touched.teamName ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} 
+              onBlur={() => handleBlur("teamName")}
+              className={`w-full border ${
+                errors.teamName && touched.teamName
+                  ? "border-red-500"
+                  : "border-gray-300 dark:border-gray-600"
+              } 
                       rounded-md shadow-sm p-2 
                       bg-white dark:bg-gray-700 
                       text-gray-900 dark:text-white`}
@@ -293,14 +321,24 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
               type="email"
               value={formData.teamLeaderEmail}
               onChange={(e) => {
-                setFormData((prev) => ({ ...prev, teamLeaderEmail: e.target.value }));
+                setFormData((prev) => ({
+                  ...prev,
+                  teamLeaderEmail: e.target.value,
+                }));
                 if (touched.teamLeaderEmail) {
-                  const error = validateField('teamLeaderEmail', e.target.value);
-                  setErrors(prev => ({ ...prev, teamLeaderEmail: error }));
+                  const error = validateField(
+                    "teamLeaderEmail",
+                    e.target.value
+                  );
+                  setErrors((prev) => ({ ...prev, teamLeaderEmail: error }));
                 }
               }}
-              onBlur={() => handleBlur('teamLeaderEmail')}
-              className={`w-full border ${errors.teamLeaderEmail && touched.teamLeaderEmail ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} 
+              onBlur={() => handleBlur("teamLeaderEmail")}
+              className={`w-full border ${
+                errors.teamLeaderEmail && touched.teamLeaderEmail
+                  ? "border-red-500"
+                  : "border-gray-300 dark:border-gray-600"
+              } 
                       rounded-md shadow-sm p-2 
                       bg-white dark:bg-gray-700 
                       text-gray-900 dark:text-white`}
@@ -308,7 +346,9 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
               required
             />
             {errors.teamLeaderEmail && touched.teamLeaderEmail && (
-              <p className="mt-1 text-sm text-red-500">{errors.teamLeaderEmail}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {errors.teamLeaderEmail}
+              </p>
             )}
           </div>
 
@@ -327,19 +367,26 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
                       const newEmails = [...memberEmails];
                       newEmails[index] = e.target.value;
                       setMemberEmails(newEmails);
-                      
+
                       if (touched.memberEmails[index]) {
-                        const error = validateField('memberEmail', e.target.value);
+                        const error = validateField(
+                          "memberEmail",
+                          e.target.value
+                        );
                         const newErrors = [...errors.memberEmails];
                         newErrors[index] = error;
-                        setErrors(prev => ({
+                        setErrors((prev) => ({
                           ...prev,
-                          memberEmails: newErrors
+                          memberEmails: newErrors,
                         }));
                       }
                     }}
-                    onBlur={() => handleBlur('memberEmail', index)}
-                    className={`w-full p-2 border rounded-md ${errors.memberEmails[index] && touched.memberEmails[index] ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} 
+                    onBlur={() => handleBlur("memberEmail", index)}
+                    className={`w-full p-2 border rounded-md ${
+                      errors.memberEmails[index] && touched.memberEmails[index]
+                        ? "border-red-500"
+                        : "border-gray-300 dark:border-gray-600"
+                    } 
                             bg-white dark:bg-gray-700 
                             text-gray-900 dark:text-white
                             focus:ring-2 focus:ring-blue-500 focus:border-blue-500
@@ -347,9 +394,12 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
                     placeholder="Member email"
                     required
                   />
-                  {errors.memberEmails[index] && touched.memberEmails[index] && (
-                    <p className="mt-1 text-sm text-red-500">{errors.memberEmails[index]}</p>
-                  )}
+                  {errors.memberEmails[index] &&
+                    touched.memberEmails[index] && (
+                      <p className="mt-1 text-sm text-red-500">
+                        {errors.memberEmails[index]}
+                      </p>
+                    )}
                 </div>
                 <button
                   type="button"
@@ -378,14 +428,21 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
               type="tel"
               value={formData.contactNumber}
               onChange={(e) => {
-                setFormData((prev) => ({ ...prev, contactNumber: e.target.value }));
+                setFormData((prev) => ({
+                  ...prev,
+                  contactNumber: e.target.value,
+                }));
                 if (touched.contactNumber) {
-                  const error = validateField('contactNumber', e.target.value);
-                  setErrors(prev => ({ ...prev, contactNumber: error }));
+                  const error = validateField("contactNumber", e.target.value);
+                  setErrors((prev) => ({ ...prev, contactNumber: error }));
                 }
               }}
-              onBlur={() => handleBlur('contactNumber')}
-              className={`w-full border ${errors.contactNumber && touched.contactNumber ? 'border-red-500' : 'border-gray-300 dark:border-gray-600'} 
+              onBlur={() => handleBlur("contactNumber")}
+              className={`w-full border ${
+                errors.contactNumber && touched.contactNumber
+                  ? "border-red-500"
+                  : "border-gray-300 dark:border-gray-600"
+              } 
                       rounded-md shadow-sm p-2 
                       bg-white dark:bg-gray-700 
                       text-gray-900 dark:text-white`}
@@ -393,7 +450,9 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
               required
             />
             {errors.contactNumber && touched.contactNumber && (
-              <p className="mt-1 text-sm text-red-500">{errors.contactNumber}</p>
+              <p className="mt-1 text-sm text-red-500">
+                {errors.contactNumber}
+              </p>
             )}
           </div>
 
@@ -426,24 +485,28 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
 
           {/* Success Message */}
           {successMessage && (
-            <div className="mb-4 p-4 bg-green-50 border border-green-200 text-green-600 rounded-md 
+            <div
+              className="mb-4 p-4 bg-green-50 border border-green-200 text-green-600 rounded-md 
                           transform transition-all duration-500 ease 
-                          animate-[fadeIn_0.5s_ease-in]">
+                          animate-[fadeIn_0.5s_ease-in]"
+            >
               <div className="flex items-center">
-                <svg 
-                  className="w-5 h-5 mr-2" 
-                  fill="currentColor" 
+                <svg
+                  className="w-5 h-5 mr-2"
+                  fill="currentColor"
                   viewBox="0 0 20 20"
                 >
-                  <path 
-                    fillRule="evenodd" 
-                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" 
-                    clipRule="evenodd" 
+                  <path
+                    fillRule="evenodd"
+                    d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                    clipRule="evenodd"
                   />
                 </svg>
                 <div>
                   <p className="font-medium">Team created successfully!</p>
-                  <p className="text-sm mt-1">Team ID: {successMessage.teamId}</p>
+                  <p className="text-sm mt-1">
+                    Team ID: {successMessage.teamId}
+                  </p>
                 </div>
               </div>
             </div>
@@ -462,10 +525,12 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
               type="submit"
               disabled={loading || !isFormValid()}
               className={`px-4 py-2 text-sm font-medium text-white rounded-md ${
-                loading || !isFormValid() ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
+                loading || !isFormValid()
+                  ? "bg-blue-400 cursor-not-allowed"
+                  : "bg-blue-600 hover:bg-blue-700"
               }`}
             >
-              {loading ? 'Creating...' : 'Create Team'}
+              {loading ? "Creating..." : "Create Team"}
             </button>
           </div>
         </form>
