@@ -176,6 +176,7 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
     );
   };
 
+  // Modify the handleSubmit function
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -234,38 +235,71 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
       formDataToSend.append("teamName", formData.teamName);
       formDataToSend.append("teamLeaderEmail", formData.teamLeaderEmail);
       formDataToSend.append("contactNumber", formData.contactNumber);
+
+      // Make sure memberEmails is properly formatted as a JSON string
       formDataToSend.append("memberEmails", JSON.stringify(validEmails));
+
+      // Only append the logo if it exists
       if (formData.teamLogo) {
         formDataToSend.append("teamLogo", formData.teamLogo);
       }
 
-      const response = await axiosInstance.post(
-        "/teams/register",
-        formDataToSend
-      );
-
-      if (response.data.success) {
-        setSuccessMessage({
-          show: true,
-          teamId: response.data.data.teamId,
-        });
-
-        toast.success(
-          "Team created! Members will receive verification emails."
+      try {
+        const response = await axiosInstance.post(
+          "/teams/register",
+          formDataToSend,
+          {
+            headers: { "Content-Type": "multipart/form-data" },
+          }
         );
-        setTimeout(() => {
-          setSuccessMessage(null);
-          onClose();
-        }, 5000);
-      } else {
-        throw new Error("Unexpected response from server");
+
+        if (response.data.success) {
+          setSuccessMessage({
+            show: true,
+            teamId: response.data.data.teamId,
+          });
+
+          toast.success(
+            "Team created! Members will receive verification emails."
+          );
+          setTimeout(() => {
+            setSuccessMessage(null);
+            onClose();
+          }, 5000);
+        } else {
+          throw new Error(
+            response.data.message || "Unexpected response from server"
+          );
+        }
+      } catch (err: any) {
+        console.error("Error creating team:", err);
+
+        // Enhanced error handling with more specific messages
+        if (err.response?.status === 500) {
+          const serverError =
+            err.response?.data?.error || err.response?.data?.message;
+          if (serverError?.includes("SENDGRID")) {
+            setError(
+              "Server email service issue. Team created but verification emails could not be sent."
+            );
+          } else if (serverError?.includes("memberEmails")) {
+            setError(
+              "Invalid member email format. Please check all emails and try again."
+            );
+          } else {
+            setError(
+              `Server error: ${serverError || "Unknown internal error"}`
+            );
+          }
+        } else {
+          setError(err.response?.data?.message || "Failed to create team");
+        }
+      } finally {
+        setLoading(false);
       }
-    } catch (err: any) {
-      console.error("Error creating team:", err);
-      const errorMessage =
-        err.response?.data?.message || "Failed to create team";
-      setError(errorMessage);
-    } finally {
+    } catch (clientErr) {
+      console.error("Client-side error:", clientErr);
+      setError("Failed to prepare form data. Please try again.");
       setLoading(false);
     }
   };

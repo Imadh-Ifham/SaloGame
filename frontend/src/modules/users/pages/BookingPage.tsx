@@ -12,6 +12,7 @@ import { updateBookingForm } from "@/store/slices/bookingSlice";
 import { setMoreMachine } from "@/store/slices/layoutSlice";
 import SelectedMachineDetail from "../components/booking/booking-panel/SelectedMachineDetail";
 import BookingForm from "../components/booking/booking-panel/BookingForm";
+import BookingDetails from "../components/booking/booking-panel/BookingDetails";
 
 const BookingPage: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();
@@ -19,24 +20,23 @@ const BookingPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState("machine-details");
 
   useEffect(() => {
-      const fetchData = async () => {
-        if (!fetched) {
-          await dispatch(fetchMachines());
-          await dispatch(
-            fetchMachineStatus({ startTime: getCurrentUTC(), duration: 60 })
-          );
-        }
-      };
-  
-      fetchData(); // Call the async function
-    }, [dispatch, fetched]);
+    const fetchData = async () => {
+      if (!fetched) {
+        await dispatch(fetchMachines());
+        await dispatch(
+          fetchMachineStatus({ startTime: getCurrentUTC(), duration: 60 })
+        );
+      }
+    };
+
+    fetchData(); // Call the async function
+  }, [dispatch, fetched]);
 
   useEffect(() => {
-
     const date = new Date();
     date.setMinutes(date.getMinutes() + 30);
     dispatch(updateBookingForm({ startTime: date.toISOString() }));
-    dispatch(setMoreMachine(true))
+    dispatch(setMoreMachine(true));
 
     return () => {
       // This runs when the component unmounts
@@ -53,11 +53,14 @@ const BookingPage: React.FC = () => {
           {activeTab === "machine-details" && (
             <>
               <CheckAvailability />
-              <SelectedMachineDetail setActiveTab={setActiveTab}/>
+              <SelectedMachineDetail setActiveTab={setActiveTab} />
             </>
           )}
           {activeTab === "customer-details" && (
             <BookingForm setActiveTab={setActiveTab} />
+          )}
+          {activeTab === "display-details" && (
+            <BookingDetails setActiveTab={setActiveTab} />
           )}
         </div>
         <div />

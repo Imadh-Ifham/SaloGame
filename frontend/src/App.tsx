@@ -46,6 +46,7 @@ import TeamBattle from "./modules/users/pages/EventPages/TeamBattle";
 import BookingReportPage from "./modules/admin/components/AdminBookings-page/BookingReport/BookingReportPage";
 import AdminMachinePage from "./modules/admin/pages/AdminMachinePage";
 import AdminFeedbackDashboard from "./modules/admin/pages/AdminFeedbackDashboard";
+import PaymentPage from "./modules/users/pages/PaymentPage";
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -75,6 +76,9 @@ const App: React.FC = () => {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/support/feedback" element={<FeedbackForm />} />
         <Route path="/support/reviews" element={<ReviewsDashboard />} />
+        <Route path="/payment" element={<PaymentPage />} />
+
+        {/* Admin Routes */}
 
         {/* Offer Category Routes */}
         <Route path="/offers/time-based" element={<TimeBased />} />

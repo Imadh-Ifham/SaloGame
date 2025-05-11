@@ -56,11 +56,17 @@ export const fetchMachineStatus = createAsyncThunk<
 // Define the createBookingThunk
 export const createBooking = createAsyncThunk(
   "booking/createBooking",
-  async (formData: CustomerBooking, { rejectWithValue }) => {
+  async (
+    {
+      formData,
+      mode = "admin",
+      paymentType = "cash",
+    }: { formData: CustomerBooking; mode?: string; paymentType?: string },
+    { rejectWithValue }
+  ) => {
     try {
-      const mode = "admin";
       const response = await axiosInstance.post(
-        `/bookings/?mode=${mode}`,
+        `/bookings/?mode=${mode}&paymentType=${paymentType}`,
         formData
       );
       return response.data;
@@ -173,16 +179,13 @@ export const fetchUpcomingBookings = createAsyncThunk<
   { today: any[]; tomorrow: any[] }, // Return type
   void, // No params needed
   { rejectValue: string }
->(
-  "bookings/fetchUpcomingBookings",
-  async (_, { rejectWithValue }) => {
-    try {
-      const response = await axiosInstance.get(`/bookings/upcoming`);
-      return response.data.data;
-    } catch (error: any) {
-      return rejectWithValue(
-        error.response?.data || "Failed to fetch upcoming bookings"
-      );
-    }
+>("bookings/fetchUpcomingBookings", async (_, { rejectWithValue }) => {
+  try {
+    const response = await axiosInstance.get(`/bookings/upcoming`);
+    return response.data.data;
+  } catch (error: any) {
+    return rejectWithValue(
+      error.response?.data || "Failed to fetch upcoming bookings"
+    );
   }
-);
+});

@@ -12,9 +12,16 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
   try {
     const { teamName, teamLeaderEmail, contactNumber } = req.body;
     let memberEmails = req.body.memberEmails;
-    const teamLogo = req.file?.path;
+    const teamLogo = req.file?.path; // Get the logo path from multer
 
-     // Parse memberEmails if it's a string
+    console.log("Team creation attempt:", { 
+      teamName, 
+      teamLeaderEmail, 
+      hasFile: !!req.file, 
+      filePath: teamLogo 
+    });
+
+    // Parse memberEmails if it's a string
     if (typeof memberEmails === 'string') {
       try {
         memberEmails = JSON.parse(memberEmails);
@@ -28,20 +35,11 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
       }
     }
 
-    // Basic validation
-    if (!teamName || !teamLeaderEmail || !memberEmails || !contactNumber || !teamLogo ) {
+    // Basic validation - make teamLogo optional
+    if (!teamName || !teamLeaderEmail || !memberEmails || !contactNumber) {
       res.status(400).json({
         success: false,
-        message: "Please provide all required fields including team logo"
-      });
-      return;
-    }
-
-    // Upload logo to cloudinary
-    if (!teamLogo) {
-      res.status(400).json({
-        success: false,
-        message: "Team logo is required"
+        message: "Please provide all required fields"
       });
       return;
     }
@@ -58,32 +56,40 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
       teamName,
       teamLeaderEmail,
       contactNumber,
-      teamLogo: teamLogo,
+      teamLogo: teamLogo || '', // Make logo optional with empty string fallback
       memberEmails: members
     });
 
-     // Send verification emails to all members
-     for (const member of members) {
-      const verificationEmail = {
-        to: member.email,
-        from: process.env.EMAIL_FROM!,
-        subject: `Team Membership Verification - ${teamName}`,
-        html: `
-          <h1>Team Membership Verification</h1>
-          <p>You have been invited to join team ${teamName}!</p>
-          <p>Click the link below to verify your membership:</p>
-          <a href="${process.env.FRONTEND_URL}/verify-member/${member.token}" 
-             style="padding: 10px 20px; background-color: #4CAF50; color: white; 
-                    text-decoration: none; border-radius: 5px; display: inline-block;">
-            Verify Membership
-          </a>
-        `
-      };
+    // Save the team before sending emails to prevent issues if email sending fails
+    await newTeam.save();
+    
+    // Send verification emails to all members
+    try {
+      for (const member of members) {
+        const verificationEmail = {
+          to: member.email,
+          from: process.env.EMAIL_FROM!,
+          subject: `Team Membership Verification - ${teamName}`,
+          html: `
+            <h1>Team Membership Verification</h1>
+            <p>You have been invited to join team ${teamName}!</p>
+            <p>Click the link below to verify your membership:</p>
+            <a href="${process.env.FRONTEND_URL}/verify-member/${member.token}" 
+              style="padding: 10px 20px; background-color: #4CAF50; color: white; 
+                      text-decoration: none; border-radius: 5px; display: inline-block;">
+              Verify Membership
+            </a>
+          `
+        };
 
-      await sgMail.send(verificationEmail);
+        await sgMail.send(verificationEmail);
+      }
+    } catch (emailError) {
+      console.error("Error sending verification emails:", emailError);
+      // Continue with team creation even if emails fail
+      // We already saved the team, so just notify about the partial success
     }
 
-    await newTeam.save();
     res.status(201).json({
       success: true,
       message: "Team created successfully. Members will receive verification emails.",
@@ -93,6 +99,7 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
       }
     });
   } catch (error: any) {
+    console.error("Error creating team:", error);
     res.status(500).json({
       success: false,
       message: "Error creating team",
