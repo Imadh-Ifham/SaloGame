@@ -350,7 +350,7 @@ export const updateBookingStatus = async (
   }
 };
 
-export const getBookingByID = async (
+export const getBookingByUserID = async (
   req: AuthRequest,
   res: Response
 ): Promise<void> => {
@@ -391,6 +391,56 @@ export const getBookingByID = async (
     const { transactionID, ...bookingData } = booking;
 
     // Structure the response
+    const structuredResponse = {
+      booking: bookingData,
+      transaction: transactionID || null, // Ensure transaction is explicitly null if not present
+    };
+
+    res.json({ status: "Success", data: structuredResponse });
+  } catch (error) {
+    res.status(500).json({
+      message: "Unexpected server error",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export const getBookingByID = async (
+  req: AuthRequest,
+  res: Response
+): Promise<void> => {
+  try {
+    if (!req.user?.id) {
+      res.status(401).json({ message: "Not authenticated" });
+      return;
+    }
+    const { bookingID } = req.params;
+
+    if (!bookingID) {
+      res.status(400).json({ message: "Booking ID is required." });
+      return;
+    }
+
+    const booking = await Booking.findById(bookingID)
+      .select("-isBooked -reservedAt -createdAt -updatedAt -__v")
+      .populate({
+        path: "transactionID",
+        select: "-userID -__v -createdAt", // Exclude userID
+      })
+      .populate({
+        path: "machines.machineID", // Populate machine details
+        select: "machineCategory serialNumber", // Exclude unnecessary fields
+      })
+      .lean();
+    if (!booking) {
+      res.status(404).json({ message: "Booking not found." });
+      return;
+    }
+
+    // Extract transaction details separately
+    const { transactionID, ...bookingData } = booking; // Convert Mongoose document to plain object
+
+    // Separate booking and transaction
     const structuredResponse = {
       booking: bookingData,
       transaction: transactionID || null, // Ensure transaction is explicitly null if not present

@@ -4,6 +4,7 @@ import {
   endBooking,
   generateReport,
   getBookingByID,
+  getBookingByUserID,
   getBookingLog,
   getBookingStatusForAllMachines,
   getFirstAndNextBooking,
@@ -19,7 +20,8 @@ router.post("/", createBooking);
 router.post("/get-first-and-next", getFirstAndNextBooking);
 router.post("/machines-status", getBookingStatusForAllMachines);
 router.patch("/update-status", updateBookingStatus);
-router.get("/get-booking", getBookingByID);
+router.post("/get-booking/:bookingID", getBookingByID);
+router.get("/get-booking", getBookingByUserID);
 router.post("/get-log", getBookingLog);
 router.get("/report", generateReport);
 router.get("/upcoming", getUpcomingBookings);
