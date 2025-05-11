@@ -12,19 +12,44 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
   try {
     const { teamName, teamLeaderEmail, contactNumber } = req.body;
     let memberEmails = req.body.memberEmails;
-    const teamLogo = req.file?.path; // Get the logo path from multer
+    
+    // Improved file path handling
+    let teamLogo = req.file?.path;
+    if (teamLogo) {
+      // Convert Windows backslashes to forward slashes for web URLs
+      teamLogo = teamLogo.replace(/\\/g, '/');
+      // Add a leading slash if needed for proper URL formatting
+      if (!teamLogo.startsWith('/')) {
+        teamLogo = '/' + teamLogo;
+      }
+    }
 
-    console.log("Team creation attempt:", { 
+    console.log("Team creation attempt with data:", { 
       teamName, 
-      teamLeaderEmail, 
+      teamLeaderEmail,
+      contactNumber, 
       hasFile: !!req.file, 
-      filePath: teamLogo 
+      filePath: teamLogo,
+      memberEmails
     });
 
+    // Check environment variables before proceeding
+    if (!process.env.EMAIL_FROM || !process.env.FRONTEND_URL) {
+      console.error("Missing required environment variables:", {
+        EMAIL_FROM: process.env.EMAIL_FROM ? "✓" : "✗",
+        FRONTEND_URL: process.env.FRONTEND_URL ? "✓" : "✗"
+      });
+      res.status(500).json({
+        success: false,
+        message: "Server configuration error. Please contact administrator."
+      });
+      return;
+    }
     // Parse memberEmails if it's a string
     if (typeof memberEmails === 'string') {
       try {
         memberEmails = JSON.parse(memberEmails);
+        console.log("Parsed memberEmails:", memberEmails);
       } catch (err) {
         console.error('Error parsing memberEmails:', err);
         res.status(400).json({
@@ -43,6 +68,9 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
       });
       return;
     }
+    
+    // Use a default logo URL if no logo is uploaded
+    const logoUrl = teamLogo || 'https://via.placeholder.com/150';
 
     // Generate verification tokens for members
     const members = memberEmails.map((email: string) => ({
@@ -56,13 +84,23 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
       teamName,
       teamLeaderEmail,
       contactNumber,
-      teamLogo: teamLogo || '', // Make logo optional with empty string fallback
+      teamLogo: logoUrl,  // Use the default logo or uploaded one
       memberEmails: members
     });
 
-    // Save the team before sending emails to prevent issues if email sending fails
-    await newTeam.save();
-    
+    try {
+      // Save the team before sending emails
+      await newTeam.save();
+      console.log("Team saved successfully:", newTeam.teamId);
+    } catch (saveError) {
+      console.error("Team save error:", saveError);
+      res.status(500).json({
+        success: false,
+        message: "Error saving team",
+        error: (saveError as Error).message
+      });
+      return;
+    }
     // Send verification emails to all members
     try {
       for (const member of members) {
@@ -81,9 +119,14 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
             </a>
           `
         };
-
-        await sgMail.send(verificationEmail);
-      }
+        try {
+              await sgMail.send(verificationEmail);
+              console.log(`Verification email sent to ${member.email}`);
+            } catch (individualEmailError) {
+              console.error(`Failed to send email to ${member.email}:`, individualEmailError);
+              // Continue with other emails even if one fails
+            }
+          }
     } catch (emailError) {
       console.error("Error sending verification emails:", emailError);
       // Continue with team creation even if emails fail
@@ -100,6 +143,15 @@ export const createTeam = async (req: Request, res: Response): Promise<void> => 
     });
   } catch (error: any) {
     console.error("Error creating team:", error);
+    console.error("Error stack:", error.stack);
+    
+    // Check if it's a MongoDB validation error
+    if (error.name === 'ValidationError') {
+      console.error("Validation errors:", Object.keys(error.errors).map(field => 
+        `${field}: ${error.errors[field].message}`
+      ));
+    }
+    
     res.status(500).json({
       success: false,
       message: "Error creating team",

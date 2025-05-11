@@ -236,9 +236,8 @@ const TeamRegistrationForm: React.FC<TeamRegistrationFormProps> = ({
       formDataToSend.append("teamLeaderEmail", formData.teamLeaderEmail);
       formDataToSend.append("contactNumber", formData.contactNumber);
 
-      // Make sure memberEmails is properly formatted as a JSON string
+      // Make sure memberEmails is properly sent as a single field
       formDataToSend.append("memberEmails", JSON.stringify(validEmails));
-
       // Only append the logo if it exists
       if (formData.teamLogo) {
         formDataToSend.append("teamLogo", formData.teamLogo);

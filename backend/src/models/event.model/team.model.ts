@@ -36,7 +36,8 @@ const teamSchema = new Schema<ITeam>({
   },
   teamLogo: {
     type: String,
-    required: true
+    required: false,
+    default: 'https://via.placeholder.com/150'
   },
   teamLeaderEmail: { 
     type: String, 
