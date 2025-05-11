@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaStar, FaGamepad, FaDice, FaChessKnight, FaArrowLeft, FaCommentAlt } from 'react-icons/fa';
 import { FiPlus, FiHome } from 'react-icons/fi';
+// Add these imports at the top of reveiwsDashboard.tsx
+import { FaUserCircle, FaUserSecret } from "react-icons/fa";
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '@/axios.config';
 import { format } from 'date-fns';
@@ -28,6 +30,7 @@ interface Feedback {
   category: string;
   createdAt: string;
   isAnonymous: boolean;
+  email?: string;
   status: 'pending' | 'reviewed' | 'resolved';
   replies?: Reply[];
   user?: {
@@ -376,7 +379,11 @@ const ReviewsDashboard = () => {
             >
               <div className="flex items-start gap-4">
                 <div className="flex-shrink-0 relative">
-                  {feedback.user?.googlePhotoUrl ? (
+                  {feedback.isAnonymous ? (
+                    <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center border-2 border-gray-600">
+                      <FaUserSecret className="text-gray-400 text-xl" />
+                    </div>
+                  ) : feedback.user?.googlePhotoUrl ? (
                     <img
                       src={feedback.user.googlePhotoUrl}
                       alt="User"
@@ -384,7 +391,7 @@ const ReviewsDashboard = () => {
                     />
                   ) : (
                     <div className="w-12 h-12 rounded-full bg-gray-700 flex items-center justify-center border-2 border-green-500">
-                      <FaGamepad className="text-gray-400" />
+                      <FaUserCircle className="text-gray-400 text-xl" />
                     </div>
                   )}
                   <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full border-2 border-gray-800 ${getStatusColor(feedback.status)} flex items-center justify-center`}>
