@@ -211,8 +211,7 @@ const ProfilePage: React.FC = () => {
     { id: "overview", icon: <FiUser />, label: "Overview" },
     { id: "membership", icon: <FiCreditCard />, label: "Membership" },
     { id: "events", icon: <FiCalendar />, label: "Events" },
-    { id: "booking", icon: <FiBookmark />, label: "Booking" },
-    { id: "support", icon: <FiHelpCircle />, label: "Support" },
+     { id: "support", icon: <FiHelpCircle />, label: "Support" },
     { id: "settings", icon: <FiSettings />, label: "Settings" },
   ];
 

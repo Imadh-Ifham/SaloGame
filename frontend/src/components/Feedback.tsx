@@ -5,6 +5,7 @@ import { FaStar, FaCamera, FaLightbulb, FaCommentAlt, FaGamepad } from 'react-ic
 import axiosInstance from '@/axios.config';
 import { NeonGradientCard } from '@/components/ui/neon-gradient-card';
 import HomeLayout from '../modules/users/layout/HomeLayout';
+import { useNavigate } from 'react-router-dom';
 
 const categories = [
   { id: 'general', label: 'General' },
@@ -24,6 +25,7 @@ const FeedbackForm = () => {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const [hover, setHover] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -274,9 +276,17 @@ const FeedbackForm = () => {
                   )}
                 </button>
               </form>
+              
             </div>
           </NeonGradientCard>
         </motion.div>
+        {/* See what others are saying button */}
+          <button
+            onClick={() => navigate('/support/reviews')}
+            className="mt-6 px-6 py-2 bg-green-600 rounded-lg text-white hover:bg-green-700 transition-colors shadow-lg"
+          >
+            See what others are saying
+          </button>
       </div>
     </HomeLayout>
   );
